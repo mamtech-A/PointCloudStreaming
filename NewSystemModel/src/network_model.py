@@ -19,6 +19,14 @@ except NameError:
 sys.path.insert(0, notebook_dir)
 from tcp_protocol import TCPConnection
 
+# Try to import LSTM predictor, but don't fail if not available
+try:
+    from bandwidth_lstm import SimpleLSTM
+    LSTM_AVAILABLE = True
+except ImportError:
+    LSTM_AVAILABLE = False
+    SimpleLSTM = None
+
 
 # --- Bandwidth Trace Loader ---
 def load_bandwidth_trace(log_path):
@@ -169,6 +177,189 @@ class EdgeNode:
         metrics['rep_info'] = rep
         tcp.close()
         return frame_id, rep_id, pc, metrics
+
+
+# --- LSTM-Enhanced Edge Node Class ---
+class EdgeNodeLSTM(EdgeNode):
+    """
+    Enhanced EdgeNode with LSTM-based bandwidth prediction.
+    
+    Uses historical bandwidth measurements to predict future bandwidth
+    and select appropriate video quality (representation) to optimize FPS.
+    """
+    
+    def __init__(self, server, bandwidth_limit_bps=None, tcp_params=None, 
+                 lstm_model_path=None, use_prediction=True):
+        """
+        Initialize LSTM-enhanced EdgeNode.
+        
+        Args:
+            server: PointCloudServer instance
+            bandwidth_limit_bps: Maximum bandwidth limit
+            tcp_params: TCP connection parameters
+            lstm_model_path: Path to trained LSTM model file
+            use_prediction: Whether to use LSTM prediction (True) or actual bandwidth (False)
+        """
+        super().__init__(server, bandwidth_limit_bps, tcp_params, abr_algorithm='lstm')
+        
+        self.use_prediction = use_prediction
+        self.lstm_model = None
+        self.predicted_bandwidth = None
+        self.prediction_history = []
+        
+        # Load LSTM model if available
+        if lstm_model_path and os.path.exists(lstm_model_path):
+            if not LSTM_AVAILABLE:
+                print("Warning: LSTM module not available, falling back to basic bandwidth selection")
+                self.use_prediction = False
+            else:
+                try:
+                    self.lstm_model = SimpleLSTM()
+                    self.lstm_model.load(lstm_model_path)
+                    print(f"✅ LSTM model loaded from {lstm_model_path}")
+                except Exception as e:
+                    print(f"Warning: Failed to load LSTM model: {e}")
+                    self.use_prediction = False
+        else:
+            if lstm_model_path:
+                print(f"Warning: LSTM model not found at {lstm_model_path}, using actual bandwidth")
+            self.use_prediction = False
+    
+    def predict_bandwidth(self):
+        """
+        Predict next bandwidth using LSTM model based on historical measurements.
+        
+        Returns:
+            Predicted bandwidth in bps (or None if not enough history)
+        """
+        if not self.use_prediction or not self.lstm_model:
+            return None
+        
+        # Need at least sequence_length measurements
+        if len(self.bandwidth_history) < self.lstm_model.sequence_length:
+            return None
+        
+        # Get last sequence_length measurements and convert to Mbps
+        recent_bw = [bw / 1e6 for bw in self.bandwidth_history[-self.lstm_model.sequence_length:]]
+        
+        # Update LSTM history
+        for bw in recent_bw:
+            self.lstm_model.update(bw)
+        
+        # Predict next bandwidth
+        predicted_mbps = self.lstm_model.predict_next()
+        predicted_bps = predicted_mbps * 1e6
+        
+        self.predicted_bandwidth = predicted_bps
+        self.prediction_history.append({
+            'predicted_bps': predicted_bps,
+            'predicted_mbps': predicted_mbps
+        })
+        
+        return predicted_bps
+    
+    def select_representation_lstm(self, frame_id, current_bandwidth_bps=None, buffer_level_s=None):
+        """
+        Select representation using LSTM-predicted bandwidth.
+        
+        Maps predicted bandwidth to one of 3 quality levels:
+        - High quality (rep_id=0): For high bandwidth (>20 Mbps)
+        - Medium quality (rep_id=1): For medium bandwidth (5-20 Mbps)
+        - Low quality (rep_id=2): For low bandwidth (<5 Mbps)
+        
+        This ensures 3 distinct quality levels based on predicted network conditions.
+        """
+        manifest = self.server.get_manifest()
+        reps = manifest.get_representations(frame_id)
+        if not reps:
+            return None
+        
+        # Store actual bandwidth for history
+        actual_bandwidth = current_bandwidth_bps or self.bandwidth_limit or 1_000_000_000
+        self.bandwidth_history.append(actual_bandwidth)
+        
+        # Predict bandwidth using LSTM
+        predicted_bw = self.predict_bandwidth()
+        
+        # Use predicted bandwidth if available, otherwise fall back to actual
+        if predicted_bw is not None and self.use_prediction:
+            bandwidth_for_selection = predicted_bw
+            print(f"    📊 LSTM Prediction: {predicted_bw/1e6:.2f} Mbps (Actual: {actual_bandwidth/1e6:.2f} Mbps)")
+        else:
+            bandwidth_for_selection = actual_bandwidth
+        
+        self.last_bandwidth = bandwidth_for_selection
+        self.last_buffer_level = buffer_level_s if buffer_level_s is not None else 0
+        
+        # Select quality based on bandwidth (3 quality levels)
+        rep_id = self._select_quality_level(reps, bandwidth_for_selection)
+        
+        self.last_rep_id = rep_id
+        self.quality_history.append(rep_id)
+        
+        return rep_id
+    
+    def _select_quality_level(self, reps, bandwidth_bps):
+        """
+        Select one of 3 quality levels based on predicted bandwidth.
+        
+        Quality mapping:
+        - rep_id=0 (High): >20 Mbps - Best quality for high bandwidth
+        - rep_id=1 (Medium): 5-20 Mbps - Medium quality for moderate bandwidth  
+        - rep_id=2 (Low): <5 Mbps - Lowest quality for low bandwidth
+        
+        This ensures stable quality selection and better FPS by matching
+        video quality to available bandwidth.
+        """
+        # Ensure we have 3 representations sorted by quality
+        reps_sorted = sorted(reps, key=lambda r: r.get('bandwidth', size_to_bits(r['size'])), reverse=True)
+        
+        # Define bandwidth thresholds for 3 quality levels
+        bandwidth_mbps = bandwidth_bps / 1e6
+        
+        if bandwidth_mbps >= 20:
+            # High bandwidth -> High quality (rep_id=0)
+            return reps_sorted[0]['id'] if len(reps_sorted) > 0 else 0
+        elif bandwidth_mbps >= 5:
+            # Medium bandwidth -> Medium quality (rep_id=1)
+            return reps_sorted[1]['id'] if len(reps_sorted) > 1 else reps_sorted[0]['id']
+        else:
+            # Low bandwidth -> Low quality (rep_id=2)
+            return reps_sorted[2]['id'] if len(reps_sorted) > 2 else reps_sorted[-1]['id']
+    
+    def select_representation(self, frame_id, current_bandwidth_bps=None, buffer_level_s=None):
+        """Override to use LSTM-based selection."""
+        if self.use_prediction:
+            return self.select_representation_lstm(frame_id, current_bandwidth_bps, buffer_level_s)
+        else:
+            return super().select_representation(frame_id, current_bandwidth_bps, buffer_level_s)
+    
+    def get_prediction_stats(self):
+        """Get statistics about LSTM predictions."""
+        if not self.prediction_history:
+            return None
+        
+        predicted_mbps = [p['predicted_mbps'] for p in self.prediction_history]
+        actual_mbps = [bw / 1e6 for bw in self.bandwidth_history[-len(predicted_mbps):]]
+        
+        # Calculate prediction accuracy
+        if len(actual_mbps) > 0 and len(predicted_mbps) > 0:
+            min_len = min(len(actual_mbps), len(predicted_mbps))
+            errors = [abs(predicted_mbps[i] - actual_mbps[i]) for i in range(min_len)]
+            mae = sum(errors) / len(errors) if errors else 0
+            mape = sum([e / max(a, 0.1) * 100 for e, a in zip(errors, actual_mbps[:min_len])]) / min_len if errors else 0
+        else:
+            mae = 0
+            mape = 0
+        
+        return {
+            'total_predictions': len(predicted_mbps),
+            'mean_predicted_mbps': sum(predicted_mbps) / len(predicted_mbps) if predicted_mbps else 0,
+            'mean_actual_mbps': sum(actual_mbps) / len(actual_mbps) if actual_mbps else 0,
+            'mae_mbps': mae,
+            'mape_percent': mape
+        }
+
 
 
 
@@ -692,6 +883,17 @@ class Simulator:
             # QoE Score (simple formula)
             qoe_score = max(0, 100 - (final_stats['rebuffer_count'] * 10) - (final_stats['total_stall_time_s'] * 5) - (final_stats['frames_dropped'] * 2))
             print(f"\n🎯 QoE Score: {qoe_score:.1f}/100")
+            
+            # LSTM Prediction Statistics (if using EdgeNodeLSTM)
+            if isinstance(self.edge_node, EdgeNodeLSTM) and self.edge_node.use_prediction:
+                pred_stats = self.edge_node.get_prediction_stats()
+                if pred_stats:
+                    print(f"\n🤖 LSTM Prediction Statistics:")
+                    print(f"   Total Predictions: {pred_stats['total_predictions']}")
+                    print(f"   Mean Predicted BW: {pred_stats['mean_predicted_mbps']:.2f} Mbps")
+                    print(f"   Mean Actual BW: {pred_stats['mean_actual_mbps']:.2f} Mbps")
+                    print(f"   Mean Absolute Error: {pred_stats['mae_mbps']:.2f} Mbps")
+                    print(f"   Mean Absolute % Error: {pred_stats['mape_percent']:.1f}%")
             
             csv_file.close()
             packet_log_file.close()
