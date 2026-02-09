@@ -8,7 +8,7 @@ visualization of results.
 
 Usage in Google Colab:
     1. Upload this file to Colab or copy/paste into a notebook cell
-    2. Upload your bandwidth log files to the 'bandwith/' folder
+    2. Upload your bandwidth log files to the 'bandwith/' folder (note: folder name matches existing repository)
     3. Run the script
 
 The script will:
@@ -1116,7 +1116,8 @@ def setup_colab_data():
             print(f"Could not mount Drive: {e}")
             print("Continuing without Drive...")
     
-    # Create bandwith directory if it doesn't exist
+    # Create bandwidth directory if it doesn't exist
+    # Note: Directory named 'bandwith' to match existing repository structure
     bandwidth_dir = 'bandwith'
     os.makedirs(bandwidth_dir, exist_ok=True)
     
@@ -1155,6 +1156,7 @@ def main():
         model_dir = 'models'
     else:
         # Local path (relative to this script)
+        # Note: 'bandwith' folder name matches existing repository structure
         script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in dir() else os.getcwd()
         bandwidth_dir = os.path.join(script_dir, 'bandwith')
         model_dir = os.path.join(script_dir, 'models')
