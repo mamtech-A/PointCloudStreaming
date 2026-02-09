@@ -16,6 +16,10 @@ from collections import deque
 import json
 import copy
 
+# Constants for model training
+GRADIENT_CLIP_MAX_NORM = 1.0  # Max norm for gradient clipping
+MAPE_ZERO_THRESHOLD = 0.1     # Threshold (Mbps) to filter near-zero values for MAPE calculation
+
 
 class BandwidthDataset(Dataset):
     """PyTorch Dataset for bandwidth sequences."""
@@ -252,7 +256,7 @@ class LSTMPredictor:
                 loss.backward()
                 
                 # Gradient clipping to prevent exploding gradients
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=GRADIENT_CLIP_MAX_NORM)
                 
                 optimizer.step()
                 train_losses.append(loss.item())
@@ -314,8 +318,8 @@ class LSTMPredictor:
         test_predictions_denorm = self._denormalize(test_predictions)
         
         mae = np.mean(np.abs(y_test_denorm - test_predictions_denorm))
-        # Use a larger epsilon to avoid division issues with values near zero
-        nonzero_mask = np.abs(y_test_denorm) > 0.1  # Filter out near-zero values for MAPE
+        # Filter out near-zero values for MAPE calculation to avoid division issues
+        nonzero_mask = np.abs(y_test_denorm) > MAPE_ZERO_THRESHOLD
         if np.sum(nonzero_mask) > 0:
             mape = np.mean(np.abs((y_test_denorm[nonzero_mask] - test_predictions_denorm[nonzero_mask]) / y_test_denorm[nonzero_mask])) * 100
         else:
@@ -408,8 +412,10 @@ class LSTMPredictor:
         Args:
             path: Path to save the model (.pkl file)
         """
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # Ensure directory exists if path has a directory component
+        dir_path = os.path.dirname(path)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
         
         save_dict = {
             'model_state_dict': self.model.state_dict(),

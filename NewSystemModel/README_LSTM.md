@@ -223,8 +223,8 @@ Example output:
    Total Predictions: 291
    Mean Predicted BW: 40.70 Mbps
    Mean Actual BW: 42.84 Mbps
-   Mean Absolute Error: 5.15 Mbps
-   Mean Absolute % Error: 18.5%
+   MAE: 5.15 Mbps
+   MAPE: 18.5%
 ```
 
 ### Output Files
