@@ -1,0 +1,6 @@
+.venv/
+.vscode
+bandwith
+logs
+models
+src/__pycache__

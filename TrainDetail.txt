@@ -1,0 +1,185 @@
+
+C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel>
+C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel>python train_model.py/usr/bin/env python3 "c:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\tempCodeRunnerFile.py"
+python: can't open file 'C:\\Users\\Mamtech\\MachineLearningProject\\PointCloudStreaming\\NewSystemModel\\train_model.py\\usr\\bin\\env': [Errno 2] No such file or directory
+
+C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel>python train_model.py
+================================================================================
+🤖 LSTM Bandwidth Prediction Model Training
+================================================================================
+
+📁 Found 40 bandwidth trace files
+📂 Output directory: C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models
+🔧 Hyperparameter tuning: Enabled
+📊 Sequence length: 10
+
+================================================================================
+Training Process:
+  1. Load and prepare dataset
+  2. Split into train (80%) and test (20%) sets
+  3. Perform hyperparameter grid search
+  4. Train final model with best hyperparameters
+  5. Save trained model and best model
+================================================================================
+
+Loading bandwidth traces from C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\bandwith...
+Dataset size: 17636 sequences
+Bandwidth range: 0.00 - 110.97 Mbps
+Mean bandwidth: 30.23 Mbps, Std: 16.65 Mbps
+
+Testing 36 hyperparameter combinations...
+============================================================
+
+[1/36] Testing: {'hidden_size': 32, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 5.9944, MAPE: 45.18%, RMSE: 8.4549
+
+[2/36] Testing: {'hidden_size': 32, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 6.1216, MAPE: 43.92%, RMSE: 8.5645
+
+[3/36] Testing: {'hidden_size': 32, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 6.0637, MAPE: 43.92%, RMSE: 8.5210
+
+[4/36] Testing: {'hidden_size': 32, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 6.2122, MAPE: 44.71%, RMSE: 8.5725
+
+[5/36] Testing: {'hidden_size': 32, 'num_layers': 1, 'dropout': 0.3, 'learning_rate': 0.001}
+  MAE: 6.0429, MAPE: 46.62%, RMSE: 8.4899
+
+[6/36] Testing: {'hidden_size': 32, 'num_layers': 1, 'dropout': 0.3, 'learning_rate': 0.0005}
+  MAE: 6.2167, MAPE: 47.40%, RMSE: 8.5537
+
+[7/36] Testing: {'hidden_size': 32, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 6.0597, MAPE: 45.97%, RMSE: 8.4830
+
+[8/36] Testing: {'hidden_size': 32, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 6.0931, MAPE: 44.71%, RMSE: 8.5583
+
+[9/36] Testing: {'hidden_size': 32, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 6.0789, MAPE: 46.06%, RMSE: 8.4893
+
+[10/36] Testing: {'hidden_size': 32, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 6.1720, MAPE: 47.25%, RMSE: 8.5769
+
+[11/36] Testing: {'hidden_size': 32, 'num_layers': 2, 'dropout': 0.3, 'learning_rate': 0.001}
+  MAE: 6.1310, MAPE: 49.88%, RMSE: 8.4704
+
+[12/36] Testing: {'hidden_size': 32, 'num_layers': 2, 'dropout': 0.3, 'learning_rate': 0.0005}
+  MAE: 6.2100, MAPE: 46.28%, RMSE: 8.5907
+
+[13/36] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 6.0058, MAPE: 45.96%, RMSE: 8.4523
+
+[14/36] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 6.0113, MAPE: 44.79%, RMSE: 8.4962
+
+[15/36] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 6.0674, MAPE: 46.12%, RMSE: 8.4480
+
+[16/36] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 6.1118, MAPE: 44.08%, RMSE: 8.5281
+
+[17/36] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.3, 'learning_rate': 0.001}
+  MAE: 6.0781, MAPE: 44.24%, RMSE: 8.4782
+
+[18/36] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.3, 'learning_rate': 0.0005}
+  MAE: 6.1340, MAPE: 45.69%, RMSE: 8.5321
+
+[19/36] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 5.9698, MAPE: 42.19%, RMSE: 8.4490
+
+[20/36] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 6.0549, MAPE: 46.75%, RMSE: 8.4970
+
+[21/36] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 5.9935, MAPE: 43.89%, RMSE: 8.5000
+
+[22/36] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 5.9937, MAPE: 44.64%, RMSE: 8.4997
+
+[23/36] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.3, 'learning_rate': 0.001}
+  MAE: 5.9990, MAPE: 44.64%, RMSE: 8.4243
+
+[24/36] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.3, 'learning_rate': 0.0005}
+  MAE: 6.0087, MAPE: 44.54%, RMSE: 8.4798
+
+[25/36] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 6.0554, MAPE: 45.34%, RMSE: 8.4481
+
+[26/36] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 6.0130, MAPE: 45.43%, RMSE: 8.4803
+
+[27/36] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 6.0518, MAPE: 45.14%, RMSE: 8.4951
+
+[28/36] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 6.0097, MAPE: 43.88%, RMSE: 8.4641
+
+[29/36] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.3, 'learning_rate': 0.001}
+  MAE: 6.0895, MAPE: 43.94%, RMSE: 8.5267
+
+[30/36] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.3, 'learning_rate': 0.0005}
+  MAE: 6.0751, MAPE: 45.67%, RMSE: 8.5178
+
+[31/36] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 5.9415, MAPE: 41.46%, RMSE: 8.4025
+
+[32/36] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 6.0944, MAPE: 48.46%, RMSE: 8.4808
+
+[33/36] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 6.0187, MAPE: 44.24%, RMSE: 8.4615
+
+[34/36] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 6.1180, MAPE: 47.12%, RMSE: 8.4634
+
+[35/36] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.3, 'learning_rate': 0.001}
+  MAE: 5.9528, MAPE: 44.50%, RMSE: 8.4073
+
+[36/36] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.3, 'learning_rate': 0.0005}
+  MAE: 6.0925, MAPE: 45.28%, RMSE: 8.4731
+
+============================================================
+Best hyperparameters: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+Best MAE: 5.9415 Mbps
+
+Tuning results saved to: C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models\bandwidth_lstm_tuning_results.json
+
+Retraining final model with best hyperparameters...
+
+Training final model...
+Dataset split: 14108 train, 3528 test samples
+Epoch 10/100 - Train Loss: 0.265538, Test Loss: 0.273269
+Epoch 20/100 - Train Loss: 0.246973, Test Loss: 0.257826
+Epoch 30/100 - Train Loss: 0.216885, Test Loss: 0.266248
+Early stopping at epoch 36 (no improvement for 15 epochs)
+Loaded best model from epoch 21 with test loss: 0.253667
+
+Final Test Metrics:
+  MAE: 5.9830 Mbps
+  MAPE: 41.62%
+  RMSE: 8.3801 Mbps
+
+Saving model to C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models\bandwidth_lstm.pkl...
+Best model saved to: C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models\bandwidth_lstm_best.pkl
+
+Sample predictions:
+  Actual: 31.29 Mbps, Predicted: 33.09 Mbps
+  Actual: 27.19 Mbps, Predicted: 31.67 Mbps
+  Actual: 31.09 Mbps, Predicted: 28.16 Mbps
+  Actual: 32.95 Mbps, Predicted: 30.35 Mbps
+  Actual: 36.95 Mbps, Predicted: 31.86 Mbps
+
+================================================================================
+✅ Training complete!
+📦 Model saved to: C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models\bandwidth_lstm.pkl
+📦 Best model saved to: C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models\bandwidth_lstm_best.pkl
+📊 Tuning results saved to: C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel\models\bandwidth_lstm_tuning_results.json
+
+Next steps:
+  1. Run the system with LSTM prediction:
+     python3 run_lstm.py
+  2. Or compare with baseline (no LSTM):
+     python3 run.py
+================================================================================
+
+C:\Users\Mamtech\MachineLearningProject\PointCloudStreaming\NewSystemModel>
