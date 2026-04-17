@@ -281,12 +281,32 @@ class EdgeNodeLSTM(EdgeNode):
         # Predict bandwidth using LSTM
         predicted_bw = self.predict_bandwidth()
         
-        # Use predicted bandwidth if available, otherwise fall back to actual
+        # Use predicted bandwidth if available.
+        # During warm-up (not enough history for LSTM), fall back to the
+        # harmonic mean of observed samples — conservative and realistic,
+        # since the edge node has no oracle access to true link bandwidth.
+        # If no samples have been collected yet, choose the lowest quality.
         if predicted_bw is not None and self.use_prediction:
             bandwidth_for_selection = predicted_bw
             print(f"    📊 LSTM Prediction: {predicted_bw/1e6:.2f} Mbps (Actual: {actual_bandwidth/1e6:.2f} Mbps)")
+        elif self.bandwidth_history:
+            # Harmonic mean of all observed throughput samples so far.
+            # Only positive values contribute; if none exist, fall back to 0
+            # which causes _select_quality_level to pick the lowest quality.
+            positive_bws = [bw for bw in self.bandwidth_history if bw > 0]
+            if positive_bws:
+                harmonic_mean_bw = len(positive_bws) / sum(1.0 / bw for bw in positive_bws)
+            else:
+                harmonic_mean_bw = 0
+            bandwidth_for_selection = harmonic_mean_bw
+            seq_len = self.lstm_model.sequence_length if self.lstm_model else '?'
+            print(f"    ⏳ Warm-up ({len(self.bandwidth_history)}/{seq_len} samples): "
+                  f"using harmonic mean {harmonic_mean_bw/1e6:.2f} Mbps")
         else:
-            bandwidth_for_selection = actual_bandwidth
+            # No history at all — default to lowest quality (safest cold-start).
+            # Passing 0 bps to _select_quality_level always yields the lowest tier.
+            bandwidth_for_selection = 0
+            print("    ⏳ Warm-up (0 samples): no history, selecting lowest quality")
         
         self.last_bandwidth = bandwidth_for_selection
         self.last_buffer_level = buffer_level_s if buffer_level_s is not None else 0
