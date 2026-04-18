@@ -134,6 +134,26 @@ class EdgeNode:
         self.last_bandwidth = 0
         self.quality_history = []
         self.bandwidth_history = []
+        self.observed_throughput_history = []
+        self.last_observed_throughput_bps = None
+        self.tcp_connections = {}
+
+    def _estimate_bandwidth_from_history(self):
+        """Estimate bandwidth from completed downloads only (no oracle access)."""
+        positive_samples = [bw for bw in self.observed_throughput_history if bw and bw > 0]
+        if not positive_samples:
+            return 0
+        return len(positive_samples) / sum(1.0 / bw for bw in positive_samples)
+
+    def _record_observed_throughput(self, metrics):
+        """Record measured throughput from a completed transfer."""
+        sent_bytes = metrics.get('sent_bytes', 0)
+        time_s = metrics.get('time_s', 0)
+        if sent_bytes > 0 and time_s > 0:
+            throughput_bps = (sent_bytes * 8) / time_s
+            self.last_observed_throughput_bps = throughput_bps
+            self.observed_throughput_history.append(throughput_bps)
+            self.bandwidth_history.append(throughput_bps)
 
     def select_representation(self, frame_id, current_bandwidth_bps=None, buffer_level_s=None):
         manifest = self.server.get_manifest()
@@ -141,10 +161,10 @@ class EdgeNode:
         if not reps:
             return None
 
-        bandwidth = current_bandwidth_bps or self.bandwidth_limit or 1_000_000_000
+        # ABR should depend on observable history; direct bandwidth input is optional.
+        bandwidth = current_bandwidth_bps if current_bandwidth_bps is not None else self._estimate_bandwidth_from_history()
         self.last_bandwidth = bandwidth
         self.last_buffer_level = buffer_level_s if buffer_level_s is not None else 0
-        self.bandwidth_history.append(bandwidth)
 
         rep_id = self._bandwidth_selection(reps, bandwidth)
         self.last_rep_id = rep_id
@@ -160,7 +180,8 @@ class EdgeNode:
         return reps_sorted[-1]['id']
 
     def serve_to_user(self, frame_id, user_id="User", capacity_bps=None, buffer_level_s=None):
-        rep_id = self.select_representation(frame_id, current_bandwidth_bps=capacity_bps, buffer_level_s=buffer_level_s)
+        # Do not leak true link capacity into ABR. Use only observed history.
+        rep_id = self.select_representation(frame_id, current_bandwidth_bps=None, buffer_level_s=buffer_level_s)
         pc = self.server.serve_pointcloud(frame_id, rep_id)
         reps = self.server.get_manifest().get_representations(frame_id)
         rep = next((r for r in reps if r['id'] == rep_id), None)
@@ -169,14 +190,27 @@ class EdgeNode:
             data_bits = rep['bandwidth'] / 30  # bandwidth is per second, we need per frame
         else:
             data_bits = size_to_bits(rep['size']) if rep else 0
-        
-        tcp = TCPConnection(src="EdgeNode", dst=user_id, **self.tcp_params)
-        tcp.establish()
+
+        # Reuse persistent TCP connection per user to keep transport state realistic.
+        tcp = self.tcp_connections.get(user_id)
+        if tcp is None or tcp.closed:
+            tcp = TCPConnection(src="EdgeNode", dst=user_id, **self.tcp_params)
+            packet_log_start = 0
+            tcp.establish()
+            self.tcp_connections[user_id] = tcp
+        else:
+            packet_log_start = len(tcp.get_packet_log())
         metrics = tcp.send(int(data_bits / 8) if data_bits else 0, capacity_bps=capacity_bps)
-        metrics['packet_log'] = tcp.get_packet_log()
+        self._record_observed_throughput(metrics)
+        metrics['packet_log'] = tcp.get_packet_log()[packet_log_start:]
         metrics['rep_info'] = rep
-        tcp.close()
         return frame_id, rep_id, pc, metrics
+
+    def close_connections(self):
+        for tcp in self.tcp_connections.values():
+            if tcp and not tcp.closed:
+                tcp.close()
+        self.tcp_connections = {}
 
 
 # --- LSTM-Enhanced Edge Node Class ---
@@ -238,11 +272,14 @@ class EdgeNodeLSTM(EdgeNode):
         # Need at least sequence_length measurements
         if len(self.bandwidth_history) < self.lstm_model.sequence_length:
             return None
-        
-        # Get last sequence_length measurements and convert to Mbps
+
+        # Build predictor input from the latest observed history exactly once,
+        # avoiding duplicate re-feeding of the same samples across calls.
         recent_bw = [bw / 1e6 for bw in self.bandwidth_history[-self.lstm_model.sequence_length:]]
-        
-        # Update LSTM history
+        if hasattr(self.lstm_model, 'history'):
+            self.lstm_model.history.clear()
+            if hasattr(self.lstm_model, '_predictor') and self.lstm_model._predictor is not None:
+                self.lstm_model._predictor.history.clear()
         for bw in recent_bw:
             self.lstm_model.update(bw)
         
@@ -274,10 +311,6 @@ class EdgeNodeLSTM(EdgeNode):
         if not reps:
             return None
         
-        # Store actual bandwidth for history
-        actual_bandwidth = current_bandwidth_bps or self.bandwidth_limit or 1_000_000_000
-        self.bandwidth_history.append(actual_bandwidth)
-        
         # Predict bandwidth using LSTM
         predicted_bw = self.predict_bandwidth()
         
@@ -288,7 +321,7 @@ class EdgeNodeLSTM(EdgeNode):
         # If no samples have been collected yet, choose the lowest quality.
         if predicted_bw is not None and self.use_prediction:
             bandwidth_for_selection = predicted_bw
-            print(f"    📊 LSTM Prediction: {predicted_bw/1e6:.2f} Mbps (Actual: {actual_bandwidth/1e6:.2f} Mbps)")
+            print(f"    📊 LSTM Prediction: {predicted_bw/1e6:.2f} Mbps")
         elif self.bandwidth_history:
             # Harmonic mean of all observed throughput samples so far.
             # Only positive values contribute; if none exist, fall back to 0
@@ -878,6 +911,9 @@ class Simulator:
                 # Write packet log entries for this frame
                 for pkt in metrics.get('packet_log', []):
                     packet_log_file.write(f"{frame_id},{pkt['time_s']:.6f},{pkt['round']},{pkt['packet_num']},{pkt['size_bytes']},{pkt['event']},{pkt['src']},{pkt['dst']},{pkt['cwnd']},{pkt.get('seq_num',0)},{pkt.get('ack_num',0)},{pkt.get('rtt_ms',0):.2f}\n")
+
+            # End of this client session.
+            self.edge_node.close_connections()
             
             # Final statistics
             final_stats = client.get_buffer_stats()

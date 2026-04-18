@@ -38,6 +38,8 @@ class TCPConnection:
         # Packet log: list of dicts with packet events
         self.packet_log = []
         self.handshake_time = 0.0  # track handshake end time
+        self.conn_time = 0.0  # cumulative connection timeline
+        self.first_data_send = True
         self.seq_num = 0  # sequence number (bytes)
         self.ack_num = 0  # acknowledgment number (bytes)
 
@@ -100,6 +102,8 @@ class TCPConnection:
         self.ack_num = server_isn + 1
         
         self.handshake_time = rtt_s  # data transmission starts after handshake
+        self.conn_time = rtt_s
+        self.first_data_send = True
         self.established = True
         return {'event':'established', 'handshake_delay_s': rtt_s}
 
@@ -140,47 +144,44 @@ class TCPConnection:
             else:
                 self.rto = max(0.2, self.srtt + 4 * self.rttvar)
 
-        cwnd_start = int(self.cwnd_packets)
-        cwnd = cwnd_start
-        ssthresh = 65535  # default ssthresh (64KB worth of packets)
+        cwnd_start = max(1, int(self.cwnd_packets))
+        cwnd = float(cwnd_start)
+        ssthresh = max(2, cwnd_start * 2)
 
-        # Capacity limit: packets per RTT
-        if capacity_bps and capacity_bps > 0:
-            cap_packets_per_rtt = max(1, int((capacity_bps * rtt_s) / (mss * 8)))
-        else:
-            cap_packets_per_rtt = total_packets  # unlimited
-
-        # --- Analytical RTT-round model ---
-        # Each round we send min(cwnd, cap_packets_per_rtt, remaining) packets
-        # Slow-start: cwnd doubles each RTT until ssthresh
-        # Congestion avoidance: cwnd += 1 per RTT
-        # Loss: expected retransmissions = total_packets * loss_prob (aggregated)
-
-        sent = 0
+        # --- RTT-round model with explicit retransmission rounds ---
+        # Keep a pending set of packet indices and remove only ACKed packets.
+        pending_packets = list(range(total_packets))
+        retransmissions = 0
         rounds = 0
         max_rounds = 10000  # safety cap
-        sim_time = self.handshake_time  # start after handshake
-        total_rtt_time = 0.0  # track actual RTT time with jitter
+        sim_time = self.conn_time
+        send_start_time = 0.0 if self.first_data_send else self.conn_time
 
-        while sent < total_packets and rounds < max_rounds:
+        while pending_packets and rounds < max_rounds:
             # Calculate RTT with jitter for this round
-            round_rtt_s = rtt_s + random.uniform(0, self.rtt_jitter_ms / 1000.0)
+            round_rtt_s = max(0.001, base_rtt_s + random.uniform(-jitter_s, jitter_s))
+            if capacity_bps and capacity_bps > 0:
+                cap_packets_per_rtt = max(1, int((capacity_bps * round_rtt_s) / (mss * 8)))
+            else:
+                cap_packets_per_rtt = len(pending_packets)
             
-            remaining = total_packets - sent
-            send_this_round = min(cwnd, cap_packets_per_rtt, remaining)
+            send_this_round = min(max(1, int(cwnd)), cap_packets_per_rtt, len(pending_packets))
+            to_send = pending_packets[:send_this_round]
+            remaining_queue = pending_packets[send_this_round:]
+            lost_this_round = []
+            success_count = 0
             
             # Log each packet in this round
-            for pkt_idx in range(send_this_round):
-                pkt_num = sent + pkt_idx
-                # Calculate sequence number for this packet
-                pkt_seq = self.seq_num + (pkt_num * mss)
+            for pkt_num, pkt_idx in enumerate(to_send):
+                pkt_seq = self.seq_num + (pkt_idx * mss)
+                pkt_size = mss if pkt_idx < total_packets - 1 else (data_bytes - ((total_packets - 1) * mss))
                 # Determine if this packet is lost (analytical: use loss_prob)
                 is_lost = random.random() < self.loss_prob
                 self.packet_log.append({
                     'time_s': sim_time,
                     'round': rounds,
                     'packet_num': pkt_num,
-                    'size_bytes': mss,
+                    'size_bytes': pkt_size,
                     'event': 'LOST' if is_lost else 'SENT',
                     'src': self.src,
                     'dst': self.dst,
@@ -189,7 +190,11 @@ class TCPConnection:
                     'ack_num': self.ack_num,
                     'rtt_ms': round_rtt_s * 1000
                 })
-                if not is_lost:
+                if is_lost:
+                    lost_this_round.append(pkt_idx)
+                    retransmissions += 1
+                else:
+                    success_count += 1
                     # Log ACK (cumulative: ack_num = seq + data_len)
                     self.packet_log.append({
                         'time_s': sim_time + round_rtt_s,
@@ -201,51 +206,42 @@ class TCPConnection:
                         'dst': self.src,
                         'cwnd': cwnd,
                         'seq_num': self.ack_num,
-                        'ack_num': pkt_seq + mss,
+                        'ack_num': pkt_seq + pkt_size,
                         'rtt_ms': round_rtt_s * 1000
                     })
             
-            sent += send_this_round
+            pending_packets = lost_this_round + remaining_queue
             rounds += 1
             sim_time += round_rtt_s
-            total_rtt_time += round_rtt_s
 
-            # cwnd growth:
-            # Slow-start: cwnd doubles each RTT (add 1 per ACK = add send_this_round per RTT)
-            # Congestion avoidance: cwnd += 1 per RTT
-            if cwnd < ssthresh:
-                # slow start: exponential growth (double cwnd)
-                cwnd = cwnd + send_this_round
+            # Congestion response and growth.
+            if lost_this_round:
+                ssthresh = max(2, int(cwnd / 2))
+                cwnd = float(ssthresh)
+                if success_count == 0:
+                    # Full-round loss approximates timeout behavior.
+                    sim_time += self.rto
             else:
-                # congestion avoidance: linear growth (+1 per RTT)
-                cwnd += 1
+                if cwnd < ssthresh:
+                    cwnd += success_count
+                else:
+                    cwnd += max(1.0 / max(cwnd, 1.0), success_count / max(cwnd, 1.0))
 
-        # Time = rounds * RTT + 1 RTT for handshake
-        time_s = (rounds + 1) * rtt_s
+            if self.rto_formula != 'fixed':
+                alpha = 1.0 / 8.0
+                beta = 1.0 / 4.0
+                self.rttvar = (1 - beta) * self.rttvar + beta * abs(self.srtt - round_rtt_s)
+                self.srtt = (1 - alpha) * self.srtt + alpha * round_rtt_s
+                self.rto = max(0.2, self.srtt + 4 * self.rttvar)
 
-        # Expected retransmissions (analytical)
-        if self.loss_prob > 0:
-            # Each packet has loss_prob chance of needing retransmit
-            # Expected retransmits ~ total_packets * loss_prob / (1 - loss_prob)
-            # Simplified: just total_packets * loss_prob
-            retransmissions = int(total_packets * self.loss_prob)
-            # Add RTO time for retransmits (simplified: 1 RTO per retransmit batch)
-            if retransmissions > 0:
-                rto_s = self.rto if self.rto else 1.0
-                # Assume retransmits happen once and add 1 RTO
-                time_s += rto_s
-        else:
-            retransmissions = 0
+        # Duration for this send (includes initial handshake once per connection).
+        time_s = sim_time - send_start_time
+        self.conn_time = sim_time
+        self.first_data_send = False
+        self.seq_num += data_bytes
 
-        cwnd_end = cwnd
-
-        # Update RTT estimator (using nominal RTT as sample)
-        if self.rto_formula != 'fixed':
-            alpha = 1.0 / 8.0
-            beta = 1.0 / 4.0
-            self.rttvar = (1 - beta) * self.rttvar + beta * abs(self.srtt - rtt_s)
-            self.srtt = (1 - alpha) * self.srtt + alpha * rtt_s
-            self.rto = max(0.2, self.srtt + 4 * self.rttvar)
+        cwnd_end = max(1, int(cwnd))
+        self.cwnd_packets = cwnd_end
 
         return {
             'sent_bytes': data_bytes,
