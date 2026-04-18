@@ -1,14 +1,9 @@
 import os
 import sys
-from src import network_model
 
 # Assume this notebook lives at the project root
 project_root = os.getcwd()
-src_dir = os.path.join(project_root, "/src")
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
-
-from network_model import (
+from src.network_model import (
     PointCloudServer, EdgeNodeLSTM, PointCloudClient, Simulator
 )
 
