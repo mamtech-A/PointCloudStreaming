@@ -720,8 +720,9 @@ class ClientBuffer:
 
 # --- Client Class ---
 class PointCloudClient:
-    def __init__(self, edge_node, target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0):
+    def __init__(self, edge_node, target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0, user_id="User"):
         self.edge_node = edge_node
+        self.user_id = user_id
         self.current_frame = None
         self.current_representation = None
         
@@ -737,6 +738,15 @@ class PointCloudClient:
         دریافت فریم از EdgeNode و اضافه کردن به بافر
         """
         return self.buffer.add_frame(frame_id, rep_id, size_bytes, download_time_s, arrival_time_s)
+
+    def request_frame(self, frame_id, capacity_bps=None, buffer_level_s=None):
+        """Client asks edge for next frame; edge decides representation."""
+        return self.edge_node.serve_to_user(
+            frame_id=frame_id,
+            user_id=self.user_id,
+            capacity_bps=capacity_bps,
+            buffer_level_s=buffer_level_s,
+        )
     
     def get_buffer_stats(self):
         return self.buffer.get_statistics()
@@ -823,11 +833,10 @@ class Simulator:
                     
                 # Let EdgeNode perform TCP send simulation and return metrics
                 # Pass buffer level for ABR algorithms that use it
-                frame_id, rep_id, pc, metrics = self.edge_node.serve_to_user(
-                    frame_id, 
-                    user_id="User", 
+                frame_id, rep_id, pc, metrics = client.request_frame(
+                    frame_id=frame_id,
                     capacity_bps=bandwidth,
-                    buffer_level_s=current_buffer_level
+                    buffer_level_s=current_buffer_level,
                 )
                 frame_time = metrics.get('time_s', 0)
                 total_time += frame_time
