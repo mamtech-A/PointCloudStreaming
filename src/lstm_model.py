@@ -19,6 +19,7 @@ import copy
 # Constants for model training
 GRADIENT_CLIP_MAX_NORM = 1.0  # Max norm for gradient clipping
 MAPE_ZERO_THRESHOLD = 0.1     # Threshold (Mbps) to filter near-zero values for MAPE calculation
+DEFAULT_SPLIT_RANDOM_STATE = 42
 
 
 class BandwidthDataset(Dataset):
@@ -198,90 +199,135 @@ class LSTMPredictor:
         # Convert to numpy arrays
         X = np.array(X)
         y = np.array(y)
-        
-        # Compute normalization statistics from training data
-        all_values = np.concatenate([X.flatten(), y])
-        self.stats['mean'] = float(np.mean(all_values))
-        self.stats['std'] = float(np.std(all_values)) if np.std(all_values) > 0 else 1.0
-        self.stats['min'] = float(np.min(all_values))
-        self.stats['max'] = float(np.max(all_values))
-        
-        # Normalize data
-        X_norm = self._normalize(X)
-        y_norm = self._normalize(y)
-        
+
         # Split into train and test sets
         X_train, X_test, y_train, y_test = train_test_split(
-            X_norm, y_norm, test_size=test_size, random_state=42
+            X, y, test_size=test_size, random_state=DEFAULT_SPLIT_RANDOM_STATE
         )
-        
+
         if verbose:
             print(f"Dataset split: {len(X_train)} train, {len(X_test)} test samples")
-        
+
+        return self.fit_from_split(
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            epochs=epochs,
+            batch_size=batch_size,
+            patience=patience,
+            verbose=verbose,
+            print_split=False
+        )
+
+    def fit_from_split(self, X_train, y_train, X_test, y_test, epochs=100,
+                       batch_size=32, patience=15, verbose=True, print_split=True):
+        """
+        Train the LSTM model using a pre-defined train/test split.
+
+        Args:
+            X_train: Train input sequences
+            y_train: Train targets
+            X_test: Test input sequences
+            y_test: Test targets
+            epochs: Maximum number of training epochs
+            batch_size: Batch size for training
+            patience: Early stopping patience
+            verbose: Whether to print training progress
+            print_split: Whether to print train/test sample counts
+
+        Returns:
+            Dictionary containing training history and metrics
+        """
+        # Convert to numpy arrays
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_test = np.array(X_test)
+        y_test = np.array(y_test)
+
+        if len(X_train) == 0 or len(X_test) == 0:
+            raise ValueError("Train and test sets must both contain at least one sample")
+
+        # Compute normalization statistics from training data only
+        train_values = np.concatenate([X_train.flatten(), y_train])
+        self.stats['mean'] = float(np.mean(train_values))
+        self.stats['std'] = float(np.std(train_values)) if np.std(train_values) > 0 else 1.0
+        self.stats['min'] = float(np.min(train_values))
+        self.stats['max'] = float(np.max(train_values))
+
+        # Normalize data using training stats
+        X_train_norm = self._normalize(X_train)
+        y_train_norm = self._normalize(y_train)
+        X_test_norm = self._normalize(X_test)
+        y_test_norm = self._normalize(y_test)
+
+        if verbose and print_split:
+            print(f"Dataset split: {len(X_train_norm)} train, {len(X_test_norm)} test samples")
+
         # Create data loaders
-        train_dataset = BandwidthDataset(X_train, y_train)
-        test_dataset = BandwidthDataset(X_test, y_test)
-        
+        train_dataset = BandwidthDataset(X_train_norm, y_train_norm)
+        test_dataset = BandwidthDataset(X_test_norm, y_test_norm)
+
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-        
+
         # Initialize optimizer and loss function
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         criterion = nn.MSELoss()
-        
+
         # Training loop with early stopping
         best_model_state = None
         best_test_loss = float('inf')
         epochs_without_improvement = 0
-        
+
         self.training_history = {
             'train_loss': [],
             'test_loss': [],
             'best_epoch': 0,
             'best_test_loss': float('inf')
         }
-        
+
         for epoch in range(epochs):
             # Training phase
             self.model.train()
             train_losses = []
-            
+
             for batch_X, batch_y in train_loader:
                 batch_X = batch_X.to(self.device)
                 batch_y = batch_y.to(self.device)
-                
+
                 optimizer.zero_grad()
                 outputs = self.model(batch_X)
                 loss = criterion(outputs, batch_y)
                 loss.backward()
-                
+
                 # Gradient clipping to prevent exploding gradients
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=GRADIENT_CLIP_MAX_NORM)
-                
+
                 optimizer.step()
                 train_losses.append(loss.item())
-            
+
             avg_train_loss = np.mean(train_losses)
-            
+
             # Evaluation phase
             self.model.eval()
             test_losses = []
-            
+
             with torch.no_grad():
                 for batch_X, batch_y in test_loader:
                     batch_X = batch_X.to(self.device)
                     batch_y = batch_y.to(self.device)
-                    
+
                     outputs = self.model(batch_X)
                     loss = criterion(outputs, batch_y)
                     test_losses.append(loss.item())
-            
+
             avg_test_loss = np.mean(test_losses)
-            
+
             # Record history
             self.training_history['train_loss'].append(avg_train_loss)
             self.training_history['test_loss'].append(avg_test_loss)
-            
+
             # Check for improvement
             if avg_test_loss < best_test_loss:
                 best_test_loss = avg_test_loss
@@ -291,32 +337,32 @@ class LSTMPredictor:
                 epochs_without_improvement = 0
             else:
                 epochs_without_improvement += 1
-            
+
             # Print progress
             if verbose and (epoch + 1) % 10 == 0:
                 print(f"Epoch {epoch+1}/{epochs} - Train Loss: {avg_train_loss:.6f}, "
                       f"Test Loss: {avg_test_loss:.6f}")
-            
+
             # Early stopping
             if epochs_without_improvement >= patience:
                 if verbose:
                     print(f"Early stopping at epoch {epoch+1} (no improvement for {patience} epochs)")
                 break
-        
+
         # Load best model
         if best_model_state is not None:
             self.model.load_state_dict(best_model_state)
             if verbose:
                 print(f"Loaded best model from epoch {self.training_history['best_epoch']+1} "
                       f"with test loss: {best_test_loss:.6f}")
-        
+
         self.trained = True
-        
+
         # Compute final metrics on test set
-        test_predictions = self.predict(X_test)
-        y_test_denorm = self._denormalize(y_test)
+        test_predictions = self.predict(X_test_norm)
+        y_test_denorm = self._denormalize(y_test_norm)
         test_predictions_denorm = self._denormalize(test_predictions)
-        
+
         mae = np.mean(np.abs(y_test_denorm - test_predictions_denorm))
         # Filter out near-zero values for MAPE calculation to avoid division issues
         nonzero_mask = np.abs(y_test_denorm) > MAPE_ZERO_THRESHOLD
@@ -325,7 +371,7 @@ class LSTMPredictor:
         else:
             mape = 0.0
         rmse = np.sqrt(np.mean((y_test_denorm - test_predictions_denorm) ** 2))
-        
+
         metrics = {
             'mae': float(mae),
             'mape': float(mape),
@@ -333,13 +379,13 @@ class LSTMPredictor:
             'best_epoch': self.training_history['best_epoch'],
             'best_test_loss': float(best_test_loss)
         }
-        
+
         if verbose:
             print(f"\nFinal Test Metrics:")
             print(f"  MAE: {mae:.4f} Mbps")
             print(f"  MAPE: {mape:.2f}%")
             print(f"  RMSE: {rmse:.4f} Mbps")
-        
+
         return metrics
     
     def predict(self, X):
@@ -494,7 +540,7 @@ def load_bandwidth_trace(log_path):
     return bandwidths
 
 
-def prepare_dataset(bandwidth_dir, sequence_length=10):
+def prepare_dataset(bandwidth_dir, sequence_length=10, log_files=None, return_sources=False):
     """
     Prepare dataset from all bandwidth log files.
     
@@ -505,14 +551,20 @@ def prepare_dataset(bandwidth_dir, sequence_length=10):
     Returns:
         X: Input sequences (historical bandwidth values in Mbps)
         y: Target values (next bandwidth value in Mbps)
+        sources (optional): Source filename for each sequence
     """
     X, y = [], []
+    sources = []
     
     # Get all log files
-    log_files = [f for f in os.listdir(bandwidth_dir) if f.endswith('.log')]
+    if log_files is None:
+        log_files = [f for f in os.listdir(bandwidth_dir) if f.endswith('.log')]
+    log_files = sorted(log_files)
     
     for log_file in log_files:
         log_path = os.path.join(bandwidth_dir, log_file)
+        if not os.path.isfile(log_path):
+            continue
         bandwidths = load_bandwidth_trace(log_path)
         
         # Normalize to Mbps for better numerical stability
@@ -522,8 +574,47 @@ def prepare_dataset(bandwidth_dir, sequence_length=10):
         for i in range(len(bandwidths_mbps) - sequence_length):
             X.append(bandwidths_mbps[i:i + sequence_length])
             y.append(bandwidths_mbps[i + sequence_length])
-    
+            sources.append(log_file)
+
+    if return_sources:
+        return np.array(X), np.array(y), np.array(sources)
     return np.array(X), np.array(y)
+
+
+def split_bandwidth_files(bandwidth_dir, test_size=0.1, random_state=DEFAULT_SPLIT_RANDOM_STATE):
+    """
+    Split bandwidth log files into train/test sets at file level.
+
+    Args:
+        bandwidth_dir: Directory containing bandwidth log files
+        test_size: Fraction of files to assign to test set
+        random_state: Random seed for deterministic split
+
+    Returns:
+        train_files: Sorted list of train log filenames
+        test_files: Sorted list of test log filenames
+    """
+    log_files = sorted([f for f in os.listdir(bandwidth_dir) if f.endswith('.log')])
+
+    if len(log_files) < 2:
+        raise ValueError("At least two .log files are required for file-level train/test split")
+
+    if not (0 < test_size < 1):
+        raise ValueError("test_size must be between 0 and 1")
+
+    n_test = int(round(len(log_files) * test_size))
+    n_test = max(1, n_test)
+    n_test = min(n_test, len(log_files) - 1)
+
+    rng = np.random.RandomState(random_state)
+    indices = np.arange(len(log_files))
+    rng.shuffle(indices)
+
+    test_indices = set(indices[:n_test])
+    train_files = sorted([name for idx, name in enumerate(log_files) if idx not in test_indices])
+    test_files = sorted([name for idx, name in enumerate(log_files) if idx in test_indices])
+
+    return train_files, test_files
 
 
 def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=True):
@@ -608,7 +699,8 @@ def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=Tru
     return best_params, best_metrics, all_results
 
 
-def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True, verbose=True):
+def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
+                     verbose=True, test_size=0.1, random_state=DEFAULT_SPLIT_RANDOM_STATE):
     """
     Train LSTM model on bandwidth traces with optional hyperparameter tuning.
     
@@ -625,12 +717,39 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True, 
     if verbose:
         print(f"Loading bandwidth traces from {bandwidth_dir}...")
     
-    X, y = prepare_dataset(bandwidth_dir, sequence_length)
+    train_files, test_files = split_bandwidth_files(
+        bandwidth_dir,
+        test_size=test_size,
+        random_state=random_state
+    )
+
+    X_train_all, y_train_all = prepare_dataset(
+        bandwidth_dir,
+        sequence_length,
+        log_files=train_files
+    )
+    X_test, y_test = prepare_dataset(
+        bandwidth_dir,
+        sequence_length,
+        log_files=test_files
+    )
+
+    if len(X_train_all) == 0:
+        raise ValueError("No training sequences created from selected train files")
+    if len(X_test) == 0:
+        raise ValueError("No test sequences created from selected test files")
+
+    X = np.concatenate([X_train_all, X_test], axis=0)
+    y = np.concatenate([y_train_all, y_test], axis=0)
     
     if verbose:
         print(f"Dataset size: {len(X)} sequences")
         print(f"Bandwidth range: {y.min():.2f} - {y.max():.2f} Mbps")
         print(f"Mean bandwidth: {y.mean():.2f} Mbps, Std: {y.std():.2f} Mbps")
+        print(
+            f"File-level split ({int((1-test_size)*100)}/{int(test_size*100)}): "
+            f"{len(train_files)} train files, {len(test_files)} test files"
+        )
     
     if tune:
         # Define hyperparameter search space
@@ -643,7 +762,7 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True, 
         
         # Perform hyperparameter tuning
         best_params, best_metrics, all_results = tune_hyperparameters(
-            X, y, param_grid, 
+            X_train_all, y_train_all, param_grid,
             test_size=0.2, 
             epochs=50, 
             verbose=verbose
@@ -684,14 +803,35 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True, 
     if verbose:
         print("\nTraining final model...")
     
-    metrics = predictor.fit(
-        X, y,
-        test_size=0.2,
+    metrics = predictor.fit_from_split(
+        X_train_all,
+        y_train_all,
+        X_test,
+        y_test,
         epochs=100,
         batch_size=32,
         patience=15,
-        verbose=verbose
+        verbose=verbose,
+        print_split=False
     )
+
+    split_metadata_path = output_path.replace('.pkl', '_split.json')
+    split_metadata = {
+        'split_method': 'file_level',
+        'test_size': float(test_size),
+        'random_state': int(random_state),
+        'sequence_length': int(sequence_length),
+        'train_files': train_files,
+        'test_files': test_files,
+        'train_file_count': len(train_files),
+        'test_file_count': len(test_files),
+        'train_sequence_count': int(len(X_train_all)),
+        'test_sequence_count': int(len(X_test)),
+        'metrics': metrics
+    }
+
+    with open(split_metadata_path, 'w') as f:
+        json.dump(split_metadata, f, indent=2)
     
     # Save model
     if verbose:
@@ -705,6 +845,7 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True, 
     
     if verbose:
         print(f"Best model saved to: {best_model_path}")
+        print(f"Split metadata saved to: {split_metadata_path}")
     
     # Test prediction on a sample
     if verbose:
