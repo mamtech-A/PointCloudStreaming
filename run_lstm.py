@@ -9,8 +9,8 @@ from src.network_model import (
 
 # Default paths
 mpd_path = os.path.join(project_root, "config", "mpd.xml")
-bandwidth_log_path = os.path.join(project_root, "data", "bandwidth", "report_foot_0001.log")
-lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
+bandwidth_log_path = os.path.join(project_root, "data", "bandwidth", "report_car_0003.log")
+lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm_best.pkl")
 
 # TCP / buffer defaults
 tcp_params = {
