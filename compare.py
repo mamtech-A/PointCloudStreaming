@@ -1,116 +1,101 @@
 #!/usr/bin/env python3
-"""
-Comparison script: Baseline vs LSTM-based bandwidth prediction
+"""Compare ABR strategies: Baseline (rule) vs LSTM-rule vs DQN.
 
-This script demonstrates the difference between:
-1. Baseline: Using actual bandwidth measurements for quality selection
-2. LSTM: Using predicted bandwidth for proactive quality selection
+Runs three independent simulations on the SAME trace + manifest, each writing to
+its own log dir (logs/<label>/), and prints a comparison table. Each strategy is
+one policy applied to all of an edge's users (here a single user).
 
-The LSTM approach aims to:
-- Anticipate bandwidth changes before they occur
-- Select appropriate quality levels more smoothly
-- Potentially improve FPS by avoiding quality mismatches
+Usage:
+    python compare.py                      # full 300-frame manifest
+    python compare.py --max-frames 30      # quick run
+    python compare.py --trace bandwidth/report_foot_0006.log
 """
 
 import os
 import sys
+import argparse
 
-# Add src directory to path
 project_root = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.join(project_root, "src")
-sys.path.insert(0, src_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
-from network_model import (
-    PointCloudServer, EdgeNode, EdgeNodeLSTM, PointCloudClient, Simulator
+from src.network_model import (
+    Server, EdgeNode, User, Topology, Simulator, BandwidthABR, LSTMABR, DQNABR,
 )
+from src.network_model.trace import BandwidthTrace
+from src.lstm_model import LSTMPredictor
+from src.rl.dqn import DQNAgent
 
-def run_comparison():
-    """Run both baseline and LSTM simulations for comparison."""
-    
-    # Setup paths
-    mpd_path = os.path.join(project_root, "config", "mpd.xml")
-    bandwidth_log_path = os.path.join(project_root, "data", "bandwidth", "report_foot_0001.log")
-    lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
-    
-    # Common parameters
-    tcp_params = {
-        'rtt_ms': 50.0,
-        'rtt_jitter_ms': 10.0,
-        'loss_prob': 0.0,
-        'cwnd_packets': 10.0,
-        'mss_bytes': 1460,
-        'rto_formula': 'jacobson',
-        'rto_fixed_s': 1.0,
-    }
-    
-    target_fps = 30.0
-    buffer_capacity_s = 5.0
-    min_buffer_s = 1.0
-    
-    print("="*100)
-    print("BASELINE vs LSTM COMPARISON")
-    print("="*100)
-    print("\nThis comparison runs two simulations:")
-    print("1. BASELINE: Uses actual bandwidth measurements")
-    print("2. LSTM: Uses LSTM predictions for bandwidth")
-    print("\nBoth use the same bandwidth trace and configuration.")
-    print("="*100)
-    
-    # Check if LSTM model exists
-    if not os.path.exists(lstm_model_path):
-        print(f"\n❌ LSTM model not found at {lstm_model_path}")
-        print("   Please run: python3 train_model.py")
-        return
-    
-    # Run baseline simulation
-    print("\n" + "="*100)
-    print("SIMULATION 1: BASELINE (Actual Bandwidth)")
-    print("="*100)
-    
-    server1 = PointCloudServer(base_url="http://localhost/")
-    edge1 = EdgeNode(server1, tcp_params=tcp_params)
-    client1 = PointCloudClient(edge1, target_fps=target_fps, 
-                               buffer_capacity_s=buffer_capacity_s, 
-                               min_buffer_s=min_buffer_s)
-    sim1 = Simulator(server1, edge1, [client1])
-    
-    # Note: For a fair comparison, we'd need to capture and compare metrics
-    # For now, we just demonstrate both can run
-    print("\n[Running baseline simulation - this may take a minute...]")
-    # Uncomment to run full simulation:
-    # sim1.run(mpd_path=mpd_path, bandwidth_log_path=bandwidth_log_path)
-    
-    # Run LSTM simulation
-    print("\n" + "="*100)
-    print("SIMULATION 2: LSTM (Predicted Bandwidth)")
-    print("="*100)
-    
-    server2 = PointCloudServer(base_url="http://localhost/")
-    edge2 = EdgeNodeLSTM(server2, tcp_params=tcp_params, 
-                         lstm_model_path=lstm_model_path, 
-                         use_prediction=True)
-    client2 = PointCloudClient(edge2, target_fps=target_fps,
-                               buffer_capacity_s=buffer_capacity_s,
-                               min_buffer_s=min_buffer_s)
-    sim2 = Simulator(server2, edge2, [client2])
-    
-    print("\n[Running LSTM simulation - this may take a minute...]")
-    # Uncomment to run full simulation:
-    # sim2.run(mpd_path=mpd_path, bandwidth_log_path=bandwidth_log_path)
-    
-    print("\n" + "="*100)
+TCP_PARAMS = {
+    'rtt_ms': 50.0, 'rtt_jitter_ms': 10.0, 'loss_prob': 0.0,
+    'cwnd_packets': 10.0, 'mss_bytes': 1460, 'rto_formula': 'jacobson', 'rto_fixed_s': 1.0,
+}
+
+
+def build_sim(label, abr_factory, trace_path):
+    server = Server(base_url="http://localhost/")
+    topo = Topology(server)
+    edge = EdgeNode("edge-1", server=server, tcp_params=TCP_PARAMS, abr_factory=abr_factory)
+    topo.add_edge(edge)
+    user = User("User", target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0)
+    topo.add_user(user, edge, trace=BandwidthTrace.from_log(trace_path))
+    return Simulator(topo)
+
+
+def main():
+    p = argparse.ArgumentParser(description="Compare baseline vs LSTM vs DQN ABR")
+    p.add_argument('--trace', default=os.path.join('bandwidth', 'report_foot_0006.log'),
+                   help='bandwidth trace (default: an unseen test-split trace)')
+    p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
+    args = p.parse_args()
+
+    mpd_path = os.path.join(project_root, 'config', 'mpd.xml')
+    trace_path = os.path.join(project_root, args.trace)
+    lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
+    dqn_path = os.path.join(project_root, 'models', 'abr_dqn.pkl')
+    max_frames = args.max_frames or None
+
+    print("=" * 100)
+    print("BASELINE vs LSTM vs DQN comparison")
+    print(f"trace: {trace_path} | frames: {'all' if not max_frames else max_frames}")
+    print("=" * 100)
+
+    runs = []
+
+    # 1) Baseline rule.
+    sim = build_sim('baseline', lambda: BandwidthABR(), trace_path)
+    runs.append(sim.run(mpd_path, run_label='baseline', return_summary=True, max_frames=max_frames)[0])
+
+    # 2) LSTM-rule (one shared predictor; predictions rebuild their window each call).
+    predictor_lstm = LSTMPredictor().load(lstm_path)
+    sim = build_sim('lstm', lambda: LSTMABR(predictor_lstm, use_prediction=True), trace_path)
+    runs.append(sim.run(mpd_path, run_label='lstm', return_summary=True, max_frames=max_frames)[0])
+
+    # 3) DQN (if a trained policy exists).
+    if os.path.exists(dqn_path):
+        agent = DQNAgent.load(dqn_path)
+        predictor_dqn = LSTMPredictor().load(lstm_path)
+        sim = build_sim('dqn', lambda: DQNABR(policy=agent, lstm_provider=LSTMABR(predictor_dqn)), trace_path)
+        runs.append(sim.run(mpd_path, run_label='dqn', return_summary=True, max_frames=max_frames)[0])
+    else:
+        print(f"\n(skipping DQN — no trained model at {dqn_path}; run train_dqn.py first)")
+
+    # --- Comparison table ---
+    print("\n" + "=" * 100)
     print("COMPARISON SUMMARY")
-    print("="*100)
-    print("\nTo see full results, uncomment the sim.run() calls in this script.")
-    print("\nKey differences to observe:")
-    print("  - Quality selection patterns (baseline vs predicted)")
-    print("  - Rebuffering events (frequency and duration)")
-    print("  - FPS achieved (frames per second)")
-    print("  - QoE score (quality of experience)")
-    print("\nFor quick testing, you can run:")
-    print("  python3 run.py        # Baseline")
-    print("  python3 run_lstm.py   # LSTM")
-    print("="*100)
+    print("=" * 100)
+    hdr = f"{'strategy':<10} {'QoE':>6} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} {'fps':>6} {'mean_rep':>9} {'switches':>9}"
+    print(hdr)
+    print("-" * len(hdr))
+    for r in runs:
+        print(f"{r['abr']:<10} {r['qoe']:>6.1f} {r['rebuffer_count']:>6d} {r['total_stall_time_s']:>9.1f} "
+              f"{r['frames_dropped']:>8d} {r['fps']:>6.2f} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d}")
+    print("\nLogs written to logs/baseline/, logs/lstm/, logs/dqn/")
+
 
 if __name__ == "__main__":
-    run_comparison()
+    main()
