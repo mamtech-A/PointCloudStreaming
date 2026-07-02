@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<MPD format="pointcloud/gpcc" type="static" encoding="G-PCC">
+  <BaseURL>.</BaseURL>
+  <Frame id="0">
+    <AdaptationSet>
+      <Representation id="0" density="765821" size="426658" codedBytes="426658" bandwidth="102397920" quality="high" attrQP="22" geomQP="0">
+        <BaseURL>longdress_vox10_1051.ply</BaseURL>
+      </Representation>
+      <Representation id="1" density="453698" size="147838" codedBytes="147838" bandwidth="35481120" quality="med" attrQP="34" geomQP="0">
+        <BaseURL>longdress_vox10_1051.ply</BaseURL>
+      </Representation>
+      <Representation id="2" density="55374" size="14246" codedBytes="14246" bandwidth="3419040" quality="low" attrQP="46" geomQP="0">
+        <BaseURL>longdress_vox10_1051.ply</BaseURL>
+      </Representation>
+    </AdaptationSet>
+  </Frame>
+  <Frame id="1">
+    <AdaptationSet>
+      <Representation id="0" density="775745" size="431158" codedBytes="431158" bandwidth="103477920" quality="high" attrQP="22" geomQP="0">
+        <BaseURL>longdress_vox10_1052.ply</BaseURL>
+      </Representation>
+      <Representation id="1" density="459351" size="149603" codedBytes="149603" bandwidth="35904720" quality="med" attrQP="34" geomQP="0">
+        <BaseURL>longdress_vox10_1052.ply</BaseURL>
+      </Representation>
+      <Representation id="2" density="56033" size="14449" codedBytes="14449" bandwidth="3467760" quality="low" attrQP="46" geomQP="0">
+        <BaseURL>longdress_vox10_1052.ply</BaseURL>
+      </Representation>
+    </AdaptationSet>
+  </Frame>
+</MPD>
