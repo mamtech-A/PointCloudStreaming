@@ -1,21 +1,25 @@
 import os
 import sys
 
-# Assume this notebook lives at the project root
-project_root = os.getcwd()
-src_dir = os.path.join(project_root, "src")
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
+# Project root on sys.path so `from src.network_model import ...` resolves.
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-from network_model import (
-    PointCloudServer, EdgeNode, PointCloudClient, Simulator
-)
+# Make emoji-rich status prints safe under non-UTF-8 consoles (e.g. cp1256 on redirect).
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
-# Default paths (same as run.py)
+from src.network_model import Server, EdgeNode, User, Topology, Simulator, BandwidthABR
+from src.network_model.trace import BandwidthTrace
+
+# Default paths
 mpd_path = os.path.join(project_root, "config", "mpd.xml")
 bandwidth_log_path = os.path.join(project_root, "data", "bandwidth", "report_foot_0001.log")
 
-# TCP / buffer defaults (same as run.py)
+# TCP / buffer defaults
 tcp_params = {
     'rtt_ms': 50.0,
     'rtt_jitter_ms': 10.0,
@@ -26,19 +30,21 @@ tcp_params = {
     'rto_fixed_s': 1.0,
 }
 
-target_fps = 30.0
+target_fps = 30.0  # 300 frames @ 30 fps = 10 s clip; each frame = 1/30 s of playback
 buffer_capacity_s = 5.0
 min_buffer_s = 1.0
 
-# Build components and run
-server = PointCloudServer(base_url="http://localhost/")
-edge = EdgeNode(server, tcp_params=tcp_params)
-client = PointCloudClient(
-    edge,
-    target_fps=target_fps,
-    buffer_capacity_s=buffer_capacity_s,
-    min_buffer_s=min_buffer_s,
-)
-sim = Simulator(server, edge, [client])
+# Build the topology: Server -> EdgeNode (baseline ABR) -> one User.
+# Frames are streamed as coded (G-PCC-modeled) bitstreams — see manifest.coded_size_bytes.
+server = Server(base_url="http://localhost/")
+topo = Topology(server)
+edge = EdgeNode("edge-1", server=server, tcp_params=tcp_params,
+                abr_factory=lambda: BandwidthABR())
+topo.add_edge(edge)
 
-sim.run(mpd_path=mpd_path, bandwidth_log_path=bandwidth_log_path)
+user = User("User", target_fps=target_fps, buffer_capacity_s=buffer_capacity_s,
+            min_buffer_s=min_buffer_s)
+topo.add_user(user, edge, trace=BandwidthTrace.from_log(bandwidth_log_path))
+
+sim = Simulator(topo)
+sim.run(mpd_path=mpd_path)

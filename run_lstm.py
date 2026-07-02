@@ -1,11 +1,19 @@
 import os
 import sys
 
-# Assume this notebook lives at the project root
-project_root = os.getcwd()
-from src.network_model import (
-    PointCloudServer, EdgeNodeLSTM, PointCloudClient, Simulator
-)
+# Project root on sys.path so `from src.network_model import ...` resolves.
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Make emoji-rich status prints safe under non-UTF-8 consoles (e.g. cp1256 on redirect).
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
+from src.network_model import Server, EdgeNodeLSTM, User, Topology, Simulator
+from src.network_model.trace import BandwidthTrace
 
 # Default paths
 mpd_path = os.path.join(project_root, "config", "mpd.xml")
@@ -23,36 +31,30 @@ tcp_params = {
     'rto_fixed_s': 1.0,
 }
 
-target_fps = 30.0
+target_fps = 30.0  # 300 frames @ 30 fps = 10 s clip; each frame = 1/30 s of playback
 buffer_capacity_s = 5.0
 min_buffer_s = 1.0
 
-# Build components with LSTM-enhanced EdgeNode
-server = PointCloudServer(base_url="http://localhost/")
+# Build the topology: Server -> EdgeNode (LSTM-driven ABR) -> one User.
+# EdgeNodeLSTM is a back-compat factory returning an EdgeNode whose policy is LSTMABR.
+server = Server(base_url="http://localhost/")
+topo = Topology(server)
+edge = EdgeNodeLSTM(server, tcp_params=tcp_params, lstm_model_path=lstm_model_path,
+                    use_prediction=True, edge_id="edge-1")
+topo.add_edge(edge)
 
-# Use EdgeNodeLSTM with LSTM prediction enabled
-edge = EdgeNodeLSTM(
-    server, 
-    tcp_params=tcp_params,
-    lstm_model_path=lstm_model_path,
-    use_prediction=True
-)
+user = User("User", target_fps=target_fps, buffer_capacity_s=buffer_capacity_s,
+            min_buffer_s=min_buffer_s)
+topo.add_user(user, edge, trace=BandwidthTrace.from_log(bandwidth_log_path))
 
-client = PointCloudClient(
-    edge,
-    target_fps=target_fps,
-    buffer_capacity_s=buffer_capacity_s,
-    min_buffer_s=min_buffer_s,
-)
+sim = Simulator(topo)
 
-sim = Simulator(server, edge, [client])
-
-print("="*100)
+print("=" * 100)
 print("🤖 LSTM-Based Bandwidth Prediction for Video Quality Selection")
-print("="*100)
+print("=" * 100)
 print(f"LSTM Model: {lstm_model_path}")
 print(f"Bandwidth Log: {bandwidth_log_path}")
 print(f"MPD Config: {mpd_path}")
-print("="*100)
+print("=" * 100)
 
-sim.run(mpd_path=mpd_path, bandwidth_log_path=bandwidth_log_path)
+sim.run(mpd_path=mpd_path)
