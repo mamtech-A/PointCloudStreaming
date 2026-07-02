@@ -2,7 +2,7 @@
 LSTM-based Bandwidth Prediction Module
 
 This module implements an LSTM model to predict bandwidth based on historical measurements
-from the 4G network traces collected in the bandwith/ folder.
+from the 4G network traces collected in the bandwidth/ folder.
 
 The module now uses a proper PyTorch LSTM model with:
 - Train/test split for proper evaluation
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     except NameError:
         project_root = os.path.abspath(os.path.join(os.getcwd(), '..'))
     
-    bandwidth_dir = os.path.join(project_root, 'bandwith')
+    bandwidth_dir = os.path.join(project_root, 'bandwidth')
     output_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
     
     # Create models directory if it doesn't exist

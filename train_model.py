@@ -3,7 +3,7 @@
 Script to train the LSTM bandwidth prediction model.
 
 This script:
-1. Loads all bandwidth traces from the bandwith/ folder
+1. Loads all bandwidth traces from the bandwidth/ folder
 2. Splits files into train and test sets (file-level split)
 3. Performs hyperparameter tuning via grid search
 4. Trains a proper PyTorch LSTM model
@@ -53,14 +53,14 @@ def main():
     
     # Set paths
     project_root = script_dir
-    bandwidth_dir = os.path.join(project_root, 'bandwith')
+    bandwidth_dir = os.path.join(project_root, 'bandwidth')
     model_dir = os.path.join(project_root, 'models')
     output_path = os.path.join(model_dir, 'bandwidth_lstm.pkl')
     
     # Check if bandwidth directory exists
     if not os.path.exists(bandwidth_dir):
         print(f"❌ Error: Bandwidth directory not found at {bandwidth_dir}")
-        print("   Please ensure the 'bandwith' folder exists with .log files.")
+        print("   Please ensure the 'bandwidth' folder exists with .log files.")
         sys.exit(1)
     
     # Count log files

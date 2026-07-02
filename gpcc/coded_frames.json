@@ -1,0 +1,99 @@
+{
+  "fps": 30.0,
+  "tiers": [
+    [
+      0,
+      "high",
+      1.0,
+      22
+    ],
+    [
+      1,
+      "med",
+      0.75,
+      34
+    ],
+    [
+      2,
+      "low",
+      0.25,
+      46
+    ]
+  ],
+  "frames": [
+    {
+      "id": 0,
+      "src": "longdress_vox10_1051.ply",
+      "src_points": 765821,
+      "representations": [
+        {
+          "id": 0,
+          "quality": "high",
+          "scale": 1.0,
+          "qp": 22,
+          "coded_bytes": 426658,
+          "bitrate_bps": 102397920.0,
+          "density": 765821,
+          "src": "longdress_vox10_1051.ply"
+        },
+        {
+          "id": 1,
+          "quality": "med",
+          "scale": 0.75,
+          "qp": 34,
+          "coded_bytes": 147838,
+          "bitrate_bps": 35481120.0,
+          "density": 453698,
+          "src": "longdress_vox10_1051.ply"
+        },
+        {
+          "id": 2,
+          "quality": "low",
+          "scale": 0.25,
+          "qp": 46,
+          "coded_bytes": 14246,
+          "bitrate_bps": 3419040.0,
+          "density": 55374,
+          "src": "longdress_vox10_1051.ply"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "src": "longdress_vox10_1052.ply",
+      "src_points": 775745,
+      "representations": [
+        {
+          "id": 0,
+          "quality": "high",
+          "scale": 1.0,
+          "qp": 22,
+          "coded_bytes": 431158,
+          "bitrate_bps": 103477920.0,
+          "density": 775745,
+          "src": "longdress_vox10_1052.ply"
+        },
+        {
+          "id": 1,
+          "quality": "med",
+          "scale": 0.75,
+          "qp": 34,
+          "coded_bytes": 149603,
+          "bitrate_bps": 35904720.0,
+          "density": 459351,
+          "src": "longdress_vox10_1052.ply"
+        },
+        {
+          "id": 2,
+          "quality": "low",
+          "scale": 0.25,
+          "qp": 46,
+          "coded_bytes": 14449,
+          "bitrate_bps": 3467760.0,
+          "density": 56033,
+          "src": "longdress_vox10_1052.ply"
+        }
+      ]
+    }
+  ]
+}
