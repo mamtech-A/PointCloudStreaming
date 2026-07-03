@@ -13,6 +13,8 @@ Usage:
 
 import os
 import sys
+import csv
+import math
 import argparse
 
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +38,28 @@ TCP_PARAMS = {
 }
 
 
+def quality_metrics(results_csv, q_lo, q_hi, mu=4.3, lam=1.0):
+    """Quality-aware metrics from a run's per-frame results.csv.
+
+    mean_quality: mean log-density utility of the CHOSEN reps (0..1 over the
+    manifest's density range). pensieve_reward: sum(q) - mu*stall - lam*|dq| —
+    the quality-aware objective (the plain QoE column only counts stalls, so it
+    rewards hiding at the lowest quality).
+    """
+    lo, hi = math.log10(q_lo), math.log10(q_hi)
+    qs, reward, prev_q = [], 0.0, None
+    with open(results_csv, newline='', encoding='utf-8') as f:
+        for row in csv.DictReader(f):
+            q = (math.log10(max(1.0, float(row['density']))) - lo) / (hi - lo)
+            q = max(0.0, min(1.0, q))
+            reward += q - mu * float(row['stall_duration_s'])
+            if prev_q is not None:
+                reward -= lam * abs(q - prev_q)
+            qs.append(q)
+            prev_q = q
+    return (sum(qs) / len(qs) if qs else 0.0), reward
+
+
 def build_sim(label, abr_factory, trace_path):
     server = Server(base_url="http://localhost/")
     topo = Topology(server)
@@ -53,7 +77,7 @@ def main():
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
     args = p.parse_args()
 
-    mpd_path = os.path.join(project_root, 'config', 'mpd.xml')
+    mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc.xml')
     trace_path = os.path.join(project_root, args.trace)
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
     dqn_path = os.path.join(project_root, 'models', 'abr_dqn.pkl')
@@ -84,17 +108,26 @@ def main():
     else:
         print(f"\n(skipping DQN — no trained model at {dqn_path}; run train_dqn.py first)")
 
-    # --- Comparison table ---
+    # --- Comparison table (stall-only QoE AND quality-aware metrics) ---
+    from src.network_model.manifest import parse_mpd_xml
+    from src.rl.features import quality_endpoints
+    q_lo, q_hi = quality_endpoints(parse_mpd_xml(mpd_path))
+
     print("\n" + "=" * 100)
     print("COMPARISON SUMMARY")
     print("=" * 100)
-    hdr = f"{'strategy':<10} {'QoE':>6} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} {'fps':>6} {'mean_rep':>9} {'switches':>9}"
+    hdr = (f"{'strategy':<10} {'QoE':>6} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} "
+           f"{'mean_rep':>9} {'switches':>9} {'mean_qual':>10} {'reward':>9}")
     print(hdr)
     print("-" * len(hdr))
     for r in runs:
+        mq, rw = quality_metrics(os.path.join(project_root, 'logs', r['abr'] if r['abr'] != 'bandwidth' else 'baseline', 'results.csv'), q_lo, q_hi)
         print(f"{r['abr']:<10} {r['qoe']:>6.1f} {r['rebuffer_count']:>6d} {r['total_stall_time_s']:>9.1f} "
-              f"{r['frames_dropped']:>8d} {r['fps']:>6.2f} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d}")
-    print("\nLogs written to logs/baseline/, logs/lstm/, logs/dqn/")
+              f"{r['frames_dropped']:>8d} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d} "
+              f"{mq:>10.3f} {rw:>9.1f}")
+    print("\nQoE counts only stalls/drops (favors the lowest quality); 'reward' is the")
+    print("quality-aware Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.")
+    print("Logs written to logs/baseline/, logs/lstm/, logs/dqn/")
 
 
 if __name__ == "__main__":

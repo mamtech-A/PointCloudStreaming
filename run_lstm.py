@@ -15,9 +15,9 @@ except Exception:
 from src.network_model import Server, EdgeNodeLSTM, User, Topology, Simulator
 from src.network_model.trace import BandwidthTrace
 
-# Default paths
-mpd_path = os.path.join(project_root, "config", "mpd.xml")
-bandwidth_log_path = os.path.join(project_root, "data", "bandwidth", "report_foot_0001.log")
+# Default paths: real G-PCC coded manifest + an UNSEEN test-split trace.
+mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
+bandwidth_log_path = os.path.join(project_root, "bandwidth", "report_foot_0006.log")
 lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 
 # TCP / buffer defaults

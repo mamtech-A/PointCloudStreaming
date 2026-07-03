@@ -87,13 +87,20 @@ quantization. There is **no target-bitrate mode** — rate is set indirectly:
 must appear **before** `--attribute=color` — TMC13 binds them when it sees
 `--attribute`.
 
-The 3 tiers used (`TIERS` in `encode_frames.py`), measured on longdress_vox10 @30 fps:
+The 6 tiers used (`TIERS` in `encode_frames.py`) are the full MPEG CTC rate points,
+measured on longdress_vox10 @30 fps:
 
-| tier | scale | qp | ≈ bitrate | ≈ decoded points |
+| tier | CTC | scale | qp | ≈ bitrate |
 |---|---|---|---|---|
-| high (rep 0) | 1.0 | 22 | 102 Mbps | 766 K |
-| med (rep 1) | 0.75 | 34 | 35.5 Mbps | 454 K |
-| low (rep 2) | 0.25 | 46 | 3.4 Mbps | 55 K |
+| high (rep 0) | r06 | 1.0 | 22 | 102 Mbps |
+| medhigh (rep 1) | r05 | 0.875 | 28 | 59.6 Mbps |
+| med (rep 2) | r04 | 0.75 | 34 | 35.5 Mbps |
+| medlow (rep 3) | r03 | 0.5 | 40 | 14.1 Mbps |
+| low (rep 4) | r02 | 0.25 | 46 | 3.4 Mbps |
+| vlow (rep 5) | r01 | 0.125 | 51 | 0.9 Mbps |
+
+Re-running the encode after adding tiers only encodes the NEW tiers — the
+existing high/med/low bitstreams are reused (resume by filename).
 
 To hit an exact target bitrate, encode a sample frame at several (scale, qp)
 pairs and pick the closest (bisection on qp at fixed scale) — then reuse those

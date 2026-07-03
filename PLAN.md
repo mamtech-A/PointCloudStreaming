@@ -431,8 +431,23 @@ also aligns the per-frame trace consumption with the ~1 sample/sec trace cadence
 real quality-vs-stall tradeoff (per report_foot_0006, 100 frames): always-HIGH → QoE 0 (reward −1526), always-MED →
 QoE 63 (reward +40), always-LOW → QoE 100 (reward +0.3).
 
-**DQN retrained (6 epochs / 12 train files) — learns an adaptive policy.** Eval reward improved −10963 (untrained,
-collapses to high) → best +40.4. On report_foot_0006 (150 frames) the trained agent picks reps hi/med/lo = 0/140/10:
-it avoids HIGH entirely, rides MED, and drops to LOW on bandwidth dips — reward 57.9 (> always-MED 56.6) with QoE
-74.9 (>> always-MED 26.6) at near-MED quality (0.42 vs 0.45). Its Q-values respond to state (low bw+low buffer →
-LOW; mid/high bw → MED). Saved to `models/abr_dqn.pkl`. Scaling `--epochs` + all 36 train files will sharpen it.
+**Part D on the REAL 300-frame G-PCC manifest (encoded on the remote PC, commit 39d4f0c):**
+- Ladder verified: high 94–123 Mbps (mean 111) / med 33.5–42.4 (38.8) / low 3.3–4.1 (3.7); all reps carry real
+  coded bytes. Defaults switched to `mpd_gpcc.xml` + test trace `bandwidth/report_foot_0006.log`.
+- Fixed-policy bars (4 test traces, fixed-seed eval): always-HIGH −136.3 / always-MED **+103.7** (QoE 3.4) /
+  always-LOW −25.5 (QoE 46.5). Note: at true 30 fps the 33 ms frame budget < 50 ms RTT, so sequential per-frame
+  fetching stalls occasionally at every tier (all strategies equally).
+- **DQN retrains (full 40 epochs × 36 traces):** run 1 (lr 5e-4, target sync 500) oscillated, best **+99.2**;
+  run 2 stabilized (lr 1e-4, `--target-update 3000`) reached **+108.3 — above the always-MED bar** → promoted to
+  `models/abr_dqn.pkl` (v2 artifacts kept for the ablation).
+- **Final 3-rep comparison** (foot_0006, 300 frames; quality-aware columns added to compare.py): baseline reward
+  −28.7 / LSTM −29.4 (both hide at LOW: mean quality 0.045, stall-only QoE ≈45) vs **DQN +56.8 at mean quality
+  0.784** — 17× the visual quality; the stall-only QoE metric favors bottom-rung policies by construction.
+
+### 6-tier ladder upgrade (in progress — user decision: 3 reps starve the RL of options)
+The 3.7→38.8 Mbps hole makes every dip a 10× quality crash, so the learned policy degenerates to always-MED.
+Extended `TIERS` to the full MPEG CTC ladder r01–r06 (0.9 / 3.4 / 14.1 / 35.5 / 59.6 / 102 Mbps; new tiers
+medhigh/medlow/vlow; existing labels kept so the remote resume reuses the 900 already-encoded bitstreams —
+only 900 new encodes needed). `num_reps` now flows from the manifest (env/state/agent are ladder-agnostic;
+verified: 6 actions, 23-dim state on a 6-rep sample). Remaining: remote incremental encode → 6-action DQN
+retrain → final 6-rep comparison (3-rep vs 6-rep = the ladder ablation).

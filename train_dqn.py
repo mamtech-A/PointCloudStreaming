@@ -85,6 +85,8 @@ def main():
     p.add_argument('--mu', type=float, default=4.3, help='rebuffer penalty weight')
     p.add_argument('--lam', type=float, default=1.0, help='quality-switch penalty weight')
     p.add_argument('--hidden', type=int, default=128)
+    p.add_argument('--target-update', type=int, default=500,
+                   help='learn-steps between target-network syncs (larger = more stable)')
     p.add_argument('--eps-start', type=float, default=1.0)
     p.add_argument('--eps-end', type=float, default=0.05)
     p.add_argument('--eps-decay-frac', type=float, default=0.6)
@@ -96,7 +98,7 @@ def main():
     torch.manual_seed(args.seed)
 
     bandwidth_dir = os.path.join(project_root, 'bandwidth')
-    mpd_path = os.path.join(project_root, 'config', 'mpd.xml')
+    mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc.xml')
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
 
     train_files, test_files = split_bandwidth_files(bandwidth_dir, test_size=0.1, random_state=args.seed)
@@ -120,7 +122,7 @@ def main():
                        feature_spec=feature_spec, mu=args.mu, lam=args.lam)
     agent = DQNAgent(env.state_dim, env.num_actions, env.feature_spec, env.norm,
                      hidden=args.hidden, lr=args.lr, gamma=args.gamma, mu=args.mu, lam=args.lam,
-                     lstm_model_path=lstm_path,
+                     target_update_freq=args.target_update, lstm_model_path=lstm_path,
                      sequence_length=getattr(predictor, 'sequence_length', 10))
 
     total_episodes = args.epochs * len(train_files)

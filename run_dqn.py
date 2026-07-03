@@ -16,7 +16,7 @@ from src.lstm_model import LSTMPredictor
 from src.rl.dqn import DQNAgent
 
 # Default paths — evaluate on an UNSEEN test trace (report_foot_0006 is in the test split).
-mpd_path = os.path.join(project_root, "config", "mpd.xml")
+mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
 bandwidth_log_path = os.path.join(project_root, "bandwidth", "report_foot_0006.log")
 dqn_model_path = os.path.join(project_root, "models", "abr_dqn.pkl")
 lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")

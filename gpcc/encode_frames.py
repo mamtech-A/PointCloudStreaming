@@ -36,12 +36,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.dirname(HERE)
 
 FPS = 30.0
-# rep_id, label, positionQuantizationScale, attribute qp  (chosen to span the 4G traces:
-# @30fps ladder ~ high 102 / med 35.5 / low 3.4 Mbps on longdress_vox10)
+# rep_id, label, positionQuantizationScale, attribute qp — the full 6-point MPEG CTC
+# rate ladder (measured @30fps on longdress_vox10: ~102 / 59.6 / 35.5 / 14.1 / 3.4 /
+# 0.9 Mbps). Labels 'high'/'med'/'low' are kept from the original 3-tier ladder so
+# resume reuses their already-encoded bitstreams; only the 3 new tiers get encoded.
 TIERS = [
-    (0, 'high', 1.0, 22),
-    (1, 'med', 0.75, 34),
-    (2, 'low', 0.25, 46),
+    (0, 'high', 1.0, 22),      # r06
+    (1, 'medhigh', 0.875, 28),  # r05 (new) — exploits trace peaks
+    (2, 'med', 0.75, 34),      # r04
+    (3, 'medlow', 0.5, 40),    # r03 (new) — the cheap dip between med and low
+    (4, 'low', 0.25, 46),      # r02
+    (5, 'vlow', 0.125, 51),    # r01 (new) — near-free stall insurance
 ]
 
 

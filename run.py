@@ -15,9 +15,10 @@ except Exception:
 from src.network_model import Server, EdgeNode, User, Topology, Simulator, BandwidthABR
 from src.network_model.trace import BandwidthTrace
 
-# Default paths
-mpd_path = os.path.join(project_root, "config", "mpd.xml")
-bandwidth_log_path = os.path.join(project_root, "data", "bandwidth", "report_foot_0001.log")
+# Default paths: real G-PCC coded manifest + an UNSEEN test-split trace.
+# (Use config/mpd.xml + data/bandwidth/report_foot_0001.log for legacy parity runs.)
+mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
+bandwidth_log_path = os.path.join(project_root, "bandwidth", "report_foot_0006.log")
 
 # TCP / buffer defaults
 tcp_params = {

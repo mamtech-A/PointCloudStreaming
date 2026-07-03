@@ -34,7 +34,7 @@ class StreamingEnv:
     def __init__(self, manifest_frames, lstm_predictor=None, tcp_params=None,
                  feature_spec=None, mu=4.3, lam=1.0, hist_len=5,
                  target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
-                 num_reps=3, norm=None, bits_per_point=None):
+                 num_reps=None, norm=None, bits_per_point=None):
         self.frames = manifest_frames
         self.lstm_predictor = lstm_predictor
         self.tcp_params = dict(tcp_params or {})
@@ -47,22 +47,23 @@ class StreamingEnv:
         self.buffer_capacity_s = buffer_capacity_s
         self.min_buffer_s = min_buffer_s
         self.bits_per_point = bits_per_point
-        self.num_reps = num_reps
         n_reps_manifest = len(manifest_frames[0]['representations']) if manifest_frames else 0
-        if n_reps_manifest != num_reps:
+        # num_reps follows the manifest (any ladder size); an explicit value must match.
+        self.num_reps = num_reps if num_reps is not None else n_reps_manifest
+        if self.num_reps != n_reps_manifest:
             raise ValueError(f"Manifest has {n_reps_manifest} representations per frame "
                              f"but the env/agent is configured for num_reps={num_reps}")
         # Reward quality endpoints derived from THIS manifest's density range, so
         # the lowest rep maps to ~0.0 and the highest to ~1.0 on any ladder.
         self.q_low_density, self.q_high_density = quality_endpoints(manifest_frames)
         self.norm = {**DEFAULT_NORM, **(norm or {})}
-        self.norm['num_reps'] = num_reps
+        self.norm['num_reps'] = self.num_reps
         self.norm['hist_len'] = hist_len
         self.norm['fps'] = target_fps
         if bits_per_point is not None:
             self.norm['bits_per_point'] = bits_per_point
-        self.num_actions = num_reps
-        self.state_dim = state_dim(self.feature_spec, num_reps, hist_len)
+        self.num_actions = self.num_reps
+        self.state_dim = state_dim(self.feature_spec, self.num_reps, hist_len)
 
         # Build the origin once (point clouds reused across episodes).
         self.server = Server("rl://origin")
