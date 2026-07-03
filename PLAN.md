@@ -444,10 +444,23 @@ QoE 63 (reward +40), always-LOW → QoE 100 (reward +0.3).
   −28.7 / LSTM −29.4 (both hide at LOW: mean quality 0.045, stall-only QoE ≈45) vs **DQN +56.8 at mean quality
   0.784** — 17× the visual quality; the stall-only QoE metric favors bottom-rung policies by construction.
 
-### 6-tier ladder upgrade (in progress — user decision: 3 reps starve the RL of options)
-The 3.7→38.8 Mbps hole makes every dip a 10× quality crash, so the learned policy degenerates to always-MED.
-Extended `TIERS` to the full MPEG CTC ladder r01–r06 (0.9 / 3.4 / 14.1 / 35.5 / 59.6 / 102 Mbps; new tiers
-medhigh/medlow/vlow; existing labels kept so the remote resume reuses the 900 already-encoded bitstreams —
-only 900 new encodes needed). `num_reps` now flows from the manifest (env/state/agent are ladder-agnostic;
-verified: 6 actions, 23-dim state on a 6-rep sample). Remaining: remote incremental encode → 6-action DQN
-retrain → final 6-rep comparison (3-rep vs 6-rep = the ladder ablation).
+### 6-tier ladder upgrade — DONE (user decision: 3 reps starve the RL of options)
+The 3.7→38.8 Mbps hole made every dip a 10× quality crash (policy degenerated to always-MED). Extended `TIERS`
+to the full MPEG CTC ladder r01–r06 (0.9 / 3.4 / 14.1 / 35.5 / 59.6 / 102 Mbps); `num_reps` flows from the
+manifest (env/agent ladder-agnostic, 23-dim state / 6 actions). Remote incremental encode landed (dca00c8;
+resume reused the 900 existing bitstreams).
+
+**6-tier results (4 test traces, fixed-seed eval):**
+- Fixed bars: high −132.9 / medhigh +40.9 / med +125.1 / **medlow +144.0 (best static)** / low +68.0 / vlow −24.1.
+  Crucially, no arm is best per-trace (med wins car_0003/0004; medlow wins car_0007/foot_0006).
+- **6-action DQN** (stabilized, 40 epochs): best eval **+132.5** — beats 5/6 fixed arms and adapts its mix per
+  trace (med-heavy on fast car traces, medhigh/medlow on variable ones; beats the per-trace best arm on
+  car_0003: 170.7 vs 169.9). Below the always-medlow mean (+144.0): it over-commits to medhigh on foot_0006.
+  Converged at ep 100 (no improvement for 1,340 episodes) — closing the gap = algorithmic future work
+  (prioritized replay / dueling / n-step), not more epochs. Promoted to `models/abr_dqn.pkl` (3-rep model
+  kept as `abr_dqn_v2.pkl`).
+- **Final comparison (foot_0006, 300 frames)**: baseline −30.7 reward @ 0.030 quality, LSTM −23.3 @ 0.030
+  (with 6 tiers the conservative rules bottom-feed to vlow — the RTT-bound achieved-throughput trap), vs
+  **DQN +71.9 @ 0.864 quality, 18 adaptive switches** (~29× the rules' quality utility).
+- Ablation note: reward scales are ladder-relative (quality endpoints derive from each manifest's density
+  range), so compare 3-rep vs 6-rep policies by quality/stall behavior, not absolute reward.
