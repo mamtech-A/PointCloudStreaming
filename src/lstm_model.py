@@ -118,11 +118,11 @@ class LSTMPredictor:
     - Real-time prediction
     """
     
-    def __init__(self, sequence_length=10, hidden_size=64, num_layers=2, 
-                 dropout=0.2, learning_rate=0.001, device=None):
+    def __init__(self, sequence_length=10, hidden_size=64, num_layers=2,
+                 dropout=0.2, learning_rate=0.001, device=None, transform='none'):
         """
         Initialize the LSTM predictor.
-        
+
         Args:
             sequence_length: Number of historical samples for prediction
             hidden_size: Number of hidden units in LSTM
@@ -130,12 +130,20 @@ class LSTMPredictor:
             dropout: Dropout rate for regularization
             learning_rate: Learning rate for optimizer
             device: Computation device ('cuda' or 'cpu')
+            transform: 'none' or 'log1p' — optional pre-transform applied before
+                z-score normalization. 'log1p' suits heavy right-skewed data
+                (e.g. 5G throughput: median ~14 Mbps, max ~530 Mbps) where plain
+                z-score MSE overweights the rare peaks. Persisted in `stats`,
+                so inference (Mbps in / Mbps out) is unchanged for callers.
         """
         self.sequence_length = sequence_length
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.dropout = dropout
         self.learning_rate = learning_rate
+        if transform not in ('none', 'log1p'):
+            raise ValueError(f"unknown transform '{transform}' (expected 'none' or 'log1p')")
+        self.transform = transform
         
         # Set device
         if device is None:
@@ -151,12 +159,16 @@ class LSTMPredictor:
             dropout=dropout
         ).to(self.device)
         
-        # Statistics for normalization
+        # Statistics for normalization. mean/std live in the TRANSFORMED domain
+        # (identical to raw when transform='none'); min/max/raw_mean stay in the
+        # raw Mbps domain (used for output clamping and the no-history fallback).
         self.stats = {
             'mean': 0,
             'std': 1,
             'min': 0,
-            'max': 100
+            'max': 100,
+            'raw_mean': 0,
+            'transform': self.transform,
         }
         
         # History for real-time prediction
@@ -171,13 +183,22 @@ class LSTMPredictor:
             'best_test_loss': float('inf')
         }
     
+    def _pretransform(self, data):
+        """Apply the optional pre-transform (raw Mbps -> transformed domain)."""
+        if self.stats.get('transform', 'none') == 'log1p':
+            return np.log1p(np.maximum(data, 0.0))
+        return data
+
     def _normalize(self, data):
-        """Normalize data using stored statistics."""
-        return (data - self.stats['mean']) / (self.stats['std'] + 1e-8)
-    
+        """Normalize raw data (pre-transform + z-score with stored statistics)."""
+        return (self._pretransform(data) - self.stats['mean']) / (self.stats['std'] + 1e-8)
+
     def _denormalize(self, data):
-        """Denormalize data using stored statistics."""
-        return data * (self.stats['std'] + 1e-8) + self.stats['mean']
+        """Invert normalization back to the raw Mbps domain."""
+        t = data * (self.stats['std'] + 1e-8) + self.stats['mean']
+        if self.stats.get('transform', 'none') == 'log1p':
+            return np.expm1(t)
+        return t
     
     def fit(self, X, y, test_size=0.2, epochs=100, batch_size=32, 
             patience=15, verbose=True):
@@ -248,12 +269,16 @@ class LSTMPredictor:
         if len(X_train) == 0 or len(X_test) == 0:
             raise ValueError("Train and test sets must both contain at least one sample")
 
-        # Compute normalization statistics from training data only
+        # Compute normalization statistics from training data only.
+        # mean/std are in the transformed domain; min/max/raw_mean stay raw (Mbps).
         train_values = np.concatenate([X_train.flatten(), y_train])
-        self.stats['mean'] = float(np.mean(train_values))
-        self.stats['std'] = float(np.std(train_values)) if np.std(train_values) > 0 else 1.0
+        self.stats['transform'] = self.transform
+        tv = self._pretransform(train_values)
+        self.stats['mean'] = float(np.mean(tv))
+        self.stats['std'] = float(np.std(tv)) if np.std(tv) > 0 else 1.0
         self.stats['min'] = float(np.min(train_values))
         self.stats['max'] = float(np.max(train_values))
+        self.stats['raw_mean'] = float(np.mean(train_values))
 
         # Normalize data using training stats
         X_train_norm = self._normalize(X_train)
@@ -372,19 +397,34 @@ class LSTMPredictor:
             mape = 0.0
         rmse = np.sqrt(np.mean((y_test_denorm - test_predictions_denorm) ** 2))
 
+        # Persistence baseline (predict next = last observed) on the same test
+        # sequences: the acceptance bar the LSTM must beat to be worth having.
+        persistence = X_test[:, -1]
+        p_mae = np.mean(np.abs(y_test - persistence))
+        if np.sum(np.abs(y_test) > MAPE_ZERO_THRESHOLD) > 0:
+            p_mask = np.abs(y_test) > MAPE_ZERO_THRESHOLD
+            p_mape = np.mean(np.abs((y_test[p_mask] - persistence[p_mask]) / y_test[p_mask])) * 100
+        else:
+            p_mape = 0.0
+        p_rmse = np.sqrt(np.mean((y_test - persistence) ** 2))
+
         metrics = {
             'mae': float(mae),
             'mape': float(mape),
             'rmse': float(rmse),
+            'persistence_mae': float(p_mae),
+            'persistence_mape': float(p_mape),
+            'persistence_rmse': float(p_rmse),
+            'transform': self.stats.get('transform', 'none'),
             'best_epoch': self.training_history['best_epoch'],
             'best_test_loss': float(best_test_loss)
         }
 
         if verbose:
             print(f"\nFinal Test Metrics:")
-            print(f"  MAE: {mae:.4f} Mbps")
-            print(f"  MAPE: {mape:.2f}%")
-            print(f"  RMSE: {rmse:.4f} Mbps")
+            print(f"  MAE: {mae:.4f} Mbps  (persistence baseline: {p_mae:.4f})")
+            print(f"  MAPE: {mape:.2f}%  (persistence baseline: {p_mape:.2f}%)")
+            print(f"  RMSE: {rmse:.4f} Mbps  (persistence baseline: {p_rmse:.4f})")
 
         return metrics
     
@@ -433,8 +473,10 @@ class LSTMPredictor:
             Predicted bandwidth in Mbps
         """
         if len(self.history) < self.sequence_length:
-            # Not enough history, return average
-            return np.mean(list(self.history)) if len(self.history) > 0 else self.stats['mean']
+            # Not enough history, return average (raw Mbps domain)
+            if len(self.history) > 0:
+                return np.mean(list(self.history))
+            return self.stats.get('raw_mean', self.stats['mean'])
         
         # Convert history to normalized sequence
         seq = np.array(list(self.history))
@@ -470,7 +512,7 @@ class LSTMPredictor:
             'num_layers': self.num_layers,
             'dropout': self.dropout,
             'learning_rate': self.learning_rate,
-            'stats': self.stats,
+            'stats': self.stats,  # includes 'transform' — load() restores it from here
             'trained': self.trained,
             'training_history': self.training_history
         }
@@ -497,6 +539,9 @@ class LSTMPredictor:
         self.dropout = save_dict['dropout']
         self.learning_rate = save_dict['learning_rate']
         self.stats = save_dict['stats']
+        # Old checkpoints predate the transform: default to raw z-score.
+        self.transform = self.stats.get('transform', 'none')
+        self.stats.setdefault('transform', 'none')
         self.trained = save_dict['trained']
         self.training_history = save_dict.get('training_history', {})
         
@@ -610,7 +655,8 @@ def split_bandwidth_files(bandwidth_dir, test_size=0.1, random_state=DEFAULT_SPL
     return train_files, test_files
 
 
-def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=True):
+def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=True,
+                         transform='none'):
     """
     Perform hyperparameter tuning using grid search.
     
@@ -657,7 +703,8 @@ def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=Tru
             hidden_size=params.get('hidden_size', 64),
             num_layers=params.get('num_layers', 2),
             dropout=params.get('dropout', 0.2),
-            learning_rate=params.get('learning_rate', 0.001)
+            learning_rate=params.get('learning_rate', 0.001),
+            transform=transform
         )
         
         metrics = predictor.fit(
@@ -693,17 +740,24 @@ def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=Tru
 
 
 def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
-                     verbose=True, test_size=0.1, random_state=DEFAULT_SPLIT_RANDOM_STATE):
+                     verbose=True, test_size=0.1, random_state=DEFAULT_SPLIT_RANDOM_STATE,
+                     transform='none', epochs=100, hidden_size=64, num_layers=2,
+                     dropout=0.2, learning_rate=0.001):
     """
     Train LSTM model on bandwidth traces with optional hyperparameter tuning.
-    
+
     Args:
-        bandwidth_dir: Directory containing bandwidth log files
+        bandwidth_dir: Directory containing bandwidth trace files (.log/.csv)
         output_path: Path to save trained model
         sequence_length: Number of historical samples to use
         tune: Whether to perform hyperparameter tuning
         verbose: Print progress
-        
+        transform: 'none' or 'log1p' input pre-transform (see LSTMPredictor)
+        epochs: Max final-training epochs (early stopping still applies)
+        hidden_size/num_layers/dropout/learning_rate: hyperparameters for the
+            tune=False path (e.g. retraining a known grid winner); ignored when
+            tune=True (the grid winner is used instead)
+
     Returns:
         Trained predictor
     """
@@ -745,20 +799,22 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
         )
     
     if tune:
-        # Define hyperparameter search space
+        # Search space for the 5G traces. hidden=32 and dropout=0.3 were dropped:
+        # the 4G-era grid search already rejected both (winner: 64/2/0.1/5e-4).
         param_grid = {
-            'hidden_size': [32, 64, 128],
+            'hidden_size': [64, 128],
             'num_layers': [1, 2],
-            'dropout': [0.1, 0.2, 0.3],
+            'dropout': [0.1, 0.2],
             'learning_rate': [0.001, 0.0005]
         }
-        
+
         # Perform hyperparameter tuning
         best_params, best_metrics, all_results = tune_hyperparameters(
             X_train_all, y_train_all, param_grid,
-            test_size=0.2, 
-            epochs=50, 
-            verbose=verbose
+            test_size=0.2,
+            epochs=50,
+            verbose=verbose,
+            transform=transform
         )
         
         # Save tuning results
@@ -780,16 +836,18 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
             hidden_size=best_params['hidden_size'],
             num_layers=best_params['num_layers'],
             dropout=best_params['dropout'],
-            learning_rate=best_params['learning_rate']
+            learning_rate=best_params['learning_rate'],
+            transform=transform
         )
     else:
-        # Use default hyperparameters
+        # Use the explicitly provided hyperparameters
         predictor = LSTMPredictor(
             sequence_length=sequence_length,
-            hidden_size=64,
-            num_layers=2,
-            dropout=0.2,
-            learning_rate=0.001
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            dropout=dropout,
+            learning_rate=learning_rate,
+            transform=transform
         )
     
     # Train model
@@ -801,7 +859,7 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
         y_train_all,
         X_test,
         y_test,
-        epochs=100,
+        epochs=epochs,
         batch_size=32,
         patience=15,
         verbose=verbose,
@@ -814,6 +872,7 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
         'test_size': float(test_size),
         'random_state': int(random_state),
         'sequence_length': int(sequence_length),
+        'transform': transform,
         'train_files': train_files,
         'test_files': test_files,
         'train_file_count': len(train_files),

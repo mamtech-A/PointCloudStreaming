@@ -24,6 +24,12 @@ import os
 import sys
 import argparse
 
+# Make emoji-rich status prints safe under non-UTF-8 consoles (e.g. cp1256 on redirect).
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 # Add src directory to path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 src_dir = os.path.join(script_dir, 'src')
@@ -46,6 +52,17 @@ def main():
                              '= 4 held-out test traces with the 21-file 5G dataset)')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for deterministic file-level split (default: 42)')
+    parser.add_argument('--transform', choices=['none', 'log1p'], default='none',
+                        help="Input pre-transform: 'log1p' suits the right-skewed 5G "
+                             "throughput distribution (default: none)")
+    parser.add_argument('--out', default=None,
+                        help='Output model path (default: models/bandwidth_lstm.pkl)')
+    # Explicit hyperparameters (used with --no-tune, e.g. to retrain the grid
+    # winner at a different sequence length or transform without re-tuning).
+    parser.add_argument('--hidden', type=int, default=64)
+    parser.add_argument('--layers', type=int, default=2)
+    parser.add_argument('--dropout', type=float, default=0.2)
+    parser.add_argument('--lr', type=float, default=0.001)
     args = parser.parse_args()
     
     print("="*80)
@@ -56,7 +73,7 @@ def main():
     project_root = script_dir
     bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
     model_dir = os.path.join(project_root, 'models')
-    output_path = os.path.join(model_dir, 'bandwidth_lstm.pkl')
+    output_path = args.out or os.path.join(model_dir, 'bandwidth_lstm.pkl')
 
     # Check if bandwidth directory exists
     if not os.path.exists(bandwidth_dir):
@@ -94,13 +111,19 @@ def main():
     print("="*80 + "\n")
     
     model = train_lstm_model(
-        bandwidth_dir, 
-        output_path, 
+        bandwidth_dir,
+        output_path,
         sequence_length=args.sequence_length,
         tune=not args.no_tune,
         verbose=True,
         test_size=args.test_size,
-        random_state=args.seed
+        random_state=args.seed,
+        transform=args.transform,
+        epochs=args.epochs,
+        hidden_size=args.hidden,
+        num_layers=args.layers,
+        dropout=args.dropout,
+        learning_rate=args.lr
     )
     
     print("\n" + "="*80)
