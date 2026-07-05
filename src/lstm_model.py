@@ -517,27 +517,20 @@ class LSTMPredictor:
         return self
 
 
-def load_bandwidth_trace(log_path):
-    """
-    Load bandwidth trace from a log file.
-    
-    Format: timestamp ms_since_start lat lon bytes_received ms_interval
-    Returns: list of bandwidth values in bps
-    """
-    bandwidths = []
-    with open(log_path, 'r') as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) < 6:
-                continue
-            bytes_received = int(parts[4])
-            ms_interval = int(parts[5])
-            if ms_interval == 0:
-                continue
-            # Calculate throughput in bps
-            bps = (bytes_received * 8) / (ms_interval / 1000.0)
-            bandwidths.append(bps)
-    return bandwidths
+# Trace loading lives in the network model (single source of truth for both
+# formats: legacy .log and 5G .csv). Dual-mode import because this module is
+# imported both as `src.lstm_model` (root scripts) and `lstm_model` (train_model.py).
+try:
+    from src.network_model.trace import BandwidthTrace
+except ImportError:
+    from network_model.trace import BandwidthTrace
+
+TRACE_EXTENSIONS = ('.log', '.csv')
+
+
+def load_bandwidth_trace(path):
+    """Load a bandwidth trace (bps list) from a .log or .csv file."""
+    return BandwidthTrace.from_file(path).samples
 
 
 def prepare_dataset(bandwidth_dir, sequence_length=10, log_files=None, return_sources=False):
@@ -556,9 +549,9 @@ def prepare_dataset(bandwidth_dir, sequence_length=10, log_files=None, return_so
     X, y = [], []
     sources = []
     
-    # Get all log files
+    # Get all trace files
     if log_files is None:
-        log_files = [f for f in os.listdir(bandwidth_dir) if f.endswith('.log')]
+        log_files = [f for f in os.listdir(bandwidth_dir) if f.endswith(TRACE_EXTENSIONS)]
     log_files = sorted(log_files)
     
     for log_file in log_files:
@@ -594,10 +587,10 @@ def split_bandwidth_files(bandwidth_dir, test_size=0.1, random_state=DEFAULT_SPL
         train_files: Sorted list of train log filenames
         test_files: Sorted list of test log filenames
     """
-    log_files = sorted([f for f in os.listdir(bandwidth_dir) if f.endswith('.log')])
+    log_files = sorted([f for f in os.listdir(bandwidth_dir) if f.endswith(TRACE_EXTENSIONS)])
 
     if len(log_files) < 2:
-        raise ValueError("At least two .log files are required for file-level train/test split")
+        raise ValueError("At least two trace files are required for file-level train/test split")
 
     if not (0 < test_size < 1):
         raise ValueError("test_size must be between 0 and 1")

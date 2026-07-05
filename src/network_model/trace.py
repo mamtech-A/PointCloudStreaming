@@ -1,12 +1,40 @@
 """Bandwidth trace loading and a per-user capacity provider.
 
-`load_bandwidth_trace` is unchanged from the legacy module. `BandwidthTrace`
-wraps a trace as the time-varying capacity of one access link: `capacity_bps(idx)`
-returns the sample for frame `idx` (clamped to the last sample past the end),
-matching the legacy `bandwidths[idx] if idx < len else bandwidths[-1]` behavior.
+Two on-disk formats are supported, dispatched by extension via
+`BandwidthTrace.from_file`:
+- `.csv`: cleaned Irish 5G Download traces (bandwidth_5g/, G-NetTrack columns;
+  only `DL_bitrate` in kbps is read) -> `load_5g_trace`.
+- `.log`: legacy 4G format -> `load_bandwidth_trace` (unchanged).
+
+`BandwidthTrace` wraps a trace as the time-varying capacity of one access link:
+`capacity_bps(idx)` returns the sample for frame `idx` (clamped to the last
+sample past the end), matching the legacy behavior.
 """
 
+import csv
 import os
+
+
+def load_5g_trace(csv_path, state_filter='D'):
+    """Read a cleaned 5G CSV and return a list of bandwidth values (bps).
+
+    Reads the `DL_bitrate` column (kbps). The State/non-numeric guards are
+    no-ops on cleaned bandwidth_5g/ files (prepare_5g_traces.py already
+    filtered) - they only protect against pointing at a raw dataset file.
+    """
+    bandwidths = []
+    with open(csv_path, 'r', newline='', encoding='utf-8') as f:
+        for row in csv.DictReader(f):
+            if state_filter and row.get('State', state_filter) != state_filter:
+                continue
+            try:
+                kbps = float(row['DL_bitrate'])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if kbps <= 0:
+                continue
+            bandwidths.append(kbps * 1000.0)
+    return bandwidths
 
 
 def load_bandwidth_trace(log_path):
@@ -44,6 +72,20 @@ class BandwidthTrace:
     @classmethod
     def from_log(cls, log_path):
         return cls(load_bandwidth_trace(log_path), name=os.path.basename(log_path))
+
+    @classmethod
+    def from_csv(cls, csv_path):
+        return cls(load_5g_trace(csv_path), name=os.path.basename(csv_path))
+
+    @classmethod
+    def from_file(cls, path):
+        """Extension-dispatched loader: `.csv` (5G) or `.log` (legacy 4G)."""
+        ext = os.path.splitext(path)[1].lower()
+        if ext == '.csv':
+            return cls.from_csv(path)
+        if ext == '.log':
+            return cls.from_log(path)
+        raise ValueError(f"unsupported trace extension '{ext}': {path}")
 
     def capacity_bps(self, frame_idx):
         """Capacity for `frame_idx`; clamps to the last sample past the trace end."""
