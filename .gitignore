@@ -8,3 +8,5 @@ src/network_model.py.bak
 # G-PCC: cloned codec source/build + generated bitstreams (large, regenerable)
 gpcc/mpeg-pcc-tmc13/
 gpcc/encoded/
+# Raw 5G dataset download/extraction (only cleaned bandwidth_5g/ is tracked)
+data/5g_raw/
