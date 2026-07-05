@@ -3,7 +3,7 @@
 Script to train the LSTM bandwidth prediction model.
 
 This script:
-1. Loads all bandwidth traces from the bandwidth/ folder
+1. Loads all bandwidth traces from the bandwidth_5g/ folder
 2. Splits files into train and test sets (file-level split)
 3. Performs hyperparameter tuning via grid search
 4. Trains a proper PyTorch LSTM model
@@ -41,8 +41,9 @@ def main():
                         help='Number of historical samples for prediction (default: 10)')
     parser.add_argument('--epochs', type=int, default=100,
                         help='Maximum training epochs (default: 100)')
-    parser.add_argument('--test-size', type=float, default=0.1,
-                        help='Fraction of files for test split at file level (default: 0.1)')
+    parser.add_argument('--test-size', type=float, default=0.2,
+                        help='Fraction of files for test split at file level (default: 0.2 '
+                             '= 4 held-out test traces with the 21-file 5G dataset)')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for deterministic file-level split (default: 42)')
     args = parser.parse_args()
@@ -53,20 +54,20 @@ def main():
     
     # Set paths
     project_root = script_dir
-    bandwidth_dir = os.path.join(project_root, 'bandwidth')
+    bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
     model_dir = os.path.join(project_root, 'models')
     output_path = os.path.join(model_dir, 'bandwidth_lstm.pkl')
-    
+
     # Check if bandwidth directory exists
     if not os.path.exists(bandwidth_dir):
         print(f"❌ Error: Bandwidth directory not found at {bandwidth_dir}")
-        print("   Please ensure the 'bandwidth' folder exists with .log files.")
+        print("   Run prepare_5g_traces.py first (see bandwidth_5g/README.md).")
         sys.exit(1)
-    
-    # Count log files
-    log_files = [f for f in os.listdir(bandwidth_dir) if f.endswith('.log')]
+
+    # Count trace files
+    log_files = [f for f in os.listdir(bandwidth_dir) if f.endswith(('.log', '.csv'))]
     if len(log_files) == 0:
-        print(f"❌ Error: No .log files found in {bandwidth_dir}")
+        print(f"❌ Error: No trace files found in {bandwidth_dir}")
         sys.exit(1)
     
     print(f"\n📁 Found {len(log_files)} bandwidth trace files")

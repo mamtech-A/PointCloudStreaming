@@ -9,6 +9,21 @@ from .manifest import (
     parse_mpd_xml, size_to_bytes, size_to_bits,
     PointCloud, DASHPCManifest, Server, PointCloudServer,
 )
+
+# Single source of truth for the transport config (entry scripts copy this).
+# RTT is DATASET-DERIVED: the Irish 5G Download traces' PINGAVG in 5G mode is
+# median 72 ms (p10 66 / p90 83, not load-inflated) — see bandwidth_5g/README.md.
+# Note 72 ms > the 33 ms frame budget at 30 fps, so sequential per-frame fetching
+# still stalls structurally (kept as a finding, not tuned away).
+DEFAULT_TCP_PARAMS = {
+    'rtt_ms': 72.0,
+    'rtt_jitter_ms': 8.0,
+    'loss_prob': 0.0,
+    'cwnd_packets': 10.0,
+    'mss_bytes': 1460,
+    'rto_formula': 'jacobson',
+    'rto_fixed_s': 1.0,
+}
 from .trace import load_bandwidth_trace, BandwidthTrace
 from .tcp_protocol import TCPConnection
 from .buffer import ClientBuffer, PointCloudClient
@@ -54,6 +69,7 @@ def EdgeNodeLSTM(server, bandwidth_limit_bps=None, tcp_params=None,
 
 
 __all__ = [
+    'DEFAULT_TCP_PARAMS',
     'parse_mpd_xml', 'size_to_bytes', 'size_to_bits', 'PointCloud', 'DASHPCManifest',
     'Server', 'PointCloudServer', 'load_bandwidth_trace', 'BandwidthTrace', 'TCPConnection',
     'ClientBuffer', 'PointCloudClient', 'ABRState', 'ABRStrategy', 'BandwidthABR', 'LSTMABR',

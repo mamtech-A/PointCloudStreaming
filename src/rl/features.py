@@ -19,8 +19,11 @@ DEFAULT_FEATURE_SPEC = [
 ]
 
 DEFAULT_NORM = {
-    'bw_mbps': 100.0,        # divide Mbps values by this
-    'tput_std_mbps': 50.0,
+    # Scaled to the Irish 5G Download traces (bandwidth_5g/): bw_mbps ~ p99.5 of
+    # DL_bitrate (307 Mbps), tput_std_mbps ~ p99 of the rolling-5 std (123 Mbps).
+    # Changing these invalidates any previously trained DQN checkpoint.
+    'bw_mbps': 300.0,        # divide Mbps values by this
+    'tput_std_mbps': 125.0,
     'buffer_cap_s': 5.0,
     'density_log': 7.0,      # log10(density) / this
     'bits_per_point': 3.0,   # codec rate for the coded-bitrate feature

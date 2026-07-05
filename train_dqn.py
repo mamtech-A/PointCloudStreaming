@@ -31,6 +31,7 @@ try:
 except Exception:
     pass
 
+from src.network_model import DEFAULT_TCP_PARAMS
 from src.network_model.manifest import parse_mpd_xml
 from src.network_model.trace import BandwidthTrace
 from src.lstm_model import split_bandwidth_files, LSTMPredictor
@@ -38,10 +39,7 @@ from src.rl.env import StreamingEnv
 from src.rl.dqn import DQNAgent
 from src.rl.features import DEFAULT_FEATURE_SPEC
 
-TCP_PARAMS = {
-    'rtt_ms': 50.0, 'rtt_jitter_ms': 10.0, 'loss_prob': 0.0,
-    'cwnd_packets': 10.0, 'mss_bytes': 1460, 'rto_formula': 'jacobson', 'rto_fixed_s': 1.0,
-}
+TCP_PARAMS = dict(DEFAULT_TCP_PARAMS)
 
 
 def evaluate(agent, env, trace_paths, seed):
@@ -57,7 +55,7 @@ def evaluate(agent, env, trace_paths, seed):
         for path in trace_paths:
             random.seed(seed)
             np.random.seed(seed)
-            s = env.reset(BandwidthTrace.from_log(path))
+            s = env.reset(BandwidthTrace.from_file(path))
             done = False
             total = 0.0
             while not done:
@@ -75,8 +73,12 @@ def evaluate(agent, env, trace_paths, seed):
 def main():
     p = argparse.ArgumentParser(description="Train DQN ABR agent")
     p.add_argument('--epochs', type=int, default=10)
-    p.add_argument('--max-train-files', type=int, default=0, help='0 = all 36 train files')
-    p.add_argument('--max-test-files', type=int, default=0, help='0 = all 4 test files')
+    p.add_argument('--max-train-files', type=int, default=0, help='0 = all train files')
+    p.add_argument('--max-test-files', type=int, default=0, help='0 = all test files')
+    p.add_argument('--random-offset', action='store_true',
+                   help='start each training episode at a random offset into its trace '
+                        '(long 5G traces otherwise only ever contribute their first '
+                        'len(frames) samples); eval always starts at offset 0')
     p.add_argument('--max-frames', type=int, default=0, help='0 = all manifest frames')
     p.add_argument('--eval-every', type=int, default=50, help='episodes between evals')
     p.add_argument('--seed', type=int, default=42)
@@ -97,11 +99,13 @@ def main():
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    bandwidth_dir = os.path.join(project_root, 'bandwidth')
+    bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
     mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc.xml')
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
 
-    train_files, test_files = split_bandwidth_files(bandwidth_dir, test_size=0.1, random_state=args.seed)
+    # test_size=0.2 keeps 4 held-out test traces with the 21-file 5G dataset
+    # (same test-set size as the old 40-file protocol).
+    train_files, test_files = split_bandwidth_files(bandwidth_dir, test_size=0.2, random_state=args.seed)
     if args.max_train_files:
         train_files = train_files[:args.max_train_files]
     if args.max_test_files:
@@ -154,7 +158,11 @@ def main():
         order = list(range(len(train_paths)))
         random.shuffle(order)
         for i in order:
-            s = env.reset(BandwidthTrace.from_log(train_paths[i]))
+            trace = BandwidthTrace.from_file(train_paths[i])
+            if args.random_offset and len(trace.samples) > len(frames):
+                off = random.randrange(len(trace.samples) - len(frames) + 1)
+                trace = BandwidthTrace(trace.samples[off:off + len(frames)], name=trace.name)
+            s = env.reset(trace)
             done = False
             ep_reward = 0.0
             losses = []

@@ -12,24 +12,17 @@ try:
 except Exception:
     pass
 
-from src.network_model import Server, EdgeNodeLSTM, User, Topology, Simulator
+from src.network_model import Server, EdgeNodeLSTM, User, Topology, Simulator, DEFAULT_TCP_PARAMS
 from src.network_model.trace import BandwidthTrace
 
-# Default paths: real G-PCC coded manifest + an UNSEEN test-split trace.
+# Default paths: real G-PCC coded manifest + an UNSEEN test-split 5G trace.
 mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
-bandwidth_log_path = os.path.join(project_root, "bandwidth", "report_foot_0006.log")
+bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
+                                  "driving_B_2020.02.27_20.35.57.csv")
 lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 
-# TCP / buffer defaults
-tcp_params = {
-    'rtt_ms': 50.0,
-    'rtt_jitter_ms': 10.0,
-    'loss_prob': 0.0,
-    'cwnd_packets': 10.0,
-    'mss_bytes': 1460,
-    'rto_formula': 'jacobson',
-    'rto_fixed_s': 1.0,
-}
+# TCP / buffer defaults (RTT is dataset-derived — see DEFAULT_TCP_PARAMS)
+tcp_params = dict(DEFAULT_TCP_PARAMS)
 
 target_fps = 30.0  # 300 frames @ 30 fps = 10 s clip; each frame = 1/30 s of playback
 buffer_capacity_s = 5.0
@@ -45,7 +38,7 @@ topo.add_edge(edge)
 
 user = User("User", target_fps=target_fps, buffer_capacity_s=buffer_capacity_s,
             min_buffer_s=min_buffer_s)
-topo.add_user(user, edge, trace=BandwidthTrace.from_log(bandwidth_log_path))
+topo.add_user(user, edge, trace=BandwidthTrace.from_file(bandwidth_log_path))
 
 sim = Simulator(topo)
 

@@ -966,7 +966,7 @@ if __name__ == "__main__":
     except NameError:
         project_root = os.path.abspath(os.path.join(os.getcwd(), '..'))
     
-    bandwidth_dir = os.path.join(project_root, 'bandwidth')
+    bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
     model_dir = os.path.join(project_root, 'models')
     output_path = os.path.join(model_dir, 'bandwidth_lstm.pkl')
     

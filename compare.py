@@ -8,7 +8,7 @@ one policy applied to all of an edge's users (here a single user).
 Usage:
     python compare.py                      # full 300-frame manifest
     python compare.py --max-frames 30      # quick run
-    python compare.py --trace bandwidth/report_foot_0006.log
+    python compare.py --trace bandwidth_5g/static_B_2020.01.16_10.43.34.csv
 """
 
 import os
@@ -27,15 +27,13 @@ except Exception:
 
 from src.network_model import (
     Server, EdgeNode, User, Topology, Simulator, BandwidthABR, LSTMABR, DQNABR,
+    DEFAULT_TCP_PARAMS,
 )
 from src.network_model.trace import BandwidthTrace
 from src.lstm_model import LSTMPredictor
 from src.rl.dqn import DQNAgent
 
-TCP_PARAMS = {
-    'rtt_ms': 50.0, 'rtt_jitter_ms': 10.0, 'loss_prob': 0.0,
-    'cwnd_packets': 10.0, 'mss_bytes': 1460, 'rto_formula': 'jacobson', 'rto_fixed_s': 1.0,
-}
+TCP_PARAMS = dict(DEFAULT_TCP_PARAMS)
 
 
 def quality_metrics(results_csv, q_lo, q_hi, mu=4.3, lam=1.0):
@@ -66,14 +64,14 @@ def build_sim(label, abr_factory, trace_path):
     edge = EdgeNode("edge-1", server=server, tcp_params=TCP_PARAMS, abr_factory=abr_factory)
     topo.add_edge(edge)
     user = User("User", target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0)
-    topo.add_user(user, edge, trace=BandwidthTrace.from_log(trace_path))
+    topo.add_user(user, edge, trace=BandwidthTrace.from_file(trace_path))
     return Simulator(topo)
 
 
 def main():
     p = argparse.ArgumentParser(description="Compare baseline vs LSTM vs DQN ABR")
-    p.add_argument('--trace', default=os.path.join('bandwidth', 'report_foot_0006.log'),
-                   help='bandwidth trace (default: an unseen test-split trace)')
+    p.add_argument('--trace', default=os.path.join('bandwidth_5g', 'driving_B_2020.02.27_20.35.57.csv'),
+                   help='bandwidth trace (default: an unseen test-split 5G trace)')
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
     args = p.parse_args()
 
