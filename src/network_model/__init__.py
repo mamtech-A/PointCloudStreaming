@@ -24,7 +24,7 @@ DEFAULT_TCP_PARAMS = {
     'rto_formula': 'jacobson',
     'rto_fixed_s': 1.0,
 }
-from .trace import load_bandwidth_trace, BandwidthTrace
+from .trace import load_5g_trace, BandwidthTrace
 from .tcp_protocol import TCPConnection
 from .buffer import ClientBuffer, PointCloudClient
 from .abr import ABRState, ABRStrategy, BandwidthABR, LSTMABR, DQNABR
@@ -71,7 +71,7 @@ def EdgeNodeLSTM(server, bandwidth_limit_bps=None, tcp_params=None,
 __all__ = [
     'DEFAULT_TCP_PARAMS',
     'parse_mpd_xml', 'size_to_bytes', 'size_to_bits', 'PointCloud', 'DASHPCManifest',
-    'Server', 'PointCloudServer', 'load_bandwidth_trace', 'BandwidthTrace', 'TCPConnection',
+    'Server', 'PointCloudServer', 'load_5g_trace', 'BandwidthTrace', 'TCPConnection',
     'ClientBuffer', 'PointCloudClient', 'ABRState', 'ABRStrategy', 'BandwidthABR', 'LSTMABR',
     'DQNABR', 'BackhaulLink', 'AccessLink', 'User', 'StreamingSession', 'EdgeNode',
     'Topology', 'Simulator', 'EdgeNodeLSTM',

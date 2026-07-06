@@ -570,11 +570,11 @@ try:
 except ImportError:
     from network_model.trace import BandwidthTrace
 
-TRACE_EXTENSIONS = ('.log', '.csv')
+TRACE_EXTENSIONS = ('.csv',)
 
 
 def load_bandwidth_trace(path):
-    """Load a bandwidth trace (bps list) from a .log or .csv file."""
+    """Load a bandwidth trace (bps list) from a supported trace file."""
     return BandwidthTrace.from_file(path).samples
 
 
