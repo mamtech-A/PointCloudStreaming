@@ -79,6 +79,10 @@ def main():
                    help='start each training episode at a random offset into its trace '
                         '(long 5G traces otherwise only ever contribute their first '
                         'len(frames) samples); eval always starts at offset 0')
+    p.add_argument('--reward-scale', type=float, default=1.0,
+                   help='scale rewards fed to the LEARNER only (argmax-invariant; '
+                        'reported/eval rewards stay unscaled). Use ~0.1 on the 5G env '
+                        'where stall spikes make raw Q-targets huge vs grad-clip 1.0')
     p.add_argument('--max-frames', type=int, default=0, help='0 = all manifest frames')
     p.add_argument('--eval-every', type=int, default=50, help='episodes between evals')
     p.add_argument('--seed', type=int, default=42)
@@ -170,7 +174,7 @@ def main():
                 eps = epsilon()
                 a = agent.act(s, eps)
                 s2, r, done, _ = env.step(a)
-                agent.push(s, a, r, s2, done)
+                agent.push(s, a, r * args.reward_scale, s2, done)
                 loss = agent.learn()
                 if loss is not None:
                     losses.append(loss)
