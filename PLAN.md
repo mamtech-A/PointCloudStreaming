@@ -464,3 +464,49 @@ resume reused the 900 existing bitstreams).
   **DQN +71.9 @ 0.864 quality, 18 adaptive switches** (~29× the rules' quality utility).
 - Ablation note: reward scales are ladder-relative (quality endpoints derive from each manifest's density
   range), so compare 3-rep vs 6-rep policies by quality/stall behavior, not absolute reward.
+
+## 12. Migration to the Irish 5G dataset (Raca et al., MMSys 2020) — BUILT & VERIFIED
+
+Replaced the 40-trace 4G dataset (Ghent 2016, `bandwidth/*.log`, deleted — recover via git history)
+with the **Download traces of the Irish 5G production dataset** (github.com/uccmisl/5Gdataset,
+GPL-3.0). Everything retrained end-to-end; old checkpoints deleted.
+
+**Dataset & cleaning** (`prepare_5g_traces.py` → `bandwidth_5g/`, 21 files / 40,963 samples):
+Download-only (file download saturates the link ⇒ `DL_bitrate` ≈ capacity; Netflix/Amazon traces
+are app-limited and excluded). Keep `State=='D'` rows, drop `DL_bitrate<=0` (a 0-bps sample would
+hit the zero-capacity fallback in `tcp_protocol.py:166` — 0 is treated as *unconstrained*, a latent
+bug left as-is), keep 4G-fallback periods (realistic NSA) and the deep-fade tail (~13% of samples
+< 1 Mbps), ≥300-sample gate (none dropped), no chunking/concatenation (file-level split leakage).
+Raw zip stays untracked in `data/5g_raw/`. Stats: mean 44 / median 13.6 / p99.5 307 / max 533 Mbps.
+
+**RTT is now dataset-derived**: the traces carry `PINGAVG` (n=3208) — 5G-mode median **72 ms**
+(p10 66 / p90 83), NOT load-inflated (68 ms under >100 Mbps DL vs 76 ms under <5 Mbps).
+`DEFAULT_TCP_PARAMS` (single source in `network_model/__init__.py`) = rtt 72 ms ± 8 jitter,
+replacing the assumed 50 ms ± 10. Norm constants from measurement: `bw_mbps` 100→**300** (p99.5),
+`tput_std_mbps` 50→**125** (rolling-5 std p99). Loader: `BandwidthTrace.from_csv/from_file`
+(`.csv`-only; legacy `.log` parser removed); split widened to `test_size=0.2` ⇒ 17 train / 4 test
+(same 4-test-trace protocol as before; test = driving 12.14_10.16 / 12.16_07.22 / 02.27_20.35 +
+static 01.16_10.43; default demo trace = `driving_B_2020.02.27_20.35.57.csv`).
+
+**LSTM retrain** (grid 16 combos, then winner at seq20 and log1p; picked by test MAE):
+winner **seq20 / 64 / 2 layers / dropout 0.2 / lr 5e-4**, test MAE **12.53** < persistence 13.84
+(MAPE 119% < 170%, RMSE 25.9 < 33.8 — gate PASS). log1p variant: best MAPE (79%) but worse MAE —
+noted for future low-tier work. MAPE is inflated by the fade tail on this dataset; compare against
+persistence, not across datasets.
+
+**DQN retrain** (`--epochs 40 --target-update 3000 --lr 1e-4 --random-offset --reward-scale 0.1`):
+new `--random-offset` (long traces contribute beyond their first 300 samples) and `--reward-scale`
+(learner-only, argmax-invariant; raw-reward run diverged — stall spikes of −40..−90/step vs
+grad-clip 1.0). Best held-out eval **−101.84** vs best fixed arm −102.15 (always-vlow) — a near-tie.
+
+**Headline finding (supersedes the §6.4 assumption with measurement)**: at real 5G NSA RTT
+(72 ms > 33 ms frame budget), sequential per-frame fetching stalls ~12–26 s per 10 s clip at EVERY
+tier (`eval_fixed.py`: arm0 −4876 … arm5 −102); the reward-optimal policy collapses to bottom-tier
+hiding and adaptation headroom is minimal. Next lever: pipelined/segment fetching or an edge cache
+cutting effective RTT below 33 ms — not a better ABR.
+
+**Time-compression caveat (unchanged)**: 1 trace sample (1 s) is consumed per 33 ms frame, as with
+the 4G traces — relative comparisons stand.
+
+Full protocol/commands: `bandwidth_5g/README.md`, `logs/lstm_tune_5g.log`, `logs/dqn_train_5g_rs.log`,
+DQN_REPORT.md §8.

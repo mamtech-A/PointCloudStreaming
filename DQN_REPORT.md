@@ -3,6 +3,13 @@
 *Point-cloud streaming simulator, branch `feat/oo-topology-dqn-gpcc`. All numbers in this report were measured
 in this repository on the real MPEG G-PCC (TMC13) encoded longdress sequence (300 frames @ 30 fps, 10 s).*
 
+> **⚠️ LEGACY-4G NUMBERS.** Sections below report results on the original 40-trace 4G dataset
+> (Ghent 2016) at a modeled 50 ms RTT — that dataset and those checkpoints were removed in the
+> 5G migration (PLAN.md §12). Headline legacy numbers for reference: best fixed arm
+> always-medlow **+144.0**, best DQN eval **+132.5**. Rewards are NOT comparable across
+> datasets/RTT configs. Current results on the Irish 5G dataset (72 ms dataset-derived RTT)
+> are in **§8 (5G re-baseline)** at the end of this report.
+
 ---
 
 ## 1. What the DQN does
@@ -21,7 +28,7 @@ provider** — the LSTM's prediction is one input to the DQN's state, not the de
 | Training environment `StreamingEnv` | `src/rl/env.py` |
 | Training script | `train_dqn.py` |
 | Evaluation / comparison | `run_dqn.py`, `compare.py` |
-| Trained model (6-action) | `models/abr_dqn.pkl` (3-action kept as `abr_dqn_v2.pkl`) |
+| Trained model (6-action) | `models/abr_dqn.pkl` (retrained on the 5G dataset — see §8) |
 
 ---
 
@@ -294,3 +301,68 @@ python train_dqn.py --epochs 40 --target-update 3000 --lr 1e-4
 python run_dqn.py
 python compare.py
 ```
+
+---
+
+## 8. 5G re-baseline (Irish 5G dataset, dataset-derived 72 ms RTT)
+
+Everything in this section was measured after the migration to the **Raca et al. (MMSys 2020)
+Irish 5G dataset** (PLAN.md §12): 21 Download traces (17 train / 4 test, file-level split seed 42,
+`test_size=0.2`), RTT **72 ms ± 8** derived from the dataset''s own `PINGAVG` (5G-mode median 72 ms,
+not load-inflated), norm constants `bw_mbps=300` / `tput_std_mbps=125`.
+
+### 8.1 LSTM retrain (feature provider)
+
+16-combo grid + seq-length/transform follow-ups; picked by held-out test MAE:
+
+| variant | test MAE (Mbps) | MAPE | RMSE |
+|---|---|---|---|
+| seq10 / z-score | 12.81 | 147% | 26.03 |
+| **seq20 / z-score (installed)** | **12.53** | **119%** | **25.87** |
+| seq10 / log1p | 13.07 | **79%** | 28.89 |
+| persistence baseline | 13.84 | 170% | 33.75 |
+
+Winner: `hidden=64, layers=2, dropout=0.2, lr=5e-4, seq_len=20` — beats persistence on all three
+metrics (acceptance gate PASS). Note the log1p variant halves MAPE (much better *relative*
+accuracy in the deep-fade tail) but loses on absolute error; worth revisiting if the ABR ever
+keys on low-tier boundaries.
+
+### 8.2 Fixed-arm baselines (`eval_fixed.py`, `models/fixed_arm_baseline.json`)
+
+At the dataset-faithful 72 ms RTT **every fixed arm is deeply negative** — sequential per-frame
+fetching costs ≥ 1 RTT/frame, i.e. ≥ ~21.6 s of transport time for a 10 s clip at ANY tier:
+
+| arm | tier | mean reward | mean stall |
+|---|---|---|---|
+| 0 | 102.4 Mbps | −4876.05 | 1202 s |
+| 1 | 59.6 Mbps | −2638.48 | 678 s |
+| 2 | 35.5 Mbps | −1485.09 | 405 s |
+| 3 | 14.1 Mbps | −518.20 | 167 s |
+| 4 | 3.4 Mbps | −116.09 | 52 s |
+| **5** | **0.9 Mbps** | **−102.15** | **26 s** |
+
+### 8.3 DQN retrain
+
+`train_dqn.py --epochs 40 --target-update 3000 --lr 1e-4 --random-offset --reward-scale 0.1`.
+Two runs: raw rewards (scale 1.0) **diverged** (evals −160 → −1483 as ε decayed; stall spikes of
+−40..−90 per step put Q-targets in the thousands against grad-clip 1.0). With learner-side reward
+scale 0.1 (argmax-invariant) training was stable early and the best held-out eval reached
+**−101.84 at episode 150** — just above the best fixed arm (−102.15). Late-training evals still
+drift optimistic (−700..−1000); the best-checkpoint-by-eval logic preserves the good policy.
+
+`compare.py` (full 300 frames, unseen test traces):
+
+| trace | baseline | LSTM-rule | DQN |
+|---|---|---|---|
+| driving_B_2020.02.27_20.35.57 | −94.9 | −95.6 | **−94.9** |
+| static_B_2020.01.16_10.43.34 | −101.4 | −100.6 | **−100.5** |
+
+### 8.4 The headline finding
+
+**At real 5G NSA latency (72 ms), the sequential frame-per-request transport model cannot sustain
+30 fps point-cloud streaming at any quality tier** — all policies stall ~12–13 s per 10 s clip and
+the reward-optimal policy collapses to bottom-tier hiding; the learned DQN can only match, not
+meaningfully beat, the always-lowest arm (−101.84 vs −102.15). This quantifies the §5/§6.4
+transport-realism limit with dataset-derived numbers instead of an assumed RTT, and motivates the
+obvious next step: **pipelined / batched frame fetching (GoP-style segments) or an edge cache that
+cuts effective RTT below the 33 ms frame budget.**
