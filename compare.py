@@ -75,7 +75,7 @@ def main():
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
     args = p.parse_args()
 
-    mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc.xml')
+    mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc_longdress.xml')
     trace_path = os.path.join(project_root, args.trace)
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
     dqn_path = os.path.join(project_root, 'models', 'abr_dqn.pkl')

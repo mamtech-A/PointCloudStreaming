@@ -18,7 +18,7 @@ from src.network_model import (
 from src.network_model.trace import BandwidthTrace
 
 # Default paths: real G-PCC coded manifest + an UNSEEN test-split 5G trace.
-mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
+mpd_path = os.path.join(project_root, "config", "mpd_gpcc_longdress.xml")
 bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
                                   "static_B_2020.01.16_10.43.34.csv")
 

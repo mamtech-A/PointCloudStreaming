@@ -70,7 +70,7 @@ def run_arm(env, arm, trace_path, seed):
 def main():
     p = argparse.ArgumentParser(description="Evaluate fixed-representation ABR arms")
     p.add_argument('--trace-dir', default=os.path.join(project_root, 'bandwidth_5g'))
-    p.add_argument('--mpd', default=os.path.join(project_root, 'config', 'mpd_gpcc.xml'))
+    p.add_argument('--mpd', default=os.path.join(project_root, 'config', 'mpd_gpcc_longdress.xml'))
     p.add_argument('--seed', type=int, default=42)
     p.add_argument('--test-size', type=float, default=0.2)
     p.add_argument('--mu', type=float, default=4.3)

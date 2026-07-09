@@ -293,7 +293,9 @@ def main():
         epoch_eps = build_epoch_episodes(train_paths, traces, args.coverage_stride,
                                          ep_rng, args.random_offset)
         for k, (path, off) in enumerate(epoch_eps):
-            seq = seq_names[(episode + k) % len(seq_names)] if len(seq_names) > 1 else seq_names[0]
+            # Round-robin content over the epoch's shuffled windows (offset by
+            # epoch so a (window % sequence) correlation can't persist).
+            seq = seq_names[(epoch + k) % len(seq_names)]
             trace = traces[path].slice_from(off) if off else traces[path]
             s = env.reset(trace, sequence=seq)
             done = False

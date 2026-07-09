@@ -157,23 +157,23 @@ def main():
     p.add_argument('--force', action='store_true', help='re-encode even if outputs exist')
     p.add_argument('--no-decode', action='store_true', help='skip decode (density = source point count)')
     p.add_argument('--tmc3', help='explicit path to the tmc3 binary')
-    p.add_argument('--name', default=None,
-                   help="sequence name (e.g. 'loot'): outputs become "
-                        "gpcc/coded_frames_<name>.json + config/mpd_gpcc_<name>.xml "
-                        "and bitstreams go to gpcc/encoded_<name>/. Omit for the "
-                        "legacy longdress paths.")
+    p.add_argument('--name', default='longdress',
+                   help="sequence name: outputs become gpcc/coded_frames_<name>.json "
+                        "+ config/mpd_gpcc_<name>.xml; bitstreams go to "
+                        "gpcc/encoded_<name>/ (except longdress, which keeps the "
+                        "legacy gpcc/encoded/ so resume reuses existing bitstreams)")
     p.add_argument('--out-dir', default=None)
     p.add_argument('--json-out', default=None)
     p.add_argument('--mpd-out', default=None)
     args = p.parse_args()
 
-    suffix = f"_{args.name}" if args.name else ""
     if args.out_dir is None:
-        args.out_dir = os.path.join(HERE, f'encoded{suffix}')
+        dir_suffix = '' if args.name == 'longdress' else f'_{args.name}'
+        args.out_dir = os.path.join(HERE, f'encoded{dir_suffix}')
     if args.json_out is None:
-        args.json_out = os.path.join(HERE, f'coded_frames{suffix}.json')
+        args.json_out = os.path.join(HERE, f'coded_frames_{args.name}.json')
     if args.mpd_out is None:
-        args.mpd_out = os.path.join(PROJECT, 'config', f'mpd_gpcc{suffix}.xml')
+        args.mpd_out = os.path.join(PROJECT, 'config', f'mpd_gpcc_{args.name}.xml')
 
     tmc3 = find_tmc3(args.tmc3)
     plys = collect_plys(args)

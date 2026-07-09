@@ -91,7 +91,7 @@ def run_series(frames, trace, abr_factory):
 def main():
     p = argparse.ArgumentParser(description="Generate achieved-throughput LSTM dataset")
     p.add_argument('--trace-dir', default=os.path.join(project_root, 'bandwidth_5g'))
-    p.add_argument('--mpd', default=os.path.join(project_root, 'config', 'mpd_gpcc.xml'))
+    p.add_argument('--mpd', default=os.path.join(project_root, 'config', 'mpd_gpcc_longdress.xml'))
     p.add_argument('--out-dir', default=os.path.join(project_root, 'data', 'lstm_achieved'))
     p.add_argument('--policies', nargs='*', default=list(POLICIES),
                    choices=list(POLICIES), help='which policies generate series')
