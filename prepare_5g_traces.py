@@ -21,6 +21,9 @@ Cleaning policy (per file):
 - Row order is preserved; dropping idle gaps creates time discontinuities,
   which is acceptable because the simulator consumes samples positionally
   (one per frame), not by wall clock.
+- STATIC mobility traces only (2026-07): the Driving traces were removed from
+  the corpus as unsuitable for the point-cloud streaming scenario (handover
+  churn + HSPA+/4G fallback periods). Recover via git history if needed.
 - Drop files with fewer than MIN_SAMPLES cleaned rows (matches the 300-frame
   episode length; avoids flat clamped tails). No concatenation of short files
   and no chunking of long ones — either would leak data across the file-level
@@ -75,7 +78,7 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
     rows, all_kept_mbps, dropped = [], [], []
-    for mob in ('Driving', 'Static'):
+    for mob in ('Static',):  # Driving excluded (see module docstring)
         src_dir = os.path.join(RAW_DIR, mob)
         for fname in sorted(os.listdir(src_dir)):
             if not fname.lower().endswith('.csv'):

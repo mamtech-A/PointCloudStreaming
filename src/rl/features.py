@@ -11,7 +11,9 @@ Each feature block is individually toggleable via `feature_spec` for ablation.
 import math
 import numpy as np
 
-from ..network_model.manifest import coded_bitrate_bps
+from ..network_model.manifest import (
+    coded_bitrate_bps, density_quality, manifest_quality_endpoints,
+)
 
 DEFAULT_FEATURE_SPEC = [
     'lstm_pred', 'buffer', 'last_rep_onehot',
@@ -32,31 +34,20 @@ DEFAULT_NORM = {
     'hist_len': 5,
 }
 
-# Default quality utility endpoints (log-density scaling so a large density ratio
-# doesn't dwarf the rebuffer/switch penalties). Derive real endpoints from the
-# manifest via quality_endpoints() so the ladder's lowest rep maps to 0.0 and the
-# highest to 1.0 regardless of dataset.
-_Q_LOW_DENSITY = 30000.0
-_Q_HIGH_DENSITY = 1060000.0
+# Quality utility: the log-density normalization lives in
+# network_model.manifest (density_quality / manifest_quality_endpoints) so the
+# quality-aware QoE and the RL reward share ONE definition. These wrappers keep
+# the historical rl.features API.
 
 
 def quality_endpoints(manifest_frames):
     """(min_density, max_density) across all reps of all frames of a manifest."""
-    densities = [r['density'] for fr in manifest_frames for r in fr['representations']
-                 if r.get('density')]
-    if not densities:
-        return _Q_LOW_DENSITY, _Q_HIGH_DENSITY
-    lo, hi = min(densities), max(densities)
-    return (lo, hi) if hi > lo else (_Q_LOW_DENSITY, _Q_HIGH_DENSITY)
+    return manifest_quality_endpoints(manifest_frames)
 
 
 def quality(rep, low_density=None, high_density=None):
     """Normalized quality utility in [0, 1] from a representation's density."""
-    lo = math.log10(low_density if low_density else _Q_LOW_DENSITY)
-    hi = math.log10(high_density if high_density else _Q_HIGH_DENSITY)
-    d = max(1.0, float(rep.get('density', 1)))
-    q = (math.log10(d) - lo) / (hi - lo)
-    return max(0.0, min(1.0, q))
+    return density_quality(rep.get('density'), low_density, high_density)
 
 
 _DIMS = {

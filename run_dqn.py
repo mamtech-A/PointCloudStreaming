@@ -20,7 +20,7 @@ from src.rl.dqn import DQNAgent
 # Default paths — evaluate on an UNSEEN test-split 5G trace.
 mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
 bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
-                                  "driving_B_2020.02.27_20.35.57.csv")
+                                  "static_B_2020.01.16_10.43.34.csv")
 dqn_model_path = os.path.join(project_root, "models", "abr_dqn.pkl")
 lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 

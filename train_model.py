@@ -57,6 +57,12 @@ def main():
                              "throughput distribution (default: none)")
     parser.add_argument('--out', default=None,
                         help='Output model path (default: models/bandwidth_lstm.pkl)')
+    parser.add_argument('--bandwidth-dir', default=None,
+                        help='Trace directory (default: bandwidth_5g/). Point at '
+                             'data/lstm_achieved/ to train on achieved-throughput series')
+    parser.add_argument('--split-from', default=None,
+                        help='JSON file with explicit {"train_files":[...],"test_files":[...]} '
+                             '(e.g. data/lstm_achieved/split.json) overriding the random split')
     # Explicit hyperparameters (used with --no-tune, e.g. to retrain the grid
     # winner at a different sequence length or transform without re-tuning).
     parser.add_argument('--hidden', type=int, default=64)
@@ -71,9 +77,19 @@ def main():
     
     # Set paths
     project_root = script_dir
-    bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
+    bandwidth_dir = args.bandwidth_dir or os.path.join(project_root, 'bandwidth_5g')
     model_dir = os.path.join(project_root, 'models')
     output_path = args.out or os.path.join(model_dir, 'bandwidth_lstm.pkl')
+
+    train_files = test_files = None
+    if args.split_from:
+        import json
+        with open(args.split_from, encoding='utf-8') as f:
+            explicit = json.load(f)
+        train_files = explicit['train_files']
+        test_files = explicit['test_files']
+        print(f"📋 Explicit split from {args.split_from}: "
+              f"{len(train_files)} train / {len(test_files)} test files")
 
     # Check if bandwidth directory exists
     if not os.path.exists(bandwidth_dir):
@@ -123,7 +139,9 @@ def main():
         hidden_size=args.hidden,
         num_layers=args.layers,
         dropout=args.dropout,
-        learning_rate=args.lr
+        learning_rate=args.lr,
+        train_files=train_files,
+        test_files=test_files
     )
     
     print("\n" + "="*80)

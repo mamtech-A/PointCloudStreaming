@@ -58,6 +58,7 @@ def run_arm(env, arm, trace_path, seed):
         return {
             'reward': total_reward,
             'qoe': env.qoe(),
+            'qoe_quality': env.qoe_quality(),
             'stall_s': total_stall,
             'mean_quality': float(np.mean(qualities)) if qualities else 0.0,
         }
@@ -115,7 +116,7 @@ def main():
     for arm in range(env.num_actions):
         per_trace = [run_arm(env, arm, tp, args.seed) for tp in test_paths]
         agg = {k: float(np.mean([r[k] for r in per_trace]))
-               for k in ('reward', 'qoe', 'stall_s', 'mean_quality')}
+               for k in ('reward', 'qoe', 'qoe_quality', 'stall_s', 'mean_quality')}
         agg['per_trace'] = {os.path.basename(tp): r for tp, r in zip(test_paths, per_trace)}
         rep = reps0[arm]
         agg['rep_id'] = rep['id']
@@ -124,6 +125,7 @@ def main():
         results[f'arm_{arm}'] = agg
         print(f"arm {arm} (rep {rep['id']}, {agg['bitrate_mbps']:6.1f} Mbps): "
               f"mean_reward={agg['reward']:8.2f}  mean_qoe={agg['qoe']:6.1f}  "
+              f"mean_qoe_q={agg['qoe_quality']:8.1f}  "
               f"mean_stall={agg['stall_s']:7.2f}s  mean_quality={agg['mean_quality']:.3f}")
 
     best = max(results, key=lambda k: results[k]['reward'])

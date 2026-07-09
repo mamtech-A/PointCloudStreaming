@@ -6,7 +6,39 @@ serving point clouds is unchanged; `PointCloudServer` is renamed to `Server`
 first-class node in the topology (reachable only via a BackhaulLink).
 """
 
+import math
 import xml.etree.ElementTree as ET
+
+# Default quality-utility endpoints (used only when a manifest carries no
+# densities). Derive real endpoints per manifest via manifest_quality_endpoints.
+DEFAULT_Q_LOW_DENSITY = 30000.0
+DEFAULT_Q_HIGH_DENSITY = 1060000.0
+
+
+def density_quality(density, low_density, high_density):
+    """Normalized [0,1] quality utility from a representation's point density.
+
+    Log-density scaling so a large density ratio doesn't dwarf stall/switch
+    penalties. This is THE quality signal shared by the RL reward
+    (src/rl/features.quality delegates here) and the quality-aware QoE.
+    """
+    lo = math.log10(low_density if low_density else DEFAULT_Q_LOW_DENSITY)
+    hi = math.log10(high_density if high_density else DEFAULT_Q_HIGH_DENSITY)
+    if hi <= lo:
+        return 0.0
+    d = max(1.0, float(density or 1))
+    return max(0.0, min(1.0, (math.log10(d) - lo) / (hi - lo)))
+
+
+def manifest_quality_endpoints(frames):
+    """(min_density, max_density) across all reps of all frames of a manifest,
+    so the ladder's lowest rep maps to ~0.0 and the highest to ~1.0."""
+    densities = [r['density'] for fr in frames for r in fr['representations']
+                 if r.get('density')]
+    if not densities:
+        return DEFAULT_Q_LOW_DENSITY, DEFAULT_Q_HIGH_DENSITY
+    lo, hi = min(densities), max(densities)
+    return (lo, hi) if hi > lo else (DEFAULT_Q_LOW_DENSITY, DEFAULT_Q_HIGH_DENSITY)
 
 
 def parse_mpd_xml(xml_path):

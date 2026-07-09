@@ -113,7 +113,20 @@ class TCPConnection:
     def send(self, data_bytes, capacity_bps=None):
         """Simulate sending `data_bytes` bytes over the connection.
 
-        Uses an ANALYTICAL model for speed (no per-packet loop).
+        `capacity_bps` may be:
+        - a scalar (bps): constant capacity for the whole transfer (legacy), or
+        - a callable `f(t_rel_s) -> bps`: TIME-VARYING capacity, re-queried at the
+          start of every RTT round with the elapsed seconds since this send began
+          (so a long download traverses the bandwidth trace instead of freezing
+          one sample).
+
+        Each round costs `max(RTT, serialization)` where serialization is the
+        transmission delay of the bytes sent that round (`round_bytes*8/capacity`).
+        On healthy links serialization < RTT so timing matches the legacy
+        RTT-round model exactly; in deep fades the transfer takes realistically
+        long instead of being floored at 1 MSS per RTT.
+
+        Uses an ANALYTICAL model for speed (no real I/O).
         Returns a dict with simulated metrics: sent_bytes, time_s, rtt_ms, retransmissions, cwnd_start, cwnd_end, srtt_s, rto_s
         """
         if not self.established:
@@ -163,21 +176,30 @@ class TCPConnection:
         while pending_packets and rounds < max_rounds:
             # Calculate RTT with jitter for this round
             round_rtt_s = max(0.001, base_rtt_s + random.uniform(-jitter_s, jitter_s))
-            if capacity_bps and capacity_bps > 0:
-                cap_packets_per_rtt = max(1, int((capacity_bps * round_rtt_s) / (mss * 8)))
+            # Capacity for THIS round: time-varying provider is queried with the
+            # elapsed download time (same clock the session accumulates), a scalar
+            # is used as-is (legacy behavior).
+            if callable(capacity_bps):
+                cap_now = capacity_bps(sim_time - send_start_time)
+            else:
+                cap_now = capacity_bps
+            if cap_now and cap_now > 0:
+                cap_packets_per_rtt = max(1, int((cap_now * round_rtt_s) / (mss * 8)))
             else:
                 cap_packets_per_rtt = len(pending_packets)
-            
+
             send_this_round = min(max(1, int(cwnd)), cap_packets_per_rtt, len(pending_packets))
             to_send = pending_packets[:send_this_round]
             remaining_queue = pending_packets[send_this_round:]
             lost_this_round = []
             success_count = 0
-            
+            round_bytes = 0
+
             # Log each packet in this round
             for pkt_num, pkt_idx in enumerate(to_send):
                 pkt_seq = self.seq_num + (pkt_idx * mss)
                 pkt_size = mss if pkt_idx < total_packets - 1 else (data_bytes - ((total_packets - 1) * mss))
+                round_bytes += pkt_size
                 # Determine if this packet is lost (analytical: use loss_prob)
                 is_lost = random.random() < self.loss_prob
                 if self.log_packets:
@@ -217,7 +239,14 @@ class TCPConnection:
             
             pending_packets = lost_this_round + remaining_queue
             rounds += 1
-            sim_time += round_rtt_s
+            # Round duration = max(RTT, serialization delay of this round's bytes).
+            # Serialization dominates only when capacity is low (deep fades), where
+            # the legacy pure-RTT model was unrealistically fast.
+            if cap_now and cap_now > 0:
+                serialize_s = (round_bytes * 8.0) / cap_now
+            else:
+                serialize_s = 0.0
+            sim_time += max(round_rtt_s, serialize_s)
 
             # Congestion response and growth.
             if lost_this_round:

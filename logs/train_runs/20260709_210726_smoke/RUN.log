@@ -1,0 +1,14 @@
+[2026-07-09 21:07:26 UTC] pipeline start | config=configs\training.json smoke=True jobs=2 skip=none
+[2026-07-09 21:07:26 UTC] START gen: C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u gen_lstm_dataset.py --offsets 4 --offsets 1 --policies fixed3 --max-frames 40  (log: 10_gen_lstm_dataset.log)
+[2026-07-09 21:07:31 UTC] DONE  gen in 0.1 min
+[2026-07-09 21:07:31 UTC] START lstm[none]: C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u train_model.py --transform none --out C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none.pkl --sequence-length 20 --epochs 5 --test-size 0.2 --bandwidth-dir C:\Users\Mamtech\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Mamtech\PointCloudStreaming\data\lstm_achieved\split.json --no-tune  (log: 20_lstm_none.log)
+[2026-07-09 21:07:38 UTC] DONE  lstm[none] in 0.1 min
+[2026-07-09 21:07:38 UTC] lstm[none] metrics: mae=0.36 low_bw_mae=0.000 dir_acc=0.700
+[2026-07-09 21:07:38 UTC] LSTM winner: transform=none (low_bw_mae=0.000) -> models/bandwidth_lstm.pkl
+[2026-07-09 21:07:38 UTC] START sweep: C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\sweep --smoke  (log: 30_sweep.log)
+[2026-07-09 21:07:46 UTC] DONE  sweep in 0.1 min
+[2026-07-09 21:07:46 UTC] START eval_fixed: C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u eval_fixed.py --max-frames 60  (log: 40_eval_fixed.log)
+[2026-07-09 21:07:51 UTC] DONE  eval_fixed in 0.1 min
+[2026-07-09 21:07:51 UTC] START compare: C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u compare.py --max-frames 40  (log: 41_compare.log)
+[2026-07-09 21:07:58 UTC] DONE  compare in 0.1 min
+[2026-07-09 21:07:58 UTC] summary -> models/TRAINING_SUMMARY.md | pipeline OK

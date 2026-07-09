@@ -162,6 +162,8 @@ class Simulator:
         total_time = session.cumulative_time_s
         fps_real = total_frames / total_time if total_time > 0 else 0
         qoe = session.qoe()
+        qoe_q = session.qoe_quality()
+        mean_q = session.mean_quality()
 
         print(f"\n{'='*100}")
         print(f"--- Session Finished: {u.user_id} ---")
@@ -179,7 +181,9 @@ class Simulator:
         print(f"   Total Stall Time: {stats['total_stall_time_s']:.2f}s")
         if stats['rebuffer_count'] > 0:
             print(f"   Average Rebuffer Duration: {stats['total_stall_time_s']/stats['rebuffer_count']:.3f}s")
-        print(f"\n🎯 QoE Score: {qoe:.1f}/100")
+        print(f"\n🎯 QoE Score (legacy, stall-only): {qoe:.1f}/100")
+        print(f"🎯 Quality-aware QoE': {qoe_q:.1f} raw | {max(0.0, qoe_q):.1f}/100 clipped "
+              f"(mean quality {mean_q:.3f})")
 
         pred = session.abr.report(session.observed_throughput_history)
         if pred:
@@ -196,6 +200,9 @@ class Simulator:
             'user_id': u.user_id,
             'abr': session.abr.name,
             'qoe': qoe,
+            'qoe_quality': qoe_q,
+            'qoe_quality_clipped': max(0.0, qoe_q),
+            'mean_quality': mean_q,
             'total_time_s': total_time,
             'fps': fps_real,
             'frames_played': stats['frames_played'],

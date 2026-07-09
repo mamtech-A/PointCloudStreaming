@@ -18,7 +18,7 @@ from src.network_model.trace import BandwidthTrace
 # Default paths: real G-PCC coded manifest + an UNSEEN test-split 5G trace.
 mpd_path = os.path.join(project_root, "config", "mpd_gpcc.xml")
 bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
-                                  "driving_B_2020.02.27_20.35.57.csv")
+                                  "static_B_2020.01.16_10.43.34.csv")
 lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 
 # TCP / buffer defaults (RTT is dataset-derived — see DEFAULT_TCP_PARAMS)

@@ -19,6 +19,7 @@ import copy
 # Constants for model training
 GRADIENT_CLIP_MAX_NORM = 1.0  # Max norm for gradient clipping
 MAPE_ZERO_THRESHOLD = 0.1     # Threshold (Mbps) to filter near-zero values for MAPE calculation
+LOW_BW_MBPS = 5.0             # Low-bandwidth regime boundary for the reported metric split
 DEFAULT_SPLIT_RANDOM_STATE = 42
 
 
@@ -408,6 +409,25 @@ class LSTMPredictor:
             p_mape = 0.0
         p_rmse = np.sqrt(np.mean((y_test - persistence) ** 2))
 
+        # Regime split: the LOW-BANDWIDTH tail (< LOW_BW_MBPS actual) is where
+        # ABR tier decisions actually flip, and where aggregate MAE hides big
+        # relative errors. Report the subset explicitly.
+        low_mask = y_test < LOW_BW_MBPS
+        if np.sum(low_mask) > 0:
+            low_mae = float(np.mean(np.abs(y_test_denorm[low_mask] - test_predictions_denorm[low_mask])))
+            low_rmse = float(np.sqrt(np.mean((y_test_denorm[low_mask] - test_predictions_denorm[low_mask]) ** 2)))
+            p_low_mae = float(np.mean(np.abs(y_test[low_mask] - persistence[low_mask])))
+        else:
+            low_mae = low_rmse = p_low_mae = 0.0
+
+        # Directional accuracy: does the predicted CHANGE from the last observed
+        # value have the right sign? (persistence always predicts "no change",
+        # so any value > ~0.5 here is signal persistence cannot provide)
+        actual_dir = np.sign(y_test - X_test[:, -1])
+        pred_dir = np.sign(test_predictions_denorm - X_test[:, -1])
+        moved = actual_dir != 0
+        dir_acc = float(np.mean(pred_dir[moved] == actual_dir[moved])) if np.sum(moved) else 0.0
+
         metrics = {
             'mae': float(mae),
             'mape': float(mape),
@@ -415,6 +435,12 @@ class LSTMPredictor:
             'persistence_mae': float(p_mae),
             'persistence_mape': float(p_mape),
             'persistence_rmse': float(p_rmse),
+            'low_bw_threshold_mbps': LOW_BW_MBPS,
+            'low_bw_mae': low_mae,
+            'low_bw_rmse': low_rmse,
+            'low_bw_fraction': float(np.mean(low_mask)),
+            'persistence_low_bw_mae': p_low_mae,
+            'directional_accuracy': dir_acc,
             'transform': self.stats.get('transform', 'none'),
             'best_epoch': self.training_history['best_epoch'],
             'best_test_loss': float(best_test_loss)
@@ -425,6 +451,9 @@ class LSTMPredictor:
             print(f"  MAE: {mae:.4f} Mbps  (persistence baseline: {p_mae:.4f})")
             print(f"  MAPE: {mape:.2f}%  (persistence baseline: {p_mape:.2f}%)")
             print(f"  RMSE: {rmse:.4f} Mbps  (persistence baseline: {p_rmse:.4f})")
+            print(f"  Low-bw (<{LOW_BW_MBPS:g} Mbps, {100*metrics['low_bw_fraction']:.0f}% of test) "
+                  f"MAE: {low_mae:.4f}  (persistence: {p_low_mae:.4f})")
+            print(f"  Directional accuracy: {dir_acc:.3f}")
 
         return metrics
     
@@ -742,7 +771,8 @@ def tune_hyperparameters(X, y, param_grid, test_size=0.2, epochs=50, verbose=Tru
 def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
                      verbose=True, test_size=0.1, random_state=DEFAULT_SPLIT_RANDOM_STATE,
                      transform='none', epochs=100, hidden_size=64, num_layers=2,
-                     dropout=0.2, learning_rate=0.001):
+                     dropout=0.2, learning_rate=0.001,
+                     train_files=None, test_files=None):
     """
     Train LSTM model on bandwidth traces with optional hyperparameter tuning.
 
@@ -757,18 +787,25 @@ def train_lstm_model(bandwidth_dir, output_path, sequence_length=10, tune=True,
         hidden_size/num_layers/dropout/learning_rate: hyperparameters for the
             tune=False path (e.g. retraining a known grid winner); ignored when
             tune=True (the grid winner is used instead)
+        train_files/test_files: EXPLICIT file lists (both or neither). Overrides
+            the random file-level split — required for derived datasets (e.g.
+            achieved-throughput series, several files per source trace) where a
+            random per-file split would leak a source trace across the split.
 
     Returns:
         Trained predictor
     """
     if verbose:
         print(f"Loading bandwidth traces from {bandwidth_dir}...")
-    
-    train_files, test_files = split_bandwidth_files(
-        bandwidth_dir,
-        test_size=test_size,
-        random_state=random_state
-    )
+
+    if (train_files is None) != (test_files is None):
+        raise ValueError("pass BOTH train_files and test_files, or neither")
+    if train_files is None:
+        train_files, test_files = split_bandwidth_files(
+            bandwidth_dir,
+            test_size=test_size,
+            random_state=random_state
+        )
 
     X_train_all, y_train_all = prepare_dataset(
         bandwidth_dir,

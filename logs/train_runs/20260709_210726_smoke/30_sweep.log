@@ -1,0 +1,13 @@
+# C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\sweep --smoke
+sweep: 2 configs x 1 seed(s) = 2 trials | jobs=2 | select-by=qoe_quality
+  dir: C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\sweep
+  [trial 001 seed 42] ok  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 000 seed 42] ok  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {}}
+
+==========================================================================================
+rank trial   qoe_quality   mean_q  stall_s  config
+1    0             34.67    0.347      0.0  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {}} *pareto
+2    1             34.67    0.347      0.0  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}} *pareto
+
+WINNER trial 0 (seed 42) -> models\abr_dqn.pkl
+results: models\dqn_sweep_results.json

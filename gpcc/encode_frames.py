@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """Encode point-cloud frames with real MPEG G-PCC (TMC13) into a coded manifest.
 
-For each input .ply frame, encodes 3 representations (a rate ladder) with the
-locally-built tmc3, decodes each to measure reconstructed point count (fidelity),
-and writes:
-  - gpcc/coded_frames.json  (detailed per-frame/per-rep sizes + densities)
-  - config/mpd_gpcc.xml     (simulator-compatible manifest with REAL coded sizes)
+For each input .ply frame, encodes the 6-tier rate ladder with the locally-built
+tmc3, decodes each to measure reconstructed point count (fidelity), and writes:
+  - gpcc/coded_frames[_<seq>].json  (detailed per-frame/per-rep sizes + densities)
+  - config/mpd_gpcc[_<seq>].xml     (simulator-compatible manifest, REAL coded sizes)
 
 The simulator then streams these real coded bitstream sizes (see
 network_model.manifest.coded_size_bytes, which prefers the manifest values).
 
-Features for large runs (300 frames x 3 tiers = 900 encodes):
+Multi-sequence: pass --name <seq> when encoding a NEW 8i sequence (loot /
+soldier / redandblack) — outputs get the per-sequence suffix and train_dqn.py
+picks every config/mpd_gpcc*.xml up automatically ('mpd_gpcc.xml' itself maps
+to sequence 'longdress'). Use the SAME 6-tier ladder for every sequence so the
+action space and tier semantics line up across content.
+
+Features for large runs (300 frames x 6 tiers = 1800 encodes):
   - cross-platform tmc3 discovery (tmc3.exe / tmc3) + --tmc3 override
   - --dir FOLDER input (all *.ply sorted = playback order)
   - --jobs N parallel encoding/decoding (multiprocessing)
@@ -18,6 +23,7 @@ Features for large runs (300 frames x 3 tiers = 900 encodes):
 
 Usage:
     python gpcc/encode_frames.py --dir "F:/path/to/longdress/Ply" --jobs 8
+    python gpcc/encode_frames.py --dir "F:/path/to/loot/Ply" --name loot --jobs 8
     python gpcc/encode_frames.py PATH1.ply PATH2.ply ...
     python gpcc/encode_frames.py --list frames.txt          # one .ply path per line
 """
@@ -151,10 +157,23 @@ def main():
     p.add_argument('--force', action='store_true', help='re-encode even if outputs exist')
     p.add_argument('--no-decode', action='store_true', help='skip decode (density = source point count)')
     p.add_argument('--tmc3', help='explicit path to the tmc3 binary')
-    p.add_argument('--out-dir', default=os.path.join(HERE, 'encoded'))
-    p.add_argument('--json-out', default=os.path.join(HERE, 'coded_frames.json'))
-    p.add_argument('--mpd-out', default=os.path.join(PROJECT, 'config', 'mpd_gpcc.xml'))
+    p.add_argument('--name', default=None,
+                   help="sequence name (e.g. 'loot'): outputs become "
+                        "gpcc/coded_frames_<name>.json + config/mpd_gpcc_<name>.xml "
+                        "and bitstreams go to gpcc/encoded_<name>/. Omit for the "
+                        "legacy longdress paths.")
+    p.add_argument('--out-dir', default=None)
+    p.add_argument('--json-out', default=None)
+    p.add_argument('--mpd-out', default=None)
     args = p.parse_args()
+
+    suffix = f"_{args.name}" if args.name else ""
+    if args.out_dir is None:
+        args.out_dir = os.path.join(HERE, f'encoded{suffix}')
+    if args.json_out is None:
+        args.json_out = os.path.join(HERE, f'coded_frames{suffix}.json')
+    if args.mpd_out is None:
+        args.mpd_out = os.path.join(PROJECT, 'config', f'mpd_gpcc{suffix}.xml')
 
     tmc3 = find_tmc3(args.tmc3)
     plys = collect_plys(args)
@@ -257,7 +276,8 @@ def main():
     print(f"\nEncoded {len(frames)} frame(s) x {len(TIERS)} reps.")
     print(f"  JSON: {args.json_out}")
     print(f"  MPD : {args.mpd_out}")
-    print("Commit back to git: config/mpd_gpcc.xml + gpcc/coded_frames.json "
+    print(f"Commit back to git: {os.path.relpath(args.mpd_out, PROJECT)} + "
+          f"{os.path.relpath(args.json_out, PROJECT)} "
           "(the .bin bitstreams stay out of git).")
 
 

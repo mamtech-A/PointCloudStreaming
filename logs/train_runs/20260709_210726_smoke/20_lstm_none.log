@@ -1,0 +1,62 @@
+# C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u train_model.py --transform none --out C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none.pkl --sequence-length 20 --epochs 5 --test-size 0.2 --bandwidth-dir C:\Users\Mamtech\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Mamtech\PointCloudStreaming\data\lstm_achieved\split.json --no-tune
+================================================================================
+🤖 LSTM Bandwidth Prediction Model Training
+================================================================================
+📋 Explicit split from C:\Users\Mamtech\PointCloudStreaming\data\lstm_achieved\split.json: 4 train / 1 test files
+
+📁 Found 5 bandwidth trace files
+📂 Output directory: C:\Users\Mamtech\PointCloudStreaming\models
+🔧 Hyperparameter tuning: Disabled
+📊 Sequence length: 20
+🧪 File-level test split: 0.20
+🎲 Split random seed: 42
+
+================================================================================
+Training Process:
+  1. Load and prepare dataset
+  2. Split files into train/test sets (file-level)
+  3. Train model with default hyperparameters
+  5. Save trained model and best model
+================================================================================
+
+Loading bandwidth traces from C:\Users\Mamtech\PointCloudStreaming\data\lstm_achieved...
+Dataset size: 100 sequences
+Bandwidth range: 6.09 - 8.12 Mbps
+Mean bandwidth: 7.04 Mbps, Std: 0.51 Mbps
+File-level split (80/20): 4 train files, 1 test files
+
+Training final model...
+Loaded best model from epoch 5 with test loss: 0.271622
+
+Final Test Metrics:
+  MAE: 0.3614 Mbps  (persistence baseline: 0.5506)
+  MAPE: 5.23%  (persistence baseline: 7.92%)
+  RMSE: 0.4247 Mbps  (persistence baseline: 0.6238)
+  Low-bw (<5 Mbps, 0% of test) MAE: 0.0000  (persistence: 0.0000)
+  Directional accuracy: 0.700
+
+Saving model to C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none.pkl...
+Best model saved to: C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none_best.pkl
+Split metadata saved to: C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none_split.json
+
+Sample predictions:
+  Actual: 7.41 Mbps, Predicted: 6.96 Mbps
+  Actual: 6.55 Mbps, Predicted: 6.96 Mbps
+  Actual: 7.67 Mbps, Predicted: 6.96 Mbps
+  Actual: 7.23 Mbps, Predicted: 6.96 Mbps
+  Actual: 7.29 Mbps, Predicted: 6.96 Mbps
+
+================================================================================
+✅ Training complete!
+📦 Model saved to: C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none.pkl
+📦 Best model saved to: C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none_best.pkl
+🧾 Split metadata saved to: C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none_split.json
+
+Next steps:
+  1. Run the system with LSTM prediction:
+     python3 run_lstm.py
+  2. Or compare with baseline (no LSTM):
+     python3 run.py
+  3. Use a test-only simulation trace from:
+     C:\Users\Mamtech\PointCloudStreaming\logs\train_runs\20260709_210726_smoke\lstm\bandwidth_lstm_none_split.json -> test_files
+================================================================================

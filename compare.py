@@ -70,7 +70,7 @@ def build_sim(label, abr_factory, trace_path):
 
 def main():
     p = argparse.ArgumentParser(description="Compare baseline vs LSTM vs DQN ABR")
-    p.add_argument('--trace', default=os.path.join('bandwidth_5g', 'driving_B_2020.02.27_20.35.57.csv'),
+    p.add_argument('--trace', default=os.path.join('bandwidth_5g', 'static_B_2020.01.16_10.43.34.csv'),
                    help='bandwidth trace (default: an unseen test-split 5G trace)')
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
     args = p.parse_args()
@@ -114,17 +114,19 @@ def main():
     print("\n" + "=" * 100)
     print("COMPARISON SUMMARY")
     print("=" * 100)
-    hdr = (f"{'strategy':<10} {'QoE':>6} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} "
+    hdr = (f"{'strategy':<10} {'QoE':>6} {'QoE_q':>8} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} "
            f"{'mean_rep':>9} {'switches':>9} {'mean_qual':>10} {'reward':>9}")
     print(hdr)
     print("-" * len(hdr))
     for r in runs:
         mq, rw = quality_metrics(os.path.join(project_root, 'logs', r['abr'] if r['abr'] != 'bandwidth' else 'baseline', 'results.csv'), q_lo, q_hi)
-        print(f"{r['abr']:<10} {r['qoe']:>6.1f} {r['rebuffer_count']:>6d} {r['total_stall_time_s']:>9.1f} "
+        print(f"{r['abr']:<10} {r['qoe']:>6.1f} {r.get('qoe_quality', 0.0):>8.1f} "
+              f"{r['rebuffer_count']:>6d} {r['total_stall_time_s']:>9.1f} "
               f"{r['frames_dropped']:>8d} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d} "
               f"{mq:>10.3f} {rw:>9.1f}")
-    print("\nQoE counts only stalls/drops (favors the lowest quality); 'reward' is the")
-    print("quality-aware Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.")
+    print("\nQoE counts only stalls/drops (favors the lowest quality); QoE_q is the")
+    print("quality-aware QoE' = 100*mean_quality - 4.3*stall_s - 1.0*sum|dq| (raw, unclipped);")
+    print("'reward' is the Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.")
     print("Logs written to logs/baseline/, logs/lstm/, logs/dqn/")
 
 

@@ -57,20 +57,36 @@ class AccessLink:
         return self.tcp
 
     def capacity_bps(self, frame_idx):
-        """This link's capacity for `frame_idx` (per-user trace sample)."""
+        """Legacy positional lookup (sample per frame index); kept for back-compat."""
         if self.trace is None:
             return None
         return self.trace.capacity_bps(frame_idx)
 
-    def transfer(self, data_bytes, frame_idx):
-        """Send `data_bytes` over the link at the trace capacity; return TCP metrics
-        with a `packet_log` slice for just this transfer."""
+    def capacity_at_time(self, t_s):
+        """This link's capacity at download wall-clock `t_s` (trace time axis)."""
+        if self.trace is None:
+            return None
+        return self.trace.capacity_at_time(t_s)
+
+    def transfer(self, data_bytes, frame_idx, start_time_s=0.0):
+        """Send `data_bytes` over the link; return TCP metrics with a `packet_log`
+        slice for just this transfer.
+
+        Capacity is TIME-VARYING: a provider closure maps the TCP model's
+        per-round elapsed time onto the trace's wall-clock axis starting at
+        `start_time_s` (the session's cumulative download time when this frame's
+        transfer begins). `frame_idx` is retained for logging/back-compat only.
+        """
         if self.tcp is None or self.tcp.closed:
             self.establish()
             packet_log_start = 0
         else:
             packet_log_start = len(self.tcp.get_packet_log())
-        capacity = self.capacity_bps(frame_idx)
+        if self.trace is not None:
+            trace, base = self.trace, float(start_time_s)
+            capacity = lambda t_rel: trace.capacity_at_time(base + t_rel)
+        else:
+            capacity = None
         metrics = self.tcp.send(int(data_bytes) if data_bytes else 0, capacity_bps=capacity)
         metrics['packet_log'] = self.tcp.get_packet_log()[packet_log_start:]
         return metrics

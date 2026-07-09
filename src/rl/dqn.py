@@ -52,7 +52,8 @@ class DQNAgent:
     def __init__(self, state_dim, num_actions, feature_spec, norm_constants,
                  hidden=128, lr=5e-4, gamma=0.99, batch_size=64, buffer_capacity=100_000,
                  target_update_freq=500, double_dqn=True, device=None,
-                 mu=4.3, lam=1.0, lstm_model_path=None, sequence_length=10):
+                 mu=4.3, lam=1.0, lstm_model_path=None, sequence_length=10,
+                 reward_norm=False):
         self.state_dim = state_dim
         self.num_actions = num_actions
         self.feature_spec = list(feature_spec)
@@ -66,6 +67,14 @@ class DQNAgent:
         self.lam = lam
         self.lstm_model_path = lstm_model_path
         self.sequence_length = sequence_length
+        # Learner-side reward normalization (argmax-invariant): rewards are
+        # divided by a RUNNING std (Welford) at learn() time, replacing the
+        # hand-tuned --reward-scale hack. Stall spikes of -40..-90 stop blowing
+        # up Q-targets against the grad clip; reported rewards stay raw.
+        self.reward_norm = bool(reward_norm)
+        self._r_count = 0
+        self._r_mean = 0.0
+        self._r_m2 = 0.0
 
         self.device = torch.device(device or ('cuda' if torch.cuda.is_available() else 'cpu'))
         self.policy = QNetwork(state_dim, num_actions, hidden).to(self.device)
@@ -85,12 +94,26 @@ class DQNAgent:
             return int(self.policy(x).argmax(dim=1).item())
 
     def push(self, s, a, r, s2, done):
+        if self.reward_norm:
+            self._r_count += 1
+            delta = r - self._r_mean
+            self._r_mean += delta / self._r_count
+            self._r_m2 += delta * (r - self._r_mean)
         self.replay.push(s, a, r, s2, done)
+
+    def reward_scale(self):
+        """Current 1/std normalizer (>= 1e-8 count guard, std floored at 0.1)."""
+        if not self.reward_norm or self._r_count < 2:
+            return 1.0
+        std = (self._r_m2 / self._r_count) ** 0.5
+        return 1.0 / max(std, 0.1)
 
     def learn(self):
         if len(self.replay) < self.batch_size:
             return None
         s, a, r, s2, d = self.replay.sample(self.batch_size)
+        if self.reward_norm:
+            r = r * self.reward_scale()
         s = torch.as_tensor(s, device=self.device)
         a = torch.as_tensor(a, device=self.device)
         r = torch.as_tensor(r, device=self.device)
@@ -138,6 +161,8 @@ class DQNAgent:
             'lstm_model_path': self.lstm_model_path,
             'sequence_length': self.sequence_length,
             'training_history': self.training_history,
+            'reward_norm': self.reward_norm,
+            'reward_norm_stats': (self._r_count, self._r_mean, self._r_m2),
         }
         with open(path, 'wb') as f:
             pickle.dump(save, f)
@@ -160,4 +185,8 @@ class DQNAgent:
         agent.policy.load_state_dict(save['model_state_dict'])
         agent.target.load_state_dict(save['model_state_dict'])
         agent.training_history = save.get('training_history', {'loss': [], 'eval': []})
+        agent.reward_norm = save.get('reward_norm', False)
+        stats = save.get('reward_norm_stats')
+        if stats:
+            agent._r_count, agent._r_mean, agent._r_m2 = stats
         return agent
