@@ -9,10 +9,17 @@ the dev PC, training on the fast PC, review back on the dev PC — all via git.
 ```
 git clone <repo> && cd PointCloudStreaming
 python -m venv .venv && .venv\Scripts\activate     # (or your env)
-pip install torch numpy pandas scikit-learn
+python -m pip install -r requirements.txt          # torch/numpy/pandas/scikit-learn (CPU is fine)
+python -c "import torch, numpy, sklearn, pandas; print('deps ok', torch.__version__)"
 python tests/test_time_varying.py                  # must print "9 tests passed"
 python run_training.py --smoke                     # ~minutes; validates the whole pipeline
 ```
+
+Note: use `python -m pip` (not bare `pip`) so the packages land in the SAME
+interpreter that runs `run_training.py`. If `run_training.py` fails instantly
+with `ModuleNotFoundError: No module named 'torch'`, the install went to a
+different Python — rerun the `python -m pip install` line above with the exact
+`python` you launch training with.
 
 ## 1. Start the overnight run
 
