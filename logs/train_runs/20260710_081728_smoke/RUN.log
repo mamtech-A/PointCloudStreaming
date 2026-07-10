@@ -1,0 +1,3 @@
+[2026-07-10 08:17:28 UTC] pipeline start | config=configs\training.json smoke=True jobs=2 skip=none
+[2026-07-10 08:17:28 UTC] START gen: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 4 --offsets 1 --policies fixed3 --max-frames 40  (log: 10_gen_lstm_dataset.log)
+[2026-07-10 08:17:29 UTC] FAIL  gen (rc=1) after 0.0 min — see C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_081728_smoke\10_gen_lstm_dataset.log

@@ -1,0 +1,26 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u C:\Users\Nima\PointCloudStreaming\train_dqn.py --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42\abr_dqn.pkl --run-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42 --coverage-stride 2000 --epochs 1 --eval-every 3 --lam 0.5 --lr 0.0001 --max-frames 30 --mu 2.0 --reward-spec {"stall_mode": "bounded", "stall_cap_s": 2.0, "event_penalty": 2.0} --seed 42 --select-by qoe_quality --target-update 3000
+==========================================================================================
+🤖 DQN ABR training
+   sequences: ['longdress', 'loot', 'redandblack', 'soldier'] | eval sequence: longdress
+   train files: 4 | test files: 1 | frames/episode: 30
+   coverage stride: 2000 samples -> 7 episodes/epoch x 1 epochs = 7 episodes (~210 env steps)
+   state_dim: 23 | actions: 6 | feature_spec: ['lstm_pred', 'buffer', 'last_rep_onehot', 'tput_last', 'tput_mean', 'tput_std', 'rep_bitrates', 'rep_densities']
+   reward: q[log_density] - 2.0*min(stall,2.0) + 2.0*new_event - 0.5*|dq|  (gamma=0.99, lr=0.0001, reward_norm=True, reward_scale=1.0)
+   select-by: qoe_quality | out: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42\abr_dqn.pkl | run-dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42
+==========================================================================================
+[eval @ ep 0] untrained: reward=10.39 qoe=100.0 qoe_q=34.7
+[ep    1] longdress    static_B_2020.02.27_18.39.27.csv@3561  reward=   12.69 qoe= 100.0 qoe_q=   50.8 eps=0.781 loss=0.0000
+[ep    2] loot         static_B_2020.02.27_18.39.27.csv@1561  reward=    7.05 qoe= 100.0 qoe_q=   32.2 eps=0.555 loss=0.0000
+[ep    3] redandblack  static_B_2020.02.27_18.39.27.csv@5561  reward=   11.89 qoe= 100.0 qoe_q=   46.4 eps=0.329 loss=0.7619
+    [eval @ ep 3] reward=10.39 qoe=100.0 qoe_q=34.7 mean_q=0.347 stall=0.0s  <-- best (saved)
+[ep    4] soldier      static_B_2019.12.16_13.40.04.csv@78    reward=   10.16 qoe= 100.0 qoe_q=   38.7 eps=0.103 loss=0.7276
+[ep    5] longdress    static_B_2020.02.13_13.57.29.csv@2585  reward=   10.39 qoe= 100.0 qoe_q=   34.7 eps=0.050 loss=0.6731
+[ep    6] loot         static_B_2020.02.14_13.21.26.csv@850   reward=   10.29 qoe= 100.0 qoe_q=   35.8 eps=0.050 loss=0.6013
+    [eval @ ep 6] reward=10.39 qoe=100.0 qoe_q=34.7 mean_q=0.347 stall=0.0s
+[ep    7] redandblack  static_B_2020.02.13_13.57.29.csv@585   reward=   10.39 qoe= 100.0 qoe_q=   34.7 eps=0.050 loss=0.5159
+    [eval @ final] reward=10.39 qoe=100.0 qoe_q=34.7 mean_q=0.347 stall=0.0s
+==========================================================================================
+✅ Training done. untrained qoe_quality=34.67 -> final 34.67 (best=34.67)
+📦 Saved: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42\abr_dqn.pkl  (+ C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42\abr_dqn_best.pkl)
+🧾 History: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42\abr_dqn_train_history.json
+🧾 Summary: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083903_smoke\sweep\trial_001_s42\train_summary.json

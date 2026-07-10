@@ -1,0 +1,48 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083943_full\sweep
+sweep: 24 configs x 1 seed(s) = 24 trials | jobs=2 | select-by=qoe_quality
+  dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083943_full\sweep
+  [trial 001 seed 42] ok  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 000 seed 42] ok  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {}}
+  [trial 002 seed 42] ok  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {}}
+  [trial 003 seed 42] ok  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 004 seed 42] ok  {'lam': 0.5, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {}}
+  [trial 005 seed 42] ok  {'lam': 0.5, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 006 seed 42] ok  {'lam': 0.5, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {}}
+  [trial 007 seed 42] ok  {'lam': 0.5, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 008 seed 42] ok  {'lam': 0.5, 'mu': 8.0, 'no-lstm-pred': False, 'reward-spec': {}}
+  [trial 009 seed 42] ok  {'lam': 0.5, 'mu': 8.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 010 seed 42] ok  {'lam': 0.5, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {}}
+  [trial 011 seed 42] ok  {'lam': 0.5, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 012 seed 42] ok  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {}}
+  [trial 013 seed 42] ok  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 014 seed 42] ok  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {}}
+  [trial 015 seed 42] ok  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 016 seed 42] ok  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {}}
+  [trial 017 seed 42] ok  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 018 seed 42] ok  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {}}
+  [trial 019 seed 42] ok  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 020 seed 42] ok  {'lam': 1.0, 'mu': 8.0, 'no-lstm-pred': False, 'reward-spec': {}}
+  [trial 021 seed 42] ok  {'lam': 1.0, 'mu': 8.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+  [trial 022 seed 42] ok  {'lam': 1.0, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {}}
+  [trial 023 seed 42] ok  {'lam': 1.0, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+
+==========================================================================================
+rank trial   qoe_quality   mean_q  stall_s  config
+1    13            11.96    0.951     18.4  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}} *pareto
+2    22           -28.64    0.950     28.1  {'lam': 1.0, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {}}
+3    7            -29.46    0.954     28.4  {'lam': 0.5, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}} *pareto
+4    19           -31.08    0.956     28.7  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}} *pareto
+5    1            -31.11    0.953     28.2  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}} *pareto
+6    11           -31.18    0.674     22.8  {'lam': 0.5, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+7    23           -31.18    0.674     22.8  {'lam': 1.0, 'mu': 8.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+8    17           -31.19    0.962     29.2  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}} *pareto
+9    15           -34.59    0.904     27.7  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+10   16           -35.08    0.947     29.2  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {}}
+11   18           -35.88    0.965     30.5  {'lam': 1.0, 'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {}} *pareto
+12   3            -36.37    0.945     28.3  {'lam': 0.5, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+13   5            -36.77    0.939     28.1  {'lam': 0.5, 'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}}
+14   14           -37.29    0.931     27.6  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': True, 'reward-spec': {}}
+15   12           -38.08    0.880     27.7  {'lam': 1.0, 'mu': 2.0, 'no-lstm-pred': False, 'reward-spec': {}}
+
+WINNER trial 13 (seed 42) -> models\abr_dqn.pkl
+results: models\dqn_sweep_results.json

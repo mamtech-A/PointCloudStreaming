@@ -1,0 +1,15 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u eval_fixed.py
+WARNING: C:\Users\Nima\PointCloudStreaming\models\bandwidth_lstm_split.json references traces not in C:\Users\Nima\PointCloudStreaming\bandwidth_5g (stale pre-migration split?) - consistency check skipped
+====================================================================================================
+Fixed-arm baselines | 1 test traces | 300 frames/episode | mu=4.3 lam=1.0 seed=42
+   test trace: static_B_2020.01.16_10.43.34.csv
+====================================================================================================
+arm 0 (rep 0,  102.4 Mbps): mean_reward=   45.17  mean_qoe=   0.0  mean_qoe_q=   -62.9  mean_stall=  57.59s  mean_quality=0.978
+arm 1 (rep 1,   59.6 Mbps): mean_reward=   25.99  mean_qoe=   0.0  mean_qoe_q=   -35.0  mean_stall=  58.09s  mean_quality=0.921
+arm 2 (rep 2,   35.5 Mbps): mean_reward=   25.39  mean_qoe=   0.0  mean_qoe_q=   -31.0  mean_stall=  53.57s  mean_quality=0.854
+arm 3 (rep 3,   14.1 Mbps): mean_reward=   63.64  mean_qoe=   0.0  mean_qoe_q=   -31.2  mean_stall=  32.12s  mean_quality=0.674
+arm 4 (rep 4,    3.4 Mbps): mean_reward=  -40.01  mean_qoe=   0.0  mean_qoe_q=   -66.5  mean_stall=  34.03s  mean_quality=0.356
+arm 5 (rep 5,    0.9 Mbps): mean_reward= -128.56  mean_qoe=   0.0  mean_qoe_q=   -94.4  mean_stall=  31.87s  mean_quality=0.030
+----------------------------------------------------------------------------------------------------
+BEST FIXED ARM: arm_3 (rep 3, 14.1 Mbps) mean_reward=63.64
+saved: C:\Users\Nima\PointCloudStreaming\models\fixed_arm_baseline.json

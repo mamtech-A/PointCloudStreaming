@@ -1,0 +1,100 @@
+{
+  "args": {
+    "epochs": 8,
+    "mpd": "config\\mpd_gpcc*.xml",
+    "eval_sequence": "longdress",
+    "max_train_files": 0,
+    "max_test_files": 0,
+    "coverage_stride": 60,
+    "random_offset": true,
+    "reward_scale": 1.0,
+    "reward_norm": true,
+    "reward_spec": "{}",
+    "no_lstm_pred": false,
+    "max_frames": 0,
+    "eval_every": 100,
+    "select_by": "qoe_quality",
+    "seed": 42,
+    "lr": 0.0001,
+    "gamma": 0.99,
+    "mu": 4.3,
+    "lam": 0.5,
+    "hidden": 128,
+    "batch_size": 64,
+    "target_update": 3000,
+    "eps_start": 1.0,
+    "eps_end": 0.05,
+    "eps_decay_frac": 0.6,
+    "out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_004_s42\\abr_dqn.pkl",
+    "run_dir": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_004_s42"
+  },
+  "reward": "q[log_density] - 4.3*stall - 0.5*|dq|",
+  "reward_spec": {
+    "utility": "log_density",
+    "psnr_key": "d1_psnr",
+    "psnr_lo": 30.0,
+    "psnr_hi": 75.0,
+    "mu": 4.3,
+    "stall_mode": "linear",
+    "stall_cap_s": 2.0,
+    "event_penalty": 0.0,
+    "lam": 0.5,
+    "switch_mode": "l1",
+    "lam_down": null
+  },
+  "feature_spec": [
+    "lstm_pred",
+    "buffer",
+    "last_rep_onehot",
+    "tput_last",
+    "tput_mean",
+    "tput_std",
+    "rep_bitrates",
+    "rep_densities"
+  ],
+  "sequences": [
+    "longdress",
+    "loot",
+    "redandblack",
+    "soldier"
+  ],
+  "eval_sequence": "longdress",
+  "train_files": [
+    "static_B_2019.12.16_13.40.04.csv",
+    "static_B_2020.02.13_13.57.29.csv",
+    "static_B_2020.02.14_13.21.26.csv",
+    "static_B_2020.02.27_18.39.27.csv"
+  ],
+  "test_files": [
+    "static_B_2020.01.16_10.43.34.csv"
+  ],
+  "episodes_per_epoch": 199,
+  "episodes_run": 1592,
+  "untrained": {
+    "reward": -30.477972893141523,
+    "qoe": 0.0,
+    "qoe_quality": -140.76832335047553,
+    "mean_quality": 0.5150061376637377,
+    "stall_s": 22.60074590515458
+  },
+  "final": {
+    "reward": -37.42602332706577,
+    "qoe": 0.0,
+    "qoe_quality": -120.56885987766654,
+    "mean_quality": 0.8434214950500549,
+    "stall_s": 30.000265943990108
+  },
+  "best": {
+    "episode": 100,
+    "reward": 8.63106316974943,
+    "qoe": 0.0,
+    "qoe_quality": -43.4373708232935,
+    "mean_quality": 0.8377059022031101,
+    "stall_s": 27.998051412115913
+  },
+  "best_metric": -43.4373708232935,
+  "select_by": "qoe_quality",
+  "out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_004_s42\\abr_dqn.pkl",
+  "history": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_004_s42\\abr_dqn_train_history.json",
+  "episodes_csv": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_004_s42\\episodes.csv"
+}

@@ -1,0 +1,37 @@
+{
+  "split_method": "file_level",
+  "test_size": 0.2,
+  "random_state": 42,
+  "sequence_length": 20,
+  "transform": "none",
+  "train_files": [
+    "static_B_2019.12.16_13.40.04__fixed3__off0.csv",
+    "static_B_2020.02.13_13.57.29__fixed3__off0.csv",
+    "static_B_2020.02.14_13.21.26__fixed3__off0.csv",
+    "static_B_2020.02.27_18.39.27__fixed3__off0.csv"
+  ],
+  "test_files": [
+    "static_B_2020.01.16_10.43.34__fixed3__off0.csv"
+  ],
+  "train_file_count": 4,
+  "test_file_count": 1,
+  "train_sequence_count": 80,
+  "test_sequence_count": 20,
+  "metrics": {
+    "mae": 0.4801736230819703,
+    "mape": 7.004776504072072,
+    "rmse": 0.568098227308875,
+    "persistence_mae": 0.6377227000000001,
+    "persistence_mape": 9.225372133672867,
+    "persistence_rmse": 0.7385465840780798,
+    "low_bw_threshold_mbps": 5.0,
+    "low_bw_mae": 0.0,
+    "low_bw_rmse": 0.0,
+    "low_bw_fraction": 0.0,
+    "persistence_low_bw_mae": 0.0,
+    "directional_accuracy": 0.65,
+    "transform": "none",
+    "best_epoch": 2,
+    "best_test_loss": 0.5474203824996948
+  }
+}

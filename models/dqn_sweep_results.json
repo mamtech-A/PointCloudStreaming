@@ -1,0 +1,624 @@
+{
+  "select_by": "qoe_quality",
+  "seeds": [
+    42
+  ],
+  "base_args": {
+    "epochs": 8,
+    "coverage-stride": 60,
+    "eval-every": 100,
+    "target-update": 3000,
+    "lr": 0.0001,
+    "select-by": "qoe_quality"
+  },
+  "sweep_dir": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep",
+  "n_configs": 24,
+  "ranking": [
+    {
+      "trial": 13,
+      "config": {
+        "lam": 1.0,
+        "mu": 2.0,
+        "no-lstm-pred": false,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 219.98371563117246,
+        "qoe": 0.0,
+        "qoe_quality": 11.961770816670105,
+        "mean_quality": 0.95057377657609,
+        "stall_s": 18.40038647699868
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_013_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 22,
+      "config": {
+        "lam": 1.0,
+        "mu": 8.0,
+        "no-lstm-pred": true,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": -164.4438270588221,
+        "qoe": 0.0,
+        "qoe_quality": -28.63867342565851,
+        "mean_quality": 0.9503685688530358,
+        "stall_s": 28.085325131639685
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_022_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 7,
+      "config": {
+        "lam": 0.5,
+        "mu": 4.3,
+        "no-lstm-pred": true,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 150.606898244666,
+        "qoe": 0.0,
+        "qoe_quality": -29.457565399274287,
+        "mean_quality": 0.9541140410294737,
+        "stall_s": 28.400920777702233
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_007_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 19,
+      "config": {
+        "lam": 1.0,
+        "mu": 4.3,
+        "no-lstm-pred": true,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 148.11140291440827,
+        "qoe": 0.0,
+        "qoe_quality": -31.077317975652054,
+        "mean_quality": 0.9555501327603597,
+        "stall_s": 28.686422178075123
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_019_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 1,
+      "config": {
+        "lam": 0.5,
+        "mu": 2.0,
+        "no-lstm-pred": false,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 213.94737165470576,
+        "qoe": 0.0,
+        "qoe_quality": -31.110619883614334,
+        "mean_quality": 0.9525054833925289,
+        "stall_s": 28.228740059651223
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_001_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 11,
+      "config": {
+        "lam": 0.5,
+        "mu": 8.0,
+        "no-lstm-pred": true,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 25.840119616042728,
+        "qoe": 0.0,
+        "qoe_quality": -31.176074267832806,
+        "mean_quality": 0.6740532076494545,
+        "stall_s": 22.815844159418575
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_011_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 23,
+      "config": {
+        "lam": 1.0,
+        "mu": 8.0,
+        "no-lstm-pred": true,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 25.603487042403536,
+        "qoe": 0.0,
+        "qoe_quality": -31.176074267832806,
+        "mean_quality": 0.6740532076494545,
+        "stall_s": 22.815844159418575
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_023_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 17,
+      "config": {
+        "lam": 1.0,
+        "mu": 4.3,
+        "no-lstm-pred": false,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 147.79663132898537,
+        "qoe": 0.0,
+        "qoe_quality": -31.18635284811011,
+        "mean_quality": 0.9618680325346477,
+        "stall_s": 29.246105209834944
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_017_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 15,
+      "config": {
+        "lam": 1.0,
+        "mu": 2.0,
+        "no-lstm-pred": true,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 199.38795637581185,
+        "qoe": 0.0,
+        "qoe_quality": -34.58810712111314,
+        "mean_quality": 0.903856045397674,
+        "stall_s": 27.743288727939305
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_015_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 16,
+      "config": {
+        "lam": 1.0,
+        "mu": 4.3,
+        "no-lstm-pred": false,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 31.051083515278677,
+        "qoe": 0.0,
+        "qoe_quality": -35.07969448252781,
+        "mean_quality": 0.9467785149175133,
+        "stall_s": 29.163349186579584
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_016_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 18,
+      "config": {
+        "lam": 1.0,
+        "mu": 4.3,
+        "no-lstm-pred": true,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 31.39707878590912,
+        "qoe": 0.0,
+        "qoe_quality": -35.87913567704328,
+        "mean_quality": 0.9649247902301707,
+        "stall_s": 30.508845084720367
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_018_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 3,
+      "config": {
+        "lam": 0.5,
+        "mu": 2.0,
+        "no-lstm-pred": true,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 211.42502269826886,
+        "qoe": 0.0,
+        "qoe_quality": -36.36957651582926,
+        "mean_quality": 0.9448130267277213,
+        "stall_s": 28.343299680596882
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_003_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 5,
+      "config": {
+        "lam": 0.5,
+        "mu": 4.3,
+        "no-lstm-pred": false,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 143.79849090173556,
+        "qoe": 0.0,
+        "qoe_quality": -36.7747907289291,
+        "mean_quality": 0.9393893564008463,
+        "stall_s": 28.07957715912965
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_005_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 14,
+      "config": {
+        "lam": 1.0,
+        "mu": 2.0,
+        "no-lstm-pred": true,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 157.80654317966227,
+        "qoe": 0.0,
+        "qoe_quality": -37.29065074988906,
+        "mean_quality": 0.930693538953178,
+        "stall_s": 27.551512647197605
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_014_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 12,
+      "config": {
+        "lam": 1.0,
+        "mu": 2.0,
+        "no-lstm-pred": false,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 147.06293667567678,
+        "qoe": 0.0,
+        "qoe_quality": -38.07538888267423,
+        "mean_quality": 0.879833424914926,
+        "stall_s": 27.741924884304087
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_012_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 6,
+      "config": {
+        "lam": 0.5,
+        "mu": 4.3,
+        "no-lstm-pred": true,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 10.05574178023735,
+        "qoe": 0.0,
+        "qoe_quality": -38.09221702512704,
+        "mean_quality": 0.7897478511359252,
+        "stall_s": 26.331654352983534
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_006_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 9,
+      "config": {
+        "lam": 0.5,
+        "mu": 8.0,
+        "no-lstm-pred": false,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 37.75986519459479,
+        "qoe": 0.0,
+        "qoe_quality": -38.23742853567524,
+        "mean_quality": 0.9405251884193369,
+        "stall_s": 28.142362919520973
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_009_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 21,
+      "config": {
+        "lam": 1.0,
+        "mu": 8.0,
+        "no-lstm-pred": false,
+        "reward-spec": {
+          "stall_mode": "bounded",
+          "stall_cap_s": 2.0,
+          "event_penalty": 2.0
+        }
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 27.396616667225818,
+        "qoe": 0.0,
+        "qoe_quality": -40.12664012890332,
+        "mean_quality": 0.9420874517585844,
+        "stall_s": 28.594948035354598
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_021_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 4,
+      "config": {
+        "lam": 0.5,
+        "mu": 4.3,
+        "no-lstm-pred": false,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 8.63106316974943,
+        "qoe": 0.0,
+        "qoe_quality": -43.4373708232935,
+        "mean_quality": 0.8377059022031101,
+        "stall_s": 27.998051412115913
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_004_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 2,
+      "config": {
+        "lam": 0.5,
+        "mu": 2.0,
+        "no-lstm-pred": true,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 146.0244044590957,
+        "qoe": 0.0,
+        "qoe_quality": -44.61580829986444,
+        "mean_quality": 0.8760699976777302,
+        "stall_s": 27.942504929696007
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_002_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 0,
+      "config": {
+        "lam": 0.5,
+        "mu": 2.0,
+        "no-lstm-pred": false,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": 158.1284122716444,
+        "qoe": 0.0,
+        "qoe_quality": -45.29346992669551,
+        "mean_quality": 0.9356026412354569,
+        "stall_s": 30.27814673890442
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_000_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 20,
+      "config": {
+        "lam": 1.0,
+        "mu": 8.0,
+        "no-lstm-pred": false,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": -198.23295574843223,
+        "qoe": 0.0,
+        "qoe_quality": -45.82283564281724,
+        "mean_quality": 0.9552648655029838,
+        "stall_s": 30.838370753082966
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_020_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 10,
+      "config": {
+        "lam": 0.5,
+        "mu": 8.0,
+        "no-lstm-pred": true,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": -199.06716280561358,
+        "qoe": 0.0,
+        "qoe_quality": -50.089771584691306,
+        "mean_quality": 0.9499041589798011,
+        "stall_s": 30.633283426397295
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_010_s42\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 8,
+      "config": {
+        "lam": 0.5,
+        "mu": 8.0,
+        "no-lstm-pred": false,
+        "reward-spec": {}
+      },
+      "seeds": [
+        42
+      ],
+      "metrics": {
+        "reward": -182.26498148047918,
+        "qoe": 0.0,
+        "qoe_quality": -50.32885401496114,
+        "mean_quality": 0.8943296828844122,
+        "stall_s": 27.775959323230644
+      },
+      "checkpoints": {
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260710_083943_full\\sweep\\trial_008_s42\\abr_dqn.pkl"
+      }
+    }
+  ],
+  "pareto_front_trials": [
+    13,
+    7,
+    19,
+    1,
+    17,
+    18
+  ],
+  "winner": {
+    "trial": 13,
+    "config": {
+      "lam": 1.0,
+      "mu": 2.0,
+      "no-lstm-pred": false,
+      "reward-spec": {
+        "stall_mode": "bounded",
+        "stall_cap_s": 2.0,
+        "event_penalty": 2.0
+      }
+    },
+    "seed": 42,
+    "metrics": {
+      "reward": 219.98371563117246,
+      "qoe": 0.0,
+      "qoe_quality": 11.961770816670105,
+      "mean_quality": 0.95057377657609,
+      "stall_s": 18.40038647699868
+    },
+    "checkpoint": "models\\abr_dqn.pkl"
+  }
+}

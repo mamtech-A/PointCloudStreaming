@@ -1,0 +1,7 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 4 --offsets 1 --policies fixed3 --max-frames 40
+Traceback (most recent call last):
+  File "C:\Users\Nima\PointCloudStreaming\gen_lstm_dataset.py", line 46, in <module>
+    from src.lstm_model import split_bandwidth_files
+  File "C:\Users\Nima\PointCloudStreaming\src\lstm_model.py", line 11, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'

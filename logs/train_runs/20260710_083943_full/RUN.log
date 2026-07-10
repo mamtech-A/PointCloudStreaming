@@ -1,0 +1,17 @@
+[2026-07-10 08:39:43 UTC] pipeline start | config=configs\training.json smoke=False jobs=2 skip=none
+[2026-07-10 08:39:43 UTC] START gen: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 4  (log: 10_gen_lstm_dataset.log)
+[2026-07-10 08:39:46 UTC] DONE  gen in 0.0 min
+[2026-07-10 08:39:46 UTC] START lstm[none]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform none --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083943_full\lstm\bandwidth_lstm_none.pkl --sequence-length 20 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json  (log: 20_lstm_none.log)
+[2026-07-10 09:04:52 UTC] DONE  lstm[none] in 25.1 min
+[2026-07-10 09:04:52 UTC] lstm[none] metrics: mae=0.73 low_bw_mae=0.291 dir_acc=0.594
+[2026-07-10 09:04:52 UTC] START lstm[log1p]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform log1p --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083943_full\lstm\bandwidth_lstm_log1p.pkl --sequence-length 20 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json  (log: 20_lstm_log1p.log)
+[2026-07-10 09:35:43 UTC] DONE  lstm[log1p] in 30.9 min
+[2026-07-10 09:35:43 UTC] lstm[log1p] metrics: mae=0.68 low_bw_mae=0.190 dir_acc=0.703
+[2026-07-10 09:35:43 UTC] LSTM winner: transform=log1p (low_bw_mae=0.190) -> models/bandwidth_lstm.pkl
+[2026-07-10 09:35:43 UTC] START sweep: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260710_083943_full\sweep  (log: 30_sweep.log)
+[2026-07-10 15:32:06 UTC] DONE  sweep in 356.4 min
+[2026-07-10 15:32:06 UTC] START eval_fixed: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u eval_fixed.py  (log: 40_eval_fixed.log)
+[2026-07-10 15:32:09 UTC] DONE  eval_fixed in 0.0 min
+[2026-07-10 15:32:09 UTC] START compare: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u compare.py  (log: 41_compare.log)
+[2026-07-10 15:32:13 UTC] DONE  compare in 0.1 min
+[2026-07-10 15:32:13 UTC] summary -> models/TRAINING_SUMMARY.md | pipeline OK
