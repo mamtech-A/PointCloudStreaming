@@ -510,3 +510,34 @@ the 4G traces — relative comparisons stand.
 
 Full protocol/commands: `bandwidth_5g/README.md`, `logs/lstm_tune_5g.log`, `logs/dqn_train_5g_rs.log`,
 DQN_REPORT.md §8.
+
+---
+
+## 13. Realism overhaul: time axis, serialization, static-only, multi-sequence, reward/QoE reform — BUILT, TRAINED & VERIFIED (2026-07-10)
+
+Supersedes §12's results and RETIRES the §12 time-compression caveat.
+
+**Transport**: traces are now consumed on their CSV-timestamp wall-clock axis
+(`BandwidthTrace.capacity_at_time`; duplicate seconds split evenly, gaps hold the previous
+sample), capacity is re-queried every TCP round during a download, and each round costs
+`max(RTT, serialization)`. Unit-tested (`tests/test_time_varying.py`). The 1-sample-per-frame
+positional consumption — and the deep-fade optimism of the pure-RTT round model — are gone.
+
+**Data**: driving traces deleted (unsuitable); 5 static traces, 4 train / 1 held-out
+(`static_B_2020.01.16_10.43.34.csv`). Content: all four 8iVFBv2 sequences on the same 6-tier
+ladder rotate in training (`config/mpd_gpcc_*.xml`); eval is longdress-only.
+
+**Reward/metrics**: pluggable reward spec (`src/rl/reward.py`; bounded per-step stall won the
+sweep), learner-side running-std reward normalization (retired `--reward-scale 0.1`), and a
+quality-aware `QoE' = 100·mean_q − 4.3·stall_s − Σ|Δq|` reported beside the (saturated) legacy QoE.
+LSTM retrained on ACHIEVED throughput (log1p; MAE 0.68 vs persistence 0.80, dir-acc 0.70);
+matched-pair ablation showed the lstm_pred feature gives no consistent DQN benefit (kept optional).
+
+**Pipeline**: one-command overnight training (`run_training.py` → gen/LSTM-select/sweep/eval/report,
+`configs/training.json`, TRAINING.md runbook), 24-trial sweep in 5.9 h at jobs=2 on the second PC.
+
+**Headline v2 (DQN_REPORT §9)**: the regime inverted — with serialization charging every tier and
+static capacity sustaining quality, bottom-tier hiding is now the WORST arm (vlow QoE' −94) and the
+DQN rides mean quality 0.955 (32× the rules' 0.030) at QoE' −34, on the fixed-arm Pareto frontier.
+Absolute QoE stays transport-limited (every policy stalls 20–60 s per 10 s clip at 72 ms RTT):
+pipelined/segment fetching remains the binding next step (§6.4 of the report).

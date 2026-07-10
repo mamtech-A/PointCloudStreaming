@@ -7,8 +7,9 @@ in this repository on the real MPEG G-PCC (TMC13) encoded longdress sequence (30
 > (Ghent 2016) at a modeled 50 ms RTT — that dataset and those checkpoints were removed in the
 > 5G migration (PLAN.md §12). Headline legacy numbers for reference: best fixed arm
 > always-medlow **+144.0**, best DQN eval **+132.5**. Rewards are NOT comparable across
-> datasets/RTT configs. Current results on the Irish 5G dataset (72 ms dataset-derived RTT)
-> are in **§8 (5G re-baseline)** at the end of this report.
+> datasets/RTT configs. §8's 5G re-baseline numbers were in turn superseded by the
+> **2026-07-10 realism overhaul** (time-varying capacity + serialization delay, static-only
+> traces, 4 content sequences, reward/QoE reform, full sweep) — **current results are in §9.**
 
 ---
 
@@ -366,3 +367,99 @@ meaningfully beat, the always-lowest arm (−101.84 vs −102.15). This quantifi
 transport-realism limit with dataset-derived numbers instead of an assumed RTT, and motivates the
 obvious next step: **pipelined / batched frame fetching (GoP-style segments) or an edge cache that
 cuts effective RTT below the 33 ms frame budget.**
+
+---
+
+## 9. Realism overhaul + full sweep re-baseline (2026-07-10)
+
+Everything in this section was produced by the one-command pipeline
+(`run_training.py`, config `configs/training.json`) on the second PC; artifacts:
+`models/TRAINING_SUMMARY.md`, `models/dqn_sweep_results.json`,
+`logs/train_runs/20260710_083943_full/`. **§8's numbers are superseded** — the
+environment itself changed.
+
+### 9.1 What changed vs §8
+
+1. **Time-varying capacity**: the trace is consumed on its CSV-timestamp wall-clock
+   axis (`capacity_at_time`); capacity is re-queried every TCP round, so a long
+   download traverses the trace instead of freezing one sample.
+2. **Serialization delay**: each TCP round costs `max(RTT, bytes·8/capacity)` — deep
+   fades are no longer floored at 1 MSS/RTT (the §5.3 optimism is gone).
+3. **Static-only traces** (driving deleted): 5 files, 4 train / 1 held-out
+   (`static_B_2020.01.16_10.43.34.csv`); coverage-tiled epochs (episodes ∝ trace length).
+4. **4 content sequences** (longdress/loot/redandblack/soldier, same 6-tier QP ladder)
+   rotate in training; **eval stays longdress-only** for comparability.
+5. **Reward reform**: pluggable spec (`src/rl/reward.py`); learner-side running-std
+   reward normalization replaced the `--reward-scale 0.1` hack (no divergence in any
+   of the 24 trials).
+6. **Quality-aware QoE′** `= 100·mean_q − 4.3·stall_s − 1.0·Σ|Δq|` reported everywhere.
+   The legacy stall-only QoE saturates at 0 for *every* policy in this regime
+   (all stall ≥ 20 s) — QoE′ is the only discriminating metric.
+7. **LSTM retrained on achieved throughput** (the signal it is fed at inference),
+   winner = log1p transform: MAE 0.68 vs persistence 0.80, low-bw MAE 0.190 vs 0.195,
+   directional accuracy 0.703 (persistence: none).
+
+### 9.2 Fixed-arm baselines (held-out trace, 300 frames, new transport)
+
+| arm | tier | reward | QoE′ | mean quality | stall |
+|---|---|---|---|---|---|
+| 0 | 102.4 Mbps | +45.2 | −62.9 | 0.978 | 57.6 s |
+| 1 | 59.6 Mbps | +26.0 | −35.0 | 0.921 | 58.1 s |
+| 2 | 35.5 Mbps | +25.4 | **−31.0** | 0.854 | 53.6 s |
+| 3 | 14.1 Mbps | **+63.6** | −31.2 | 0.674 | 32.1 s |
+| 4 | 3.4 Mbps | −40.0 | −66.5 | 0.356 | 34.0 s |
+| 5 | 0.9 Mbps | −128.6 | −94.4 | 0.030 | 31.9 s |
+
+**The regime inverted: bottom-tier hiding is dead.** Under §8's transport, always-vlow
+was optimal (−102.15) because tiny frames escaped serialization. Now serialization
+charges every fade regardless of tier, and the static traces' sustained capacity makes
+quality affordable — vlow is the *worst* arm and the sweet spot moved to med/medlow.
+All arms still stall 32–58 s per 10 s clip: the 72 ms-RTT sequential-fetch floor stands.
+
+### 9.3 DQN sweep (24 configs = 3 μ × 2 λ × 2 reward shapes × lstm_pred ablation)
+
+`sweep.py`, 8 epochs × ~200 episodes each, jobs=2, 5.9 h, selection by held-out QoE′.
+
+- **Winner config**: μ=2.0, λ=1.0, **bounded stall** (cap 2 s/step + 2.0/event), with
+  lstm_pred. Best-checkpoint eval QoE′ **+11.96** (mean_q 0.951, stall 18.4 s) — but
+  the eval trajectory shows this was a **single spike at ep 500** (neighbors −31…−49);
+  the reproducible plateau of the top configs is **QoE′ ≈ −29…−36 at mean_q ≈ 0.95,
+  stall ≈ 28 s**. Checkpoint-by-max-eval overfits eval-jitter noise; use n-seed evals
+  before trusting a single number.
+- **Bounded stall dominates**: 7 of the top 8 trials use the bounded spec. Capping the
+  per-step spike (while stall still accumulates) is the single most effective reward
+  change.
+- **Low μ wins**: with ~28 s of stall unavoidable, μ=8 merely suppresses quality
+  (bounded μ=8 trials collapse to mean_q 0.674) without buying stall reduction;
+  μ=2 rides near the top tier.
+- **lstm_pred ablation verdict: no consistent benefit.** Matched-pair mean ΔQoE′
+  (with − without) = **+0.41** over 12 pairs, 8 of 12 pairs negative; the +46.6
+  outlier pair is the winner's lucky checkpoint. The feature is kept optional
+  (`--no-lstm-pred`); nothing justifies requiring it.
+
+### 9.4 Final comparison (compare.py, held-out trace, 300 frames)
+
+| strategy | QoE (legacy) | QoE′ | mean quality | mean rep | switches | stall | Pensieve reward |
+|---|---|---|---|---|---|---|---|
+| bandwidth rule | 0.0 | −95.1 | 0.030 | 5.00 | 0 | 22.7 s | −129.6 |
+| LSTM rule | 0.0 | −100.2 | 0.030 | 5.00 | 0 | 23.9 s | −139.0 |
+| **DQN** | 0.0 | **−34.0** | **0.955** | 0.37 | 48 | 29.0 s | **+34.0** |
+
+### 9.5 The headline finding (v2)
+
+**Under the realistic transport, learned ABR finally has headroom — and uses it.**
+The DQN rides near the top tier (mean quality 0.955 vs the rules' 0.030 — a 32×
+quality gap) at QoE′ −34, **on the fixed-arm quality-stall Pareto frontier** (beats
+arm 0/1 at comparable quality; ≈ arm 2/3's QoE′ at +0.1–0.28 higher quality). The
+rule baselines stay trapped at the bottom tier by the RTT-bound achieved-throughput
+underestimate. What remains transport-limited is the absolute level: every policy
+stalls 20–60 s per 10 s clip, so QoE′ stays negative and legacy QoE stays 0 —
+pipelined/segment fetching (§6.4) is still the binding next step.
+
+### 9.6 Reproduce
+
+```
+python run_training.py --jobs 2          # full pipeline (see TRAINING.md)
+python compare.py                        # table 9.4
+python eval_fixed.py                     # table 9.2
+```
