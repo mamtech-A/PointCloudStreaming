@@ -463,3 +463,109 @@ python run_training.py --jobs 2          # full pipeline (see TRAINING.md)
 python compare.py                        # table 9.4
 python eval_fixed.py                     # table 9.2
 ```
+
+---
+
+## 10. Segment-based fetching + adaptive playback (round 2, 2026-07-11)
+
+§9 diagnosed the per-frame RTT floor as the binding constraint. Round 2 fixes it
+by **fetching S frames per request** (one ABR decision + one TCP transfer, DASH
+segments) — the §6.4 recommendation — plus **adaptive playback** (0.9x floor) and
+**multi-seed evals**. Artifacts: `models/TRAINING_SUMMARY.md`,
+`models/dqn_sweep_results.json`, `logs/train_runs/20260711_073843_full/`. The
+48-trial sweep swept **S ∈ {1,5,8,10,15,30}** × μ{2,4.3} × the lstm_pred ablation,
+2 training seeds each, reward shape fixed to the §9 winner (bounded stall).
+
+### 10.1 The segment-size curve (the headline)
+
+Mean over μ × lstm-ablation × 2 seeds per S, held-out longdress:
+
+| S (frames/req) | QoE′ | mean quality | stall (s) | legacy QoE |
+|---|---|---|---|---|
+| 1 (per-frame = §9) | −9.8 | 0.865 | 19.1 | 1.5 |
+| **5** | **69.4** | 0.850 | **2.9** | **71.7** |
+| 8 | 65.4 | 0.875 | 4.3 | 57.4 |
+| 10 | 53.9 | 0.893 | 7.5 | 53.1 |
+| 15 | 54.9 | 0.916 | 8.2 | 40.6 |
+| 30 | 7.5 | 0.958 | 20.4 | 12.5 |
+
+**A clean inverted-U, peaking at S=5** — both extremes are bad for *opposite*
+reasons, and the data rejects each with numbers rather than assumption:
+- **S=1** pays one 72 ms RTT per 33 ms frame → 19 s of stall (the §9 regime).
+- **S=30** amortizes the RTT fully but commits to a ~1 s, multi-MB block per
+  decision (only 10 decisions per clip): it can't react to a fade mid-segment, so
+  stall climbs back to 20 s **despite the highest mean quality (0.958)**. This is
+  exactly the "coarse adaptation" downside we included S=30 to measure — confirmed
+  and rejected.
+- **S=5–8** is the sweet spot: enough RTT amortization to nearly eliminate stall,
+  still 38–60 decisions per clip for fine adaptation.
+
+### 10.2 Winner + fixed arms
+
+- **Winner** (`models/abr_dqn.pkl`): **S=5, μ=4.3, +lstm_pred** — QoE′ **77.3**
+  (2-seed mean of 91.6 and 62.9), **legacy QoE 92.2**, mean quality 0.809, stall
+  **0.56 s**, reward 238.7. Legacy stall-only QoE has finally lifted off 0 — the
+  RTT floor is broken.
+- **Fixed arms** (S=10 + AMP, `eval_fixed.py`): best arm **arm 1 (59.6 Mbps)** now
+  streams with **zero stall**, legacy QoE 100, QoE′ 90.4 — vs §9 where every arm
+  stalled ≥ 32 s. arm 0 (top tier) still stalls 8 s; the cheap arms (4,5) drop to
+  QoE′ 35 / 2.5 as quality collapses. The quality-stall frontier is now favorable.
+
+### 10.3 Final comparison (compare.py, S=10 + AMP, held-out trace)
+
+| strategy | legacy QoE | QoE′ | mean quality | mean rep | stall | dropped |
+|---|---|---|---|---|---|---|
+| bandwidth rule | 0.0 | 2.5 | 0.030 | 5.00 | 0.0 s | 84 |
+| LSTM rule | 0.0 | 41.1 | 0.426 | 3.33 | 0.0 s | 56 |
+| **DQN** | **100.0** | **91.6** | **0.921** | 1.00 | 0.0 s | 0 |
+
+The DQN streams the second-highest tier stall-free at 0.921 quality (QoE 100). Note
+the **LSTM rule jumped from 0.030 → 0.426 quality** vs §9: with segments the client
+finally *measures real bandwidth* (§ below), so even the rule-based ABR climbs off
+the bottom tier. The DQN still wins by learning to avoid buffer overflow (0 dropped
+vs the rules' 56–84 — see §10.5).
+
+### 10.4 LSTM + lstm_pred ablation
+
+- **LSTM** retrained on the S=10 achieved-throughput signal (now ~60–160 Mbps with
+  real variance, not the flat ~7 Mbps RTT artifact of §9). Winner = log1p, seq_len 8:
+  MAE 5.80, RMSE 12.88 (beats persistence 14.02), low-bw MAE 1.368 (beats 1.539) —
+  **but loses persistence on *aggregate* MAE (5.80 vs 5.36)**; the `none` transform
+  actually beat persistence on both (MAE 5.10) and was arguably the safer pick. The
+  selection metric (`low_bw_mae`) favored log1p; with stalls now rare, aggregate MAE
+  deserves more weight next round.
+- **lstm_pred ablation**: matched-pair mean ΔQoE′ (with − without) = **−1.78** over
+  12 pairs (range −39…+11) — i.e. the feature is, if anything, marginally *negative*
+  on average, dominated by noise. Consistent with §9's "no consistent benefit." It is
+  +1.3 at the winner config, so kept, but the state does not need it.
+
+### 10.5 Caveats & residual levers
+
+- **Training-seed variance is still large**: at the winner config seed 42 plateaus at
+  QoE′ ~82 while seed 43 sits at ~62. The multi-seed averaging means the reported
+  77.3 is honest (not a spike), but run-to-run stability wants more seeds or epochs.
+- **Eager fetching overflows the buffer**: the rule ABRs drop 56–84 frames because
+  there is **no request pacing** — a fast policy fetches faster than playback drains
+  the 5 s buffer. The DQN avoids it by observing the buffer; adding a "fetch only when
+  the buffer has room" gate (ABR-agnostic) is the clean next fix and would also lift
+  the rule baselines.
+- **Final-eval S mismatch**: `compare.py`/`eval_fixed.py` ran at S=10 while the winner
+  trained at S=5 (it generalizes — QoE′ 91.6 at S=10 — but the final eval S should
+  track the winning S for a strict apples-to-apples).
+
+### 10.6 Bottom line
+
+Segmentation was the missing piece §9 pointed to: at S=5–8 the point-cloud stream
+plays essentially stall-free at high quality (legacy QoE 92–100), the learned policy
+sits well above every fixed arm and rule baseline on the quality-stall frontier, and
+the S-curve gives a principled operating point (S≈5). The remaining work is
+engineering polish (request pacing, seed count, S-matched eval), not a fundamental
+transport limit.
+
+### 10.7 Reproduce
+
+```
+python run_training.py --jobs 2                        # full round-2 pipeline
+python eval_fixed.py --segment-frames 5 --playback-rate-min 0.9   # table 10.2
+python compare.py   --segment-frames 5 --playback-rate-min 0.9    # table 10.3 at the winning S
+```

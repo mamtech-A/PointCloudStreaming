@@ -541,3 +541,33 @@ static capacity sustaining quality, bottom-tier hiding is now the WORST arm (vlo
 DQN rides mean quality 0.955 (32× the rules' 0.030) at QoE' −34, on the fixed-arm Pareto frontier.
 Absolute QoE stays transport-limited (every policy stalls 20–60 s per 10 s clip at 72 ms RTT):
 pipelined/segment fetching remains the binding next step (§6.4 of the report).
+
+---
+
+## 14. Segment-based fetching + adaptive playback (round 2) — BUILT, TRAINED & VERIFIED (2026-07-11)
+
+The §13 headline said pipelined/segment fetching was the binding next lever. Round 2
+built it and it worked: **the per-frame RTT floor is broken.**
+
+**What shipped** (commit 2c05818): `session.step_segment()` fetches S frames per
+request (one ABR decision + one TCP transfer); `step()` is now a 1-frame adapter so
+S=1 is bit-identical to §13. Adaptive playback (`ClientBuffer.playback_rate_min`,
+dash.js-style 0.9x floor, QoE′ gains −10·∫(1−rate)dt). Multi-seed evals
+(`--eval-seeds` averages jitter seeds; sweep trains 2 seeds/config) — fixes the §9
+one-off-spike checkpoint problem. `--segment-frames`/`--playback-rate-min` across
+train/eval/compare/run; LSTM regen at segment granularity.
+
+**Result (DQN_REPORT §10)**: the segment-size sweep {1,5,8,10,15,30} traces a clean
+**inverted-U in QoE′ peaking at S=5** (69.4), bad at both ends for opposite reasons —
+S=1 stalls 19 s (RTT floor), S=30 stalls 20 s (only 10 decisions/clip, can't react
+mid-segment; the deliberate measure-and-reject worked). Winner **S=5, μ=4.3,
++lstm_pred: QoE′ 77.3, legacy QoE 92.2, quality 0.809, stall 0.56 s** — legacy QoE
+finally off 0. compare.py at S=10: DQN QoE 100 / quality 0.921 / zero stall; the LSTM
+rule climbs to quality 0.426 (was 0.030) because segments finally let the client
+*measure real bandwidth*. lstm_pred ablation still marginal (mean −1.78, noisy).
+
+**Residual levers (not transport-fundamental)**: request pacing (eager fetch overflows
+the 5 s buffer → rule ABRs drop 56–84 frames; the DQN avoids it by watching the
+buffer); more training seeds (seed 42→82 vs seed 43→62 at the winner config);
+S-matched final eval; reconsider the LSTM selection metric now that stalls are rare
+(log1p won low-bw MAE but lost aggregate MAE to persistence).
