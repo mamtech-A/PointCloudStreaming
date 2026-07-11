@@ -1,0 +1,18 @@
+[2026-07-11 13:06:07 UTC] pipeline start | config=configs\training.json smoke=False jobs=2 skip=none
+[2026-07-11 13:06:07 UTC] START gen: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 8 --segment-frames 10  (log: 10_gen_lstm_dataset.log)
+[2026-07-11 13:06:10 UTC] DONE  gen in 0.1 min
+[2026-07-11 13:06:10 UTC] START lstm[none]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform none --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_130607_full\lstm\bandwidth_lstm_none.pkl --sequence-length 8 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json  (log: 20_lstm_none.log)
+[2026-07-11 13:08:48 UTC] DONE  lstm[none] in 2.6 min
+[2026-07-11 13:08:48 UTC] lstm[none] metrics: mae=5.52 low_bw_mae=1.574 dir_acc=0.558
+[2026-07-11 13:08:48 UTC] START lstm[log1p]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform log1p --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_130607_full\lstm\bandwidth_lstm_log1p.pkl --sequence-length 8 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json  (log: 20_lstm_log1p.log)
+[2026-07-11 13:12:03 UTC] DONE  lstm[log1p] in 3.2 min
+[2026-07-11 13:12:03 UTC] lstm[log1p] metrics: mae=6.21 low_bw_mae=1.310 dir_acc=0.612
+[2026-07-11 13:12:03 UTC] LSTM winner: transform=log1p (low_bw_mae=1.310) -> models/bandwidth_lstm.pkl
+[2026-07-11 13:12:03 UTC] START sweep: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_130607_full\sweep  (log: 30_sweep.log)
+[2026-07-11 14:27:55 UTC] DONE  sweep in 75.9 min
+[2026-07-11 14:27:55 UTC] final eval at winner S=8 (from dqn_sweep_results.json)
+[2026-07-11 14:27:55 UTC] START eval_fixed: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u eval_fixed.py --segment-frames 8 --playback-rate-min 0.9  (log: 40_eval_fixed.log)
+[2026-07-11 14:27:57 UTC] DONE  eval_fixed in 0.0 min
+[2026-07-11 14:27:57 UTC] START compare: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u compare.py --segment-frames 8 --playback-rate-min 0.9  (log: 41_compare.log)
+[2026-07-11 14:28:01 UTC] DONE  compare in 0.1 min
+[2026-07-11 14:28:01 UTC] summary -> models/TRAINING_SUMMARY.md | pipeline OK

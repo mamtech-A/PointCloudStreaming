@@ -2,7 +2,13 @@
   "select_by": "qoe_quality",
   "seeds": [
     42,
-    43
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
   ],
   "base_args": {
     "epochs": 8,
@@ -20,594 +26,232 @@
       "event_penalty": 2.0
     }
   },
-  "sweep_dir": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep",
-  "n_configs": 24,
+  "sweep_dir": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep",
+  "n_configs": 4,
   "ranking": [
-    {
-      "trial": 13,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": false,
-        "segment-frames": 5
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 238.68877735735725,
-        "qoe": 92.20158216533403,
-        "qoe_quality": 77.27299684975762,
-        "mean_quality": 0.8093832282036163,
-        "stall_s": 0.5596835669331961
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_013_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_013_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 14,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": false,
-        "segment-frames": 8
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 238.02286172729424,
-        "qoe": 91.4981657448075,
-        "qoe_quality": 75.98316817314655,
-        "mean_quality": 0.8106504628112373,
-        "stall_s": 0.7003668510385038
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_014_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_014_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 19,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": true,
-        "segment-frames": 5
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 234.80006777671161,
-        "qoe": 89.35147457959695,
-        "qoe_quality": 75.93692913721782,
-        "mean_quality": 0.812650499116198,
-        "stall_s": 0.8630384174139424
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_019_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_019_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 15,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": false,
-        "segment-frames": 10
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 231.8094462867881,
-        "qoe": 76.0270740830589,
-        "qoe_quality": 68.94196823508801,
-        "mean_quality": 0.8450449868093122,
-        "stall_s": 2.794585183388218
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_015_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_015_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 21,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": true,
-        "segment-frames": 10
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 228.63783216267692,
-        "qoe": 64.62409111865283,
-        "qoe_quality": 64.74094713013373,
-        "mean_quality": 0.8534219737401343,
-        "stall_s": 4.075181776269436
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_021_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_021_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 20,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": true,
-        "segment-frames": 8
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 230.47296238445563,
-        "qoe": 53.397447728625025,
-        "qoe_quality": 64.6079535978711,
-        "mean_quality": 0.8844292001685828,
-        "stall_s": 4.5871771209416625
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_020_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_020_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 16,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": false,
-        "segment-frames": 15
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 231.63714249143874,
-        "qoe": 47.49541002453216,
-        "qoe_quality": 64.31129673999014,
-        "mean_quality": 0.8994939116419061,
-        "stall_s": 5.500917995093567
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_016_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_016_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 22,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": true,
-        "segment-frames": 15
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 230.47680108120917,
-        "qoe": 51.67666824051479,
-        "qoe_quality": 63.48248405665302,
-        "mean_quality": 0.8944974194864328,
-        "stall_s": 5.664666351897042
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_022_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_022_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 7,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": true,
-        "segment-frames": 5
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 246.41855384243934,
-        "qoe": 52.889555215127,
-        "qoe_quality": 63.14771433292953,
-        "mean_quality": 0.8868379919507587,
-        "stall_s": 4.955422290307934
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_007_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_007_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 1,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": false,
-        "segment-frames": 5
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 246.0348807305213,
-        "qoe": 52.450630488453804,
-        "qoe_quality": 61.40848056855854,
-        "mean_quality": 0.8896067276312409,
-        "stall_s": 5.176540568975906
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_001_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_001_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 2,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": false,
-        "segment-frames": 8
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 244.45953213368767,
-        "qoe": 43.6542949417469,
-        "qoe_quality": 60.93718859200801,
-        "mean_quality": 0.8937133690778377,
-        "stall_s": 5.602474344983955
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_002_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_002_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 8,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": true,
-        "segment-frames": 8
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 248.53703141403753,
-        "qoe": 40.991170146832516,
-        "qoe_quality": 60.21544885390976,
-        "mean_quality": 0.9103092111529498,
-        "stall_s": 6.135099303966832
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_008_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_008_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 4,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": false,
-        "segment-frames": 15
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 251.05764793819935,
-        "qoe": 27.232431824335748,
-        "qoe_quality": 50.021128866895204,
-        "mean_quality": 0.9284189234390101,
-        "stall_s": 9.371169245109005
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_004_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_004_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 23,
-      "config": {
-        "mu": 4.3,
-        "no-lstm-pred": true,
-        "segment-frames": 30
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 246.1259138227779,
-        "qoe": 50.0,
-        "qoe_quality": 49.18704774808109,
-        "mean_quality": 0.9349606242617176,
-        "stall_s": 10.149070115241011
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_023_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_023_s43\\abr_dqn.pkl"
-      }
-    },
     {
       "trial": 3,
       "config": {
-        "mu": 2.0,
-        "no-lstm-pred": false,
-        "segment-frames": 10
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 243.62190970649422,
-        "qoe": 35.831676417400494,
-        "qoe_quality": 43.37522606078956,
-        "mean_quality": 0.9283642382170817,
-        "stall_s": 10.91701471020629
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_003_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_003_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 10,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": true,
-        "segment-frames": 15
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 251.52870239788228,
-        "qoe": 36.00060683793112,
-        "qoe_quality": 41.68799645484453,
-        "mean_quality": 0.9434936365250571,
-        "stall_s": 12.045843283524357
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_010_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_010_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 9,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": true,
-        "segment-frames": 10
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 248.2149326344341,
-        "qoe": 35.95701716150556,
-        "qoe_quality": 38.520785827902344,
-        "mean_quality": 0.9433261534756268,
-        "stall_s": 12.380761104734008
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_009_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_009_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 17,
-      "config": {
         "mu": 4.3,
-        "no-lstm-pred": false,
-        "segment-frames": 30
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 241.66634464799083,
-        "qoe": 0.0,
-        "qoe_quality": 9.960616850958472,
-        "mean_quality": 0.9463256225413246,
-        "stall_s": 19.569400804618333
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_017_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_017_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 6,
-      "config": {
-        "mu": 2.0,
         "no-lstm-pred": true,
-        "segment-frames": 1
+        "segment-frames": 8
       },
       "seeds": [
         42,
-        43
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
       ],
       "metrics": {
-        "reward": 210.44522482567794,
-        "qoe": 1.113799118024976,
-        "qoe_quality": -1.1774272296318404,
-        "mean_quality": 0.8924898618635801,
-        "stall_s": 18.163289212238183
+        "reward": 253.63323653099337,
+        "qoe": 73.52621776960372,
+        "qoe_quality": 74.59772840149485,
+        "mean_quality": 0.9086300700838488,
+        "stall_s": 3.194756446079256,
+        "qoe_quality_std": 19.785609055511866,
+        "qoe_quality_per_seed": {
+          "42": 90.94552657478353,
+          "43": 38.27038062095867,
+          "44": 95.11091865217524,
+          "45": 87.93558763650542,
+          "46": 56.8986781135384,
+          "47": 67.90453818338757,
+          "48": 63.53712643427891,
+          "49": 96.17907099633108
+        }
       },
       "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_006_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_006_s43\\abr_dqn.pkl"
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s42\\abr_dqn.pkl",
+        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s43\\abr_dqn.pkl",
+        "44": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s44\\abr_dqn.pkl",
+        "45": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s45\\abr_dqn.pkl",
+        "46": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s46\\abr_dqn.pkl",
+        "47": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s47\\abr_dqn.pkl",
+        "49": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s49\\abr_dqn.pkl",
+        "48": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_003_s48\\abr_dqn.pkl"
       }
     },
     {
       "trial": 0,
       "config": {
-        "mu": 2.0,
+        "mu": 4.3,
         "no-lstm-pred": false,
-        "segment-frames": 1
+        "segment-frames": 5
       },
       "seeds": [
         42,
-        43
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
       ],
       "metrics": {
-        "reward": 200.08859516144472,
-        "qoe": 1.1753260777010404,
-        "qoe_quality": -7.648527492456299,
-        "mean_quality": 0.8602008727357462,
-        "stall_s": 19.066741035143263
+        "reward": 251.96178324073554,
+        "qoe": 72.58538725037631,
+        "qoe_quality": 74.23380281351429,
+        "mean_quality": 0.9085851018328117,
+        "stall_s": 3.316255883258071,
+        "qoe_quality_std": 20.26014200928193,
+        "qoe_quality_per_seed": {
+          "42": 88.3127244689789,
+          "43": 35.14738091979532,
+          "44": 92.8565864699453,
+          "45": 91.37583673009345,
+          "46": 61.636891028023626,
+          "47": 59.111430204654916,
+          "48": 68.8233767419376,
+          "49": 96.60619594468524
+        }
       },
       "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_000_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_000_s43\\abr_dqn.pkl"
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s42\\abr_dqn.pkl",
+        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s43\\abr_dqn.pkl",
+        "44": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s44\\abr_dqn.pkl",
+        "45": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s45\\abr_dqn.pkl",
+        "47": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s47\\abr_dqn.pkl",
+        "46": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s46\\abr_dqn.pkl",
+        "49": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s49\\abr_dqn.pkl",
+        "48": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_000_s48\\abr_dqn.pkl"
       }
     },
     {
-      "trial": 18,
+      "trial": 2,
       "config": {
         "mu": 4.3,
         "no-lstm-pred": true,
-        "segment-frames": 1
+        "segment-frames": 5
       },
       "seeds": [
         42,
-        43
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
       ],
       "metrics": {
-        "reward": 136.43819509644555,
-        "qoe": 3.051149502165874,
-        "qoe_quality": -11.040413142307454,
-        "mean_quality": 0.8147613877905922,
-        "stall_s": 19.096461517657527
+        "reward": 252.50539723521467,
+        "qoe": 74.90353943323117,
+        "qoe_quality": 73.76838044068079,
+        "mean_quality": 0.9047669864919109,
+        "stall_s": 3.2026254466870996,
+        "qoe_quality_std": 20.630470450446193,
+        "qoe_quality_per_seed": {
+          "42": 91.20203108610906,
+          "43": 60.67182718832657,
+          "44": 93.72083147964963,
+          "45": 90.35097662814825,
+          "46": 36.651150478085555,
+          "47": 59.138864663684195,
+          "48": 61.80516605675779,
+          "49": 96.60619594468524
+        }
       },
       "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_018_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_018_s43\\abr_dqn.pkl"
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s42\\abr_dqn.pkl",
+        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s43\\abr_dqn.pkl",
+        "44": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s44\\abr_dqn.pkl",
+        "45": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s45\\abr_dqn.pkl",
+        "46": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s46\\abr_dqn.pkl",
+        "47": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s47\\abr_dqn.pkl",
+        "49": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s49\\abr_dqn.pkl",
+        "48": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_002_s48\\abr_dqn.pkl"
       }
     },
     {
-      "trial": 5,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": false,
-        "segment-frames": 30
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 269.9702676267032,
-        "qoe": 0.0,
-        "qoe_quality": -13.294378795185562,
-        "mean_quality": 0.9747306579183996,
-        "stall_s": 25.637911264934104
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_005_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_005_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 11,
-      "config": {
-        "mu": 2.0,
-        "no-lstm-pred": true,
-        "segment-frames": 30
-      },
-      "seeds": [
-        42,
-        43
-      ],
-      "metrics": {
-        "reward": 269.0949843788084,
-        "qoe": 0.0,
-        "qoe_quality": -15.784281940607638,
-        "mean_quality": 0.9775727870820997,
-        "stall_s": 26.295855544249314
-      },
-      "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_011_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_011_s43\\abr_dqn.pkl"
-      }
-    },
-    {
-      "trial": 12,
+      "trial": 1,
       "config": {
         "mu": 4.3,
         "no-lstm-pred": false,
-        "segment-frames": 1
+        "segment-frames": 8
       },
       "seeds": [
         42,
-        43
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
       ],
       "metrics": {
-        "reward": 143.37872307176582,
-        "qoe": 0.4924295957108953,
-        "qoe_quality": -19.132619840239048,
-        "mean_quality": 0.8924960744699655,
-        "stall_s": 20.25272699655439
+        "reward": 246.8634434668705,
+        "qoe": 69.52679199953383,
+        "qoe_quality": 72.60044375980317,
+        "mean_quality": 0.8927356441965917,
+        "stall_s": 3.3446416000932326,
+        "qoe_quality_std": 19.03203356694799,
+        "qoe_quality_per_seed": {
+          "42": 91.28720905251443,
+          "43": 45.03684026906819,
+          "44": 92.36641092226644,
+          "45": 83.74257605541291,
+          "46": 54.4270568824268,
+          "47": 56.39479267993682,
+          "48": 61.38425596008111,
+          "49": 96.16440825671872
+        }
       },
       "checkpoints": {
-        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_012_s42\\abr_dqn.pkl",
-        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073843_full\\sweep\\trial_012_s43\\abr_dqn.pkl"
+        "42": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s42\\abr_dqn.pkl",
+        "43": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s43\\abr_dqn.pkl",
+        "44": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s44\\abr_dqn.pkl",
+        "45": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s45\\abr_dqn.pkl",
+        "47": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s47\\abr_dqn.pkl",
+        "46": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s46\\abr_dqn.pkl",
+        "49": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s49\\abr_dqn.pkl",
+        "48": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_130607_full\\sweep\\trial_001_s48\\abr_dqn.pkl"
       }
     }
   ],
   "pareto_front_trials": [
-    13,
-    14,
-    19,
-    15,
-    21,
-    20,
-    16,
-    7,
-    1,
-    8,
-    4,
-    23,
-    10,
-    17,
-    5,
-    11
+    3
   ],
   "winner": {
-    "trial": 13,
+    "trial": 3,
     "config": {
       "mu": 4.3,
-      "no-lstm-pred": false,
-      "segment-frames": 5
+      "no-lstm-pred": true,
+      "segment-frames": 8
     },
-    "seed": 42,
+    "seed": 49,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
     "metrics": {
-      "reward": 238.68877735735725,
-      "qoe": 92.20158216533403,
-      "qoe_quality": 77.27299684975762,
-      "mean_quality": 0.8093832282036163,
-      "stall_s": 0.5596835669331961
+      "reward": 253.63323653099337,
+      "qoe": 73.52621776960372,
+      "qoe_quality": 74.59772840149485,
+      "mean_quality": 0.9086300700838488,
+      "stall_s": 3.194756446079256,
+      "qoe_quality_std": 19.785609055511866,
+      "qoe_quality_per_seed": {
+        "42": 90.94552657478353,
+        "43": 38.27038062095867,
+        "44": 95.11091865217524,
+        "45": 87.93558763650542,
+        "46": 56.8986781135384,
+        "47": 67.90453818338757,
+        "48": 63.53712643427891,
+        "49": 96.17907099633108
+      }
     },
     "checkpoint": "models\\abr_dqn.pkl"
   }
