@@ -27,7 +27,9 @@ lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 tcp_params = dict(DEFAULT_TCP_PARAMS)
 
 # DASH-style segments: frames fetched per request (1 = legacy per-frame).
-segment_frames = 10
+# Matches the round-3 sweep winner S=8 (S=5..8 are statistically tied;
+# see DQN_REPORT §10.8). Override freely — the policy generalizes across S.
+segment_frames = 8
 
 # Preload the policy + LSTM predictor once; the edge mints a DQNABR per session
 # (sharing them read-only — safe single-threaded).

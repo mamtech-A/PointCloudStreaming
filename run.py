@@ -26,7 +26,9 @@ bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
 tcp_params = dict(DEFAULT_TCP_PARAMS)
 
 # DASH-style segments: frames fetched per request (1 = legacy per-frame).
-segment_frames = 10
+# Matches the round-3 sweep winner S=8 (S=5..8 are statistically tied;
+# see DQN_REPORT §10.8). Override freely — the policy generalizes across S.
+segment_frames = 8
 
 target_fps = 30.0  # 300 frames @ 30 fps = 10 s clip; each frame = 1/30 s of playback
 buffer_capacity_s = 5.0
