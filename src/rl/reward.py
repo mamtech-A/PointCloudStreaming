@@ -106,6 +106,15 @@ class RewardFunction:
             switch = w * mag
         return q - penalty - switch
 
+    def step_segment(self, q_sum, q_mean, prev_q_mean, stall_s, new_stall_event=False):
+        """Per-SEGMENT reward: per-frame qualities SUMMED (so episode reward
+        magnitudes stay comparable across segment sizes), ONE stall penalty
+        (the bounded cap applies to the whole segment's stall) and ONE switch
+        penalty on mean quality vs the previous segment. With a 1-frame segment
+        this equals step() exactly."""
+        base = self.step(q_mean, prev_q_mean, stall_s, new_stall_event)
+        return base - q_mean + q_sum
+
     def describe(self):
         sp = self.spec
         stall = f"{sp['mu']}*stall"

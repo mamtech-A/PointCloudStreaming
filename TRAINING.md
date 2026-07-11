@@ -1,5 +1,13 @@
 # TRAINING.md — second-PC overnight training runbook
 
+> **Round 2 (2026-07-11):** the pipeline now sweeps **segment-based fetching**
+> (`--segment-frames`: S frames per request, amortizing the 72 ms RTT — S=1 is
+> the round-1 control) with **adaptive playback** (`--playback-rate-min 0.9`,
+> research-backed imperceptible slowdown instead of stalling) and **multi-seed
+> evals** (`--eval-seeds 42,43,44` + 2 training seeds per config — fixes the
+> round-1 one-off-spike checkpoint problem). Same commands as before; the
+> config drives everything.
+
 The full retraining pipeline (LSTM → DQN sweep → eval → report) is one command
 and fully described by repo state (`configs/training.json`). Prep happens on
 the dev PC, training on the fast PC, review back on the dev PC — all via git.

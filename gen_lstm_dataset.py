@@ -6,7 +6,7 @@ session's achieved per-frame throughput at inference — a different signal
 (RTT-bound on small frames, serialization-bound in fades). This script closes
 that gap: it runs quiet simulations (representative policies x static traces x
 several start offsets) under the CURRENT transport model and records each
-frame's achieved throughput, producing a derived dataset the LSTM can train on
+SEGMENT's achieved throughput (one sample per fetch, as at inference), producing a derived dataset the LSTM can train on
 that matches what it will see at inference.
 
 Outputs (default data/lstm_achieved/):
@@ -66,8 +66,9 @@ POLICIES = {
 }
 
 
-def run_series(frames, trace, abr_factory):
-    """One quiet episode; returns the per-frame achieved throughput (bps)."""
+def run_series(frames, trace, abr_factory, segment_frames=1):
+    """One quiet episode; returns the achieved throughput series (bps) — one
+    sample per SEGMENT (matches what the LSTM is fed at inference)."""
     server = Server("gen://origin")
     server.manifest.frames = frames
     from src.network_model.manifest import PointCloud
@@ -82,8 +83,9 @@ def run_series(frames, trace, abr_factory):
     user = User("gen-user")
     session = topo.add_user(user, edge, trace=trace)
     session.start()
-    for frame_idx, frame in enumerate(frames):
-        session.step(frame, frame_idx)
+    seg = max(1, int(segment_frames))
+    for i in range(0, len(frames), seg):
+        session.step_segment(frames[i:i + seg], i)
     topo.close_all()
     return list(session.observed_throughput_history)
 
@@ -97,6 +99,9 @@ def main():
                    choices=list(POLICIES), help='which policies generate series')
     p.add_argument('--offsets', type=int, default=4,
                    help='episode start offsets per trace (spread evenly)')
+    p.add_argument('--segment-frames', type=int, default=10,
+                   help='frames per fetched segment; MUST match the DQN eval/'
+                        'inference setting so the LSTM trains on the same signal')
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
     p.add_argument('--seed', type=int, default=42,
                    help='canonical split seed (must match LSTM/DQN training)')
@@ -109,6 +114,11 @@ def main():
     train_src, test_src = split_bandwidth_files(args.trace_dir, test_size=0.2,
                                                 random_state=args.seed)
     os.makedirs(args.out_dir, exist_ok=True)
+    # Derived dataset: wipe stale series so split.json and the dir never disagree
+    # (e.g. leftovers generated under a different segment size).
+    for old in os.listdir(args.out_dir):
+        if old.endswith('.csv'):
+            os.remove(os.path.join(args.out_dir, old))
 
     split = {'train_files': [], 'test_files': []}
     n_series = 0
@@ -122,7 +132,7 @@ def main():
         for off in offs:
             trace = full.slice_from(off) if off else full
             for pol in args.policies:
-                series = run_series(frames, trace, POLICIES[pol])
+                series = run_series(frames, trace, POLICIES[pol], args.segment_frames)
                 name = f"{stem}__{pol}__off{off}.csv"
                 with open(os.path.join(args.out_dir, name), 'w', encoding='utf-8',
                           newline='') as f:
@@ -137,6 +147,7 @@ def main():
     split['source_split'] = {'train': train_src, 'test': test_src, 'seed': args.seed}
     split['policies'] = args.policies
     split['mpd'] = os.path.basename(args.mpd)
+    split['segment_frames'] = args.segment_frames
     with open(os.path.join(args.out_dir, 'split.json'), 'w', encoding='utf-8') as f:
         json.dump(split, f, indent=2)
     print(f"\n{n_series} series -> {args.out_dir} "

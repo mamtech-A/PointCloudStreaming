@@ -26,7 +26,10 @@ class Simulator:
         self.duration = duration
 
     def run(self, mpd_path, run_label=None, return_summary=False, max_frames=None,
-            verbose=True):
+            verbose=True, segment_frames=1):
+        """`segment_frames` = frames fetched per request (DASH-style segment).
+        1 (default) = legacy per-frame fetching; S>1 amortizes the per-request
+        RTT over S frames (ONE ABR decision + ONE TCP transfer per segment)."""
         self._verbose = verbose
         print("--- DASH-PC Point Cloud Streaming Simulation ---")
         if not mpd_path or not mpd_path.endswith('.xml') or not os.path.exists(mpd_path):
@@ -61,10 +64,14 @@ class Simulator:
 
         csv_file = open(csv_path, 'w', newline='', encoding='utf-8')
         csv_writer = csv.writer(csv_file)
+        # One row per FRAME (segment_frames > 1: `send_time_s` carries the full
+        # segment transfer time on the segment's FIRST frame, 0.0 on the rest;
+        # `segment_id` groups the rows).
         csv_writer.writerow([
             'user_id', 'frame_id', 'rep_id', 'density', 'size', 'bandwidth_mbps', 'send_time_s',
             'retransmissions', 'cwnd_start', 'cwnd_end', 'srtt_s', 'rto_s',
-            'buffer_level_s', 'buffer_health', 'stall', 'stall_duration_s', 'cumulative_time_s'
+            'buffer_level_s', 'buffer_health', 'stall', 'stall_duration_s', 'cumulative_time_s',
+            'segment_id'
         ])
         packet_log_file = open(packet_log_path, 'w', encoding='utf-8')
         packet_log_file.write('user_id,frame_id,time_s,round,packet_num,size_bytes,event,src,dst,cwnd,seq_num,ack_num,rtt_ms\n')
@@ -77,11 +84,14 @@ class Simulator:
                   f"{u.buffer_capacity_s}s capacity, {u.min_buffer_s}s min, {u.target_fps} FPS target")
         print("=" * 100)
 
-        # --- Frame-outer / session-inner main loop ---
-        for frame_idx, frame in enumerate(frames):
+        # --- Segment-outer / session-inner main loop (S=1 == per-frame) ---
+        seg = max(1, int(segment_frames or 1))
+        for seg_idx in range(0, len(frames), seg):
+            segment = frames[seg_idx:seg_idx + seg]
             for session in sessions:
-                record = session.step(frame, frame_idx)
-                self._log_record(session, record, csv_writer, packet_log_file, buffer_log_file)
+                record = session.step_segment(segment, seg_idx)
+                self._log_segment(session, seg_idx // seg, record,
+                                  csv_writer, packet_log_file, buffer_log_file)
 
         csv_file.close()
         packet_log_file.close()
@@ -102,59 +112,81 @@ class Simulator:
         if return_summary:
             return summaries
 
-    def _log_record(self, session, record, csv_writer, packet_log_file, buffer_log_file):
+    def _log_segment(self, session, segment_id, record, csv_writer, packet_log_file,
+                     buffer_log_file):
+        """Log one segment: ONE console line + per-FRAME csv/buffer rows.
+        `send_time_s` carries the segment transfer time on the first frame only."""
         u = session.user
-        rep = record['rep']
         m = record['metrics']
-        br = record['buffer_result']
         capacity = record['capacity_bps'] or 0
-        frame_time = record['frame_time_s']
+        seg_time = record['segment_time_s']
         cumulative = record['cumulative_time_s']
+        frames = record['frames']
 
-        bstats = u.get_buffer_stats()
-        buffer_health = bstats['buffer_health']
-        buffer_level = bstats['buffer_level_s']
-        stall_time = br.get('stall_time_s', 0)
-        is_rebuffering = br.get('is_rebuffering', False)
-        is_playing = br.get('is_playing', False)
-        event_type = br.get('event', 'buffered')
-        status = br.get('status', 'buffered')
+        # Per-frame rows (buffer state evolves within the batch as frames land).
+        seg_stall = 0.0
+        for i, fr in enumerate(frames):
+            rep = fr['rep'] or {}
+            br = fr['buffer_result']
+            stall_time = br.get('stall_time_s', 0) or 0
+            seg_stall += stall_time
+            status = br.get('status', 'buffered')
+            event_type = br.get('event', 'buffered')
+            buffer_level = br.get('buffer_level_s', u.buffer.buffer_level_s)
+            buffer_health = u.buffer.get_buffer_health()
 
-        if getattr(self, '_verbose', True):
-            if event_type == 'playback_started':
-                state = " ▶️ PLAYBACK STARTED"
-            elif event_type == 'playback_resumed':
-                state = f" ▶️ RESUMED (rebuffer={stall_time:.2f}s)"
-            elif is_rebuffering:
-                state = " ⏸️ REBUFFERING..."
-            elif is_playing:
-                state = " ▶️ PLAYING"
-            else:
-                state = " ⏳ INITIAL BUFFER"
-            emoji = _BUFFER_EMOJI.get(buffer_health, '⚪')
-            icon = "❌" if status == 'dropped' else "✅"
-            print(f"[{u.user_id}] Frame {record['frame_id']:3d}: {icon} Rep {record['rep_id']} "
-                  f"(density={rep['density']}, size={rep['size']:>5}) | DL={frame_time:.2f}s | "
-                  f"BW={capacity/1e6:.1f}Mbps | Buffer: {emoji} {buffer_level:.2f}s ({buffer_health}){state}")
+            buffer_log_file.write(
+                f"{u.user_id},{cumulative:.6f},{fr['frame_id']},{status},{buffer_level:.4f},"
+                f"{buffer_health},{stall_time:.4f},{event_type}\n")
 
-        buffer_log_file.write(
-            f"{u.user_id},{cumulative:.6f},{record['frame_id']},{status},{buffer_level:.4f},"
-            f"{buffer_health},{stall_time:.4f},{event_type}\n")
-
-        csv_writer.writerow([
-            u.user_id, record['frame_id'], record['rep_id'], rep['density'], rep['size'],
-            f"{capacity/1e6:.3f}", f"{frame_time:.6f}",
-            m.get('retransmissions', 0), m.get('cwnd_start', ''), m.get('cwnd_end', ''),
-            m.get('srtt_s', ''), m.get('rto_s', ''),
-            f"{buffer_level:.4f}", buffer_health,
-            'yes' if is_rebuffering else 'no', f"{stall_time:.4f}", f"{cumulative:.6f}"
-        ])
+            csv_writer.writerow([
+                u.user_id, fr['frame_id'], record['rep_id'], rep.get('density', ''),
+                rep.get('size', ''),
+                f"{capacity/1e6:.3f}", f"{seg_time:.6f}" if i == 0 else "0.000000",
+                m.get('retransmissions', 0), m.get('cwnd_start', ''), m.get('cwnd_end', ''),
+                m.get('srtt_s', ''), m.get('rto_s', ''),
+                f"{buffer_level:.4f}", buffer_health,
+                'yes' if br.get('is_rebuffering', False) else 'no',
+                f"{stall_time:.4f}", f"{cumulative:.6f}", segment_id
+            ])
 
         for pkt in m.get('packet_log', []):
             packet_log_file.write(
-                f"{u.user_id},{record['frame_id']},{pkt['time_s']:.6f},{pkt['round']},"
+                f"{u.user_id},{record['first_frame_id']},{pkt['time_s']:.6f},{pkt['round']},"
                 f"{pkt['packet_num']},{pkt['size_bytes']},{pkt['event']},{pkt['src']},{pkt['dst']},"
                 f"{pkt['cwnd']},{pkt.get('seq_num',0)},{pkt.get('ack_num',0)},{pkt.get('rtt_ms',0):.2f}\n")
+
+        if not getattr(self, '_verbose', True):
+            return
+        # ONE console line per segment, showing the post-segment buffer state.
+        last_br = frames[-1]['buffer_result']
+        bstats = u.get_buffer_stats()
+        buffer_health = bstats['buffer_health']
+        buffer_level = bstats['buffer_level_s']
+        is_rebuffering = last_br.get('is_rebuffering', False)
+        is_playing = last_br.get('is_playing', False)
+        events = [f['buffer_result'].get('event', 'buffered') for f in frames]
+        if 'playback_started' in events:
+            state = " ▶️ PLAYBACK STARTED"
+        elif 'playback_resumed' in events:
+            state = f" ▶️ RESUMED (rebuffer={seg_stall:.2f}s)"
+        elif is_rebuffering:
+            state = " ⏸️ REBUFFERING..."
+        elif is_playing:
+            state = " ▶️ PLAYING"
+        else:
+            state = " ⏳ INITIAL BUFFER"
+        emoji = _BUFFER_EMOJI.get(buffer_health, '⚪')
+        dropped = sum(1 for f in frames if f['buffer_result'].get('status') == 'dropped')
+        icon = "❌" if dropped else "✅"
+        first_id, last_id = frames[0]['frame_id'], frames[-1]['frame_id']
+        label = (f"Frame {first_id:3d}" if len(frames) == 1
+                 else f"Frames {first_id:3d}-{last_id:3d}")
+        rep0 = frames[0]['rep'] or {}
+        print(f"[{u.user_id}] {label}: {icon} Rep {record['rep_id']} "
+              f"(density={rep0.get('density', '?')}, {record['data_bytes']:>7.0f}B) | "
+              f"DL={seg_time:.2f}s | BW={capacity/1e6:.1f}Mbps | "
+              f"Buffer: {emoji} {buffer_level:.2f}s ({buffer_health}){state}")
 
     def _report_session(self, session, total_frames):
         u = session.user
@@ -181,6 +213,10 @@ class Simulator:
         print(f"   Total Stall Time: {stats['total_stall_time_s']:.2f}s")
         if stats['rebuffer_count'] > 0:
             print(f"   Average Rebuffer Duration: {stats['total_stall_time_s']/stats['rebuffer_count']:.3f}s")
+        if stats.get('playback_rate_min', 1.0) < 1.0:
+            print(f"   Adaptive Playback: {stats['slowdown_time_s']:.2f}s below 1.0x "
+                  f"(floor {stats['playback_rate_min']:.2f}x, "
+                  f"integral {stats['slowdown_integral']:.3f})")
         print(f"\n🎯 QoE Score (legacy, stall-only): {qoe:.1f}/100")
         print(f"🎯 Quality-aware QoE': {qoe_q:.1f} raw | {max(0.0, qoe_q):.1f}/100 clipped "
               f"(mean quality {mean_q:.3f})")
@@ -209,6 +245,7 @@ class Simulator:
             'frames_dropped': stats['frames_dropped'],
             'rebuffer_count': stats['rebuffer_count'],
             'total_stall_time_s': stats['total_stall_time_s'],
+            'slowdown_time_s': stats.get('slowdown_time_s', 0.0),
             'mean_rep_id': (sum(qh) / len(qh)) if qh else 0,
             'quality_switches': switches,
             'prediction_stats': pred,

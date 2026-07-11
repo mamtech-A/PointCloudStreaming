@@ -114,10 +114,13 @@ def main():
     achieved = lstm_cfg.get('signal', 'capacity') == 'achieved'
     achieved_dir = os.path.join(project_root, 'data', 'lstm_achieved')
     if achieved and 'gen' not in skip:
-        cmd = py('gen_lstm_dataset.py',
-                 '--offsets', lstm_cfg.get('gen_args', {}).get('offsets', 4))
+        cmd = py('gen_lstm_dataset.py')
+        for k, v in lstm_cfg.get('gen_args', {}).items():
+            cmd += [f"--{k.replace('_', '-')}", str(v)]
         if args.smoke:
-            cmd += ['--offsets', '1', '--policies', 'fixed3', '--max-frames', '40']
+            # 120 frames -> 12 segment samples at S=10: still enough sequences
+            # for the seq_len-8 smoke LSTM fit.
+            cmd += ['--offsets', '1', '--policies', 'fixed3', '--max-frames', '120']
         ok = R.stage('gen', cmd, '10_gen_lstm_dataset.log')
         if not ok:
             sys.exit(1)
@@ -168,11 +171,15 @@ def main():
 
     # --- Stage 4: final eval ---------------------------------------------------
     if 'eval' not in skip:
+        fe = cfg.get('final_eval', {})
+        fe_flags = ['--segment-frames', str(fe.get('segment_frames', 10)),
+                    '--playback-rate-min', str(fe.get('playback_rate_min', 1.0))]
         mf = ['--max-frames', '60'] if args.smoke else []
-        if not R.stage('eval_fixed', py('eval_fixed.py', *mf), '40_eval_fixed.log'):
+        if not R.stage('eval_fixed', py('eval_fixed.py', *(fe_flags + mf)),
+                       '40_eval_fixed.log'):
             ok = False
         mf = ['--max-frames', '40'] if args.smoke else []
-        if not R.stage('compare', py('compare.py', *mf), '41_compare.log'):
+        if not R.stage('compare', py('compare.py', *(fe_flags + mf)), '41_compare.log'):
             ok = False
 
     # --- Stage 5: TRAINING_SUMMARY.md -----------------------------------------

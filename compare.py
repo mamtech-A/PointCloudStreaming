@@ -58,12 +58,13 @@ def quality_metrics(results_csv, q_lo, q_hi, mu=4.3, lam=1.0):
     return (sum(qs) / len(qs) if qs else 0.0), reward
 
 
-def build_sim(label, abr_factory, trace_path):
+def build_sim(label, abr_factory, trace_path, playback_rate_min=1.0):
     server = Server(base_url="http://localhost/")
     topo = Topology(server)
     edge = EdgeNode("edge-1", server=server, tcp_params=TCP_PARAMS, abr_factory=abr_factory)
     topo.add_edge(edge)
-    user = User("User", target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0)
+    user = User("User", target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
+                playback_rate_min=playback_rate_min)
     topo.add_user(user, edge, trace=BandwidthTrace.from_file(trace_path))
     return Simulator(topo)
 
@@ -73,6 +74,10 @@ def main():
     p.add_argument('--trace', default=os.path.join('bandwidth_5g', 'static_B_2020.01.16_10.43.34.csv'),
                    help='bandwidth trace (default: an unseen test-split 5G trace)')
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
+    p.add_argument('--segment-frames', type=int, default=10,
+                   help='frames per DASH-style segment (1 = legacy per-frame)')
+    p.add_argument('--playback-rate-min', type=float, default=1.0,
+                   help='adaptive-playback floor (1.0 = off; 0.9 recommended)')
     args = p.parse_args()
 
     mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc_longdress.xml')
@@ -83,26 +88,27 @@ def main():
 
     print("=" * 100)
     print("BASELINE vs LSTM vs DQN comparison")
-    print(f"trace: {trace_path} | frames: {'all' if not max_frames else max_frames}")
+    print(f"trace: {trace_path} | frames: {'all' if not max_frames else max_frames} | "
+          f"segment: {args.segment_frames} | amp_floor: {args.playback_rate_min}")
     print("=" * 100)
 
     runs = []
 
     # 1) Baseline rule.
-    sim = build_sim('baseline', lambda: BandwidthABR(), trace_path)
-    runs.append(sim.run(mpd_path, run_label='baseline', return_summary=True, max_frames=max_frames)[0])
+    sim = build_sim('baseline', lambda: BandwidthABR(), trace_path, args.playback_rate_min)
+    runs.append(sim.run(mpd_path, run_label='baseline', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames)[0])
 
     # 2) LSTM-rule (one shared predictor; predictions rebuild their window each call).
     predictor_lstm = LSTMPredictor().load(lstm_path)
-    sim = build_sim('lstm', lambda: LSTMABR(predictor_lstm, use_prediction=True), trace_path)
-    runs.append(sim.run(mpd_path, run_label='lstm', return_summary=True, max_frames=max_frames)[0])
+    sim = build_sim('lstm', lambda: LSTMABR(predictor_lstm, use_prediction=True), trace_path, args.playback_rate_min)
+    runs.append(sim.run(mpd_path, run_label='lstm', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames)[0])
 
     # 3) DQN (if a trained policy exists).
     if os.path.exists(dqn_path):
         agent = DQNAgent.load(dqn_path)
         predictor_dqn = LSTMPredictor().load(lstm_path)
-        sim = build_sim('dqn', lambda: DQNABR(policy=agent, lstm_provider=LSTMABR(predictor_dqn)), trace_path)
-        runs.append(sim.run(mpd_path, run_label='dqn', return_summary=True, max_frames=max_frames)[0])
+        sim = build_sim('dqn', lambda: DQNABR(policy=agent, lstm_provider=LSTMABR(predictor_dqn)), trace_path, args.playback_rate_min)
+        runs.append(sim.run(mpd_path, run_label='dqn', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames)[0])
     else:
         print(f"\n(skipping DQN — no trained model at {dqn_path}; run train_dqn.py first)")
 
@@ -114,7 +120,7 @@ def main():
     print("\n" + "=" * 100)
     print("COMPARISON SUMMARY")
     print("=" * 100)
-    hdr = (f"{'strategy':<10} {'QoE':>6} {'QoE_q':>8} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} "
+    hdr = (f"{'strategy':<10} {'QoE':>6} {'QoE_q':>8} {'rebuf':>6} {'stall_s':>9} {'slow_s':>7} {'dropped':>8} "
            f"{'mean_rep':>9} {'switches':>9} {'mean_qual':>10} {'reward':>9}")
     print(hdr)
     print("-" * len(hdr))
@@ -122,6 +128,7 @@ def main():
         mq, rw = quality_metrics(os.path.join(project_root, 'logs', r['abr'] if r['abr'] != 'bandwidth' else 'baseline', 'results.csv'), q_lo, q_hi)
         print(f"{r['abr']:<10} {r['qoe']:>6.1f} {r.get('qoe_quality', 0.0):>8.1f} "
               f"{r['rebuffer_count']:>6d} {r['total_stall_time_s']:>9.1f} "
+              f"{r.get('slowdown_time_s', 0.0):>7.1f} "
               f"{r['frames_dropped']:>8d} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d} "
               f"{mq:>10.3f} {rw:>9.1f}")
     print("\nQoE counts only stalls/drops (favors the lowest quality); QoE_q is the")

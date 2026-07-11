@@ -24,6 +24,9 @@ lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 # TCP / buffer defaults (RTT is dataset-derived — see DEFAULT_TCP_PARAMS)
 tcp_params = dict(DEFAULT_TCP_PARAMS)
 
+# DASH-style segments: frames fetched per request (1 = legacy per-frame).
+segment_frames = 10
+
 target_fps = 30.0  # 300 frames @ 30 fps = 10 s clip; each frame = 1/30 s of playback
 buffer_capacity_s = 5.0
 min_buffer_s = 1.0
@@ -50,4 +53,4 @@ print(f"Bandwidth Log: {bandwidth_log_path}")
 print(f"MPD Config: {mpd_path}")
 print("=" * 100)
 
-sim.run(mpd_path=mpd_path)
+sim.run(mpd_path=mpd_path, run_label="lstm", segment_frames=segment_frames)

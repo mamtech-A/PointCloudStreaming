@@ -1,0 +1,124 @@
+# C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u compare.py --segment-frames 10 --playback-rate-min 0.9 --max-frames 40
+====================================================================================================
+BASELINE vs LSTM vs DQN comparison
+trace: C:\Users\Mamtech\PointCloudStreaming\bandwidth_5g\static_B_2020.01.16_10.43.34.csv | frames: 40 | segment: 10 | amp_floor: 0.9
+====================================================================================================
+--- DASH-PC Point Cloud Streaming Simulation ---
+
+[Session] User via edge-1 - Buffer: 5.0s capacity, 1.0s min, 30.0 FPS target
+====================================================================================================
+[User] Frames   0-  9: ✅ Rep 5 (density=14057,   36996B) | DL=6.06s | BW=0.0Mbps | Buffer: 🔴 0.33s (critical) ⏳ INITIAL BUFFER
+[User] Frames  10- 19: ✅ Rep 5 (density=14721,   37181B) | DL=0.15s | BW=168.8Mbps | Buffer: 🟡 0.67s (low) ⏳ INITIAL BUFFER
+[User] Frames  20- 29: ✅ Rep 5 (density=14705,   37193B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟡 1.00s (low) ⏳ INITIAL BUFFER
+[User] Frames  30- 39: ✅ Rep 5 (density=14980,   39799B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟡 1.33s (low) ▶️ PLAYBACK STARTED
+
+====================================================================================================
+--- Session Finished: User ---
+
+📊 Playback Statistics:
+   Total Frames: 40
+   Total Download Time: 6.36s
+   Real Video FPS: 6.28 frames per second
+
+📦 Buffer Statistics:
+   Final Buffer Level: 1.33s (40 frames)
+   Buffer Health: low
+   Frames Played: 0
+   Frames Dropped: 0
+
+⚠️  Stall Statistics:
+   Rebuffer Events: 0
+   Total Stall Time: 0.00s
+   Adaptive Playback: 0.00s below 1.0x (floor 0.90x, integral 0.000)
+
+🎯 QoE Score (legacy, stall-only): 100.0/100
+🎯 Quality-aware QoE': 0.9 raw | 0.9/100 clipped (mean quality 0.010)
+
+📁 Output Files:
+   Per-frame results: C:\Users\Mamtech\PointCloudStreaming\logs\baseline\results.csv
+   Packet log: C:\Users\Mamtech\PointCloudStreaming\logs\baseline\packets.log
+   Buffer log: C:\Users\Mamtech\PointCloudStreaming\logs\baseline\buffer.log
+--- DASH-PC Point Cloud Streaming Simulation ---
+
+[Session] User via edge-1 - Buffer: 5.0s capacity, 1.0s min, 30.0 FPS target
+====================================================================================================
+[User] Frames   0-  9: ✅ Rep 5 (density=14057,   36996B) | DL=6.05s | BW=0.0Mbps | Buffer: 🔴 0.33s (critical) ⏳ INITIAL BUFFER
+[User] Frames  10- 19: ✅ Rep 5 (density=14721,   37181B) | DL=0.14s | BW=168.8Mbps | Buffer: 🟡 0.67s (low) ⏳ INITIAL BUFFER
+[User] Frames  20- 29: ✅ Rep 5 (density=14705,   37193B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟡 1.00s (low) ⏳ INITIAL BUFFER
+[User] Frames  30- 39: ✅ Rep 5 (density=14980,   39799B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟡 1.33s (low) ▶️ PLAYBACK STARTED
+
+====================================================================================================
+--- Session Finished: User ---
+
+📊 Playback Statistics:
+   Total Frames: 40
+   Total Download Time: 6.32s
+   Real Video FPS: 6.33 frames per second
+
+📦 Buffer Statistics:
+   Final Buffer Level: 1.33s (40 frames)
+   Buffer Health: low
+   Frames Played: 0
+   Frames Dropped: 0
+
+⚠️  Stall Statistics:
+   Rebuffer Events: 0
+   Total Stall Time: 0.00s
+   Adaptive Playback: 0.00s below 1.0x (floor 0.90x, integral 0.000)
+
+🎯 QoE Score (legacy, stall-only): 100.0/100
+🎯 Quality-aware QoE': 0.9 raw | 0.9/100 clipped (mean quality 0.010)
+
+📁 Output Files:
+   Per-frame results: C:\Users\Mamtech\PointCloudStreaming\logs\lstm\results.csv
+   Packet log: C:\Users\Mamtech\PointCloudStreaming\logs\lstm\packets.log
+   Buffer log: C:\Users\Mamtech\PointCloudStreaming\logs\lstm\buffer.log
+--- DASH-PC Point Cloud Streaming Simulation ---
+
+[Session] User via edge-1 - Buffer: 5.0s capacity, 1.0s min, 30.0 FPS target
+====================================================================================================
+[User] Frames   0-  9: ✅ Rep 2 (density=453698, 1530902B) | DL=8.09s | BW=0.0Mbps | Buffer: 🔴 0.33s (critical) ⏳ INITIAL BUFFER
+[User] Frames  10- 19: ✅ Rep 2 (density=475988, 1540103B) | DL=0.79s | BW=164.9Mbps | Buffer: 🟡 0.67s (low) ⏳ INITIAL BUFFER
+[User] Frames  20- 29: ✅ Rep 2 (density=474645, 1509737B) | DL=0.45s | BW=164.9Mbps | Buffer: 🟡 1.00s (low) ⏳ INITIAL BUFFER
+[User] Frames  30- 39: ✅ Rep 2 (density=480776, 1592562B) | DL=0.22s | BW=164.9Mbps | Buffer: 🟡 1.33s (low) ▶️ PLAYBACK STARTED
+
+====================================================================================================
+--- Session Finished: User ---
+
+📊 Playback Statistics:
+   Total Frames: 40
+   Total Download Time: 9.56s
+   Real Video FPS: 4.18 frames per second
+
+📦 Buffer Statistics:
+   Final Buffer Level: 1.33s (40 frames)
+   Buffer Health: low
+   Frames Played: 0
+   Frames Dropped: 0
+
+⚠️  Stall Statistics:
+   Rebuffer Events: 0
+   Total Stall Time: 0.00s
+   Adaptive Playback: 0.00s below 1.0x (floor 0.90x, integral 0.000)
+
+🎯 QoE Score (legacy, stall-only): 100.0/100
+🎯 Quality-aware QoE': 86.0 raw | 86.0/100 clipped (mean quality 0.860)
+
+📁 Output Files:
+   Per-frame results: C:\Users\Mamtech\PointCloudStreaming\logs\dqn\results.csv
+   Packet log: C:\Users\Mamtech\PointCloudStreaming\logs\dqn\packets.log
+   Buffer log: C:\Users\Mamtech\PointCloudStreaming\logs\dqn\buffer.log
+
+====================================================================================================
+COMPARISON SUMMARY
+====================================================================================================
+strategy      QoE    QoE_q  rebuf   stall_s  slow_s  dropped  mean_rep  switches  mean_qual    reward
+-----------------------------------------------------------------------------------------------------
+bandwidth   100.0      0.9      0       0.0     0.0        0      5.00         0      0.020       0.7
+lstm        100.0      0.9      0       0.0     0.0        0      5.00         0      0.020       0.7
+dqn         100.0     86.0      0       0.0     0.0        0      2.00         0      0.844      33.7
+
+QoE counts only stalls/drops (favors the lowest quality); QoE_q is the
+quality-aware QoE' = 100*mean_quality - 4.3*stall_s - 1.0*sum|dq| (raw, unclipped);
+'reward' is the Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.
+Logs written to logs/baseline/, logs/lstm/, logs/dqn/

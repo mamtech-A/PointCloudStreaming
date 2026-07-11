@@ -76,6 +76,10 @@ def main():
     p.add_argument('--mu', type=float, default=4.3)
     p.add_argument('--lam', type=float, default=1.0)
     p.add_argument('--max-frames', type=int, default=0)
+    p.add_argument('--segment-frames', type=int, default=10,
+                   help='frames per DASH-style segment (1 = legacy per-frame)')
+    p.add_argument('--playback-rate-min', type=float, default=1.0,
+                   help='adaptive-playback floor (1.0 = off)')
     p.add_argument('--out', default=os.path.join(project_root, 'models', 'fixed_arm_baseline.json'))
     args = p.parse_args()
 
@@ -100,13 +104,16 @@ def main():
         frames = frames[:args.max_frames]
 
     env = StreamingEnv(frames, lstm_predictor=None, tcp_params=TCP_PARAMS,
-                       mu=args.mu, lam=args.lam)
+                       mu=args.mu, lam=args.lam,
+                       segment_frames=args.segment_frames,
+                       playback_rate_min=args.playback_rate_min)
 
     # Arm a selects reps_sorted_by_id[a]; report each arm's manifest identity.
     reps0 = sorted(frames[0]['representations'], key=lambda r: r['id'])
 
     print("=" * 100)
     print(f"Fixed-arm baselines | {len(test_paths)} test traces | {len(frames)} frames/episode "
+          f"| segment={args.segment_frames} amp_floor={args.playback_rate_min} "
           f"| mu={args.mu} lam={args.lam} seed={args.seed}")
     for t in test_files:
         print(f"   test trace: {t}")
@@ -135,6 +142,8 @@ def main():
 
     payload = {
         'seed': args.seed, 'mu': args.mu, 'lam': args.lam,
+        'segment_frames': args.segment_frames,
+        'playback_rate_min': args.playback_rate_min,
         'frames_per_episode': len(frames), 'test_files': test_files,
         'tcp_params': TCP_PARAMS, 'results': results, 'best_arm': best,
         'best_reward': results[best]['reward'],

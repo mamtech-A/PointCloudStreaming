@@ -97,31 +97,34 @@ def build_epoch_episodes(train_paths, traces, stride, rng, random_phase):
     return episodes
 
 
-def evaluate(agent, env, trace_paths, seed, sequence):
-    """Greedy eval on `sequence` over traces with fixed jitter seed.
+def evaluate(agent, env, trace_paths, eval_seeds, sequence):
+    """Greedy eval on `sequence`, averaged over EVERY (jitter seed x trace).
 
-    Saves/restores the global RNG state so mid-training evals don't reset the
-    exploration/jitter randomness of subsequent training episodes.
+    Multi-seed averaging de-noises checkpoint selection: round 1 showed a
+    single-seed max-eval latching onto a one-off jitter spike (+11.96 vs a
+    -29..-36 plateau). Saves/restores the global RNG state so mid-training
+    evals don't reset the exploration/jitter randomness of training.
     """
     rng_state = random.getstate()
     np_state = np.random.get_state()
     out = {'reward': [], 'qoe': [], 'qoe_quality': [], 'mean_quality': [], 'stall_s': []}
     try:
-        for path in trace_paths:
-            random.seed(seed)
-            np.random.seed(seed)
-            s = env.reset(BandwidthTrace.from_file(path), sequence=sequence)
-            done = False
-            total = 0.0
-            while not done:
-                a = agent.act(s, epsilon=0.0)
-                s, r, done, _ = env.step(a)
-                total += r
-            out['reward'].append(total)
-            out['qoe'].append(env.qoe())
-            out['qoe_quality'].append(env.qoe_quality())
-            out['mean_quality'].append(env.mean_quality())
-            out['stall_s'].append(env.total_stall_s())
+        for eval_seed in eval_seeds:
+            for path in trace_paths:
+                random.seed(eval_seed)
+                np.random.seed(eval_seed)
+                s = env.reset(BandwidthTrace.from_file(path), sequence=sequence)
+                done = False
+                total = 0.0
+                while not done:
+                    a = agent.act(s, epsilon=0.0)
+                    s, r, done, _ = env.step(a)
+                    total += r
+                out['reward'].append(total)
+                out['qoe'].append(env.qoe())
+                out['qoe_quality'].append(env.qoe_quality())
+                out['mean_quality'].append(env.mean_quality())
+                out['stall_s'].append(env.total_stall_s())
     finally:
         random.setstate(rng_state)
         np.random.set_state(np_state)
@@ -156,6 +159,15 @@ def main():
                         'e.g. \'{"stall_mode":"bounded","stall_cap_s":2.0,"mu":6}\'')
     p.add_argument('--no-lstm-pred', action='store_true',
                    help='ABLATION: drop the lstm_pred feature from the state')
+    p.add_argument('--segment-frames', type=int, default=10,
+                   help='frames per DASH-style segment (one decision + one transfer); '
+                        '1 = legacy per-frame fetching')
+    p.add_argument('--playback-rate-min', type=float, default=1.0,
+                   help='adaptive-playback floor (1.0 = off; 0.9 = research-backed '
+                        'imperceptible slowdown instead of stalling)')
+    p.add_argument('--eval-seeds', type=str, default='',
+                   help='comma list of jitter seeds averaged per eval (default: just '
+                        '--seed); e.g. 42,43,44 de-noises checkpoint selection')
     p.add_argument('--max-frames', type=int, default=0, help='0 = all manifest frames')
     p.add_argument('--eval-every', type=int, default=50, help='episodes between evals')
     p.add_argument('--select-by', choices=['qoe_quality', 'reward'], default='qoe_quality',
@@ -220,8 +232,13 @@ def main():
     if args.reward_spec:
         reward_spec.update(json.loads(args.reward_spec))
 
+    eval_seeds = ([int(s) for s in args.eval_seeds.split(',') if s.strip()]
+                  if args.eval_seeds else [args.seed])
+
     env = StreamingEnv(manifest_pool, lstm_predictor=predictor, tcp_params=TCP_PARAMS,
-                       feature_spec=feature_spec, reward_spec=reward_spec)
+                       feature_spec=feature_spec, reward_spec=reward_spec,
+                       segment_frames=args.segment_frames,
+                       playback_rate_min=args.playback_rate_min)
     agent = DQNAgent(env.state_dim, env.num_actions, env.feature_spec, env.norm,
                      hidden=args.hidden, lr=args.lr, gamma=args.gamma,
                      batch_size=args.batch_size,
@@ -235,7 +252,8 @@ def main():
     episodes_per_epoch = sum(max(1, int(round(len(traces[p]) / float(args.coverage_stride))))
                              for p in train_paths)
     total_episodes = args.epochs * episodes_per_epoch
-    total_steps_est = max(1, total_episodes * mean_frames)
+    steps_per_episode = max(1, -(-mean_frames // max(1, args.segment_frames)))  # ceil
+    total_steps_est = max(1, total_episodes * steps_per_episode)
     decay_steps = max(1, int(args.eps_decay_frac * total_steps_est))
 
     print("=" * 90)
@@ -246,6 +264,9 @@ def main():
     print(f"   coverage stride: {args.coverage_stride} samples -> "
           f"{episodes_per_epoch} episodes/epoch x {args.epochs} epochs = {total_episodes} episodes "
           f"(~{total_steps_est} env steps)")
+    print(f"   segment: {args.segment_frames} frames/request "
+          f"({steps_per_episode} decisions/episode) | playback-rate-min: "
+          f"{args.playback_rate_min} | eval seeds: {eval_seeds}")
     print(f"   state_dim: {env.state_dim} | actions: {env.num_actions} | feature_spec: {feature_spec}")
     print(f"   reward: {env.reward_fn.describe()}  (gamma={args.gamma}, lr={args.lr}, "
           f"reward_norm={args.reward_norm}, reward_scale={args.reward_scale})")
@@ -269,7 +290,7 @@ def main():
 
     def run_eval(tag):
         nonlocal best_metric, best_entry
-        ev = evaluate(agent, env, test_paths, args.seed, eval_sequence)
+        ev = evaluate(agent, env, test_paths, eval_seeds, eval_sequence)
         entry = {'episode': episode, **ev}
         history['eval'].append(entry)
         marker = ""
@@ -285,7 +306,7 @@ def main():
         return ev
 
     # Baseline eval (untrained policy) for reference.
-    base = evaluate(agent, env, test_paths, args.seed, eval_sequence)
+    base = evaluate(agent, env, test_paths, eval_seeds, eval_sequence)
     print(f"[eval @ ep 0] untrained: reward={base['reward']:.2f} qoe={base['qoe']:.1f} "
           f"qoe_q={base['qoe_quality']:.1f}")
 

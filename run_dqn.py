@@ -26,6 +26,9 @@ lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
 
 tcp_params = dict(DEFAULT_TCP_PARAMS)
 
+# DASH-style segments: frames fetched per request (1 = legacy per-frame).
+segment_frames = 10
+
 # Preload the policy + LSTM predictor once; the edge mints a DQNABR per session
 # (sharing them read-only — safe single-threaded).
 agent = DQNAgent.load(dqn_model_path)
@@ -50,4 +53,4 @@ print(f"LSTM Model: {lstm_model_path}")
 print(f"Bandwidth:  {bandwidth_log_path}")
 print("=" * 100)
 
-sim.run(mpd_path=mpd_path, run_label="dqn")
+sim.run(mpd_path=mpd_path, run_label="dqn", segment_frames=segment_frames)

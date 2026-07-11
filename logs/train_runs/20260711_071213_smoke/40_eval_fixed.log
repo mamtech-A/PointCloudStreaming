@@ -1,0 +1,15 @@
+# C:\Users\Mamtech\AppData\Local\Programs\Python\Python310\python.exe -u eval_fixed.py --segment-frames 10 --playback-rate-min 0.9 --max-frames 60
+WARNING: C:\Users\Mamtech\PointCloudStreaming\models\bandwidth_lstm_split.json references traces not in C:\Users\Mamtech\PointCloudStreaming\bandwidth_5g (stale pre-migration split?) - consistency check skipped
+====================================================================================================
+Fixed-arm baselines | 1 test traces | 60 frames/episode | segment=10 amp_floor=0.9 | mu=4.3 lam=1.0 seed=42
+   test trace: static_B_2020.01.16_10.43.34.csv
+====================================================================================================
+arm 0 (rep 0,  102.4 Mbps): mean_reward=   59.11  mean_qoe= 100.0  mean_qoe_q=    98.5  mean_stall=   0.00s  mean_quality=0.986
+arm 1 (rep 1,   59.6 Mbps): mean_reward=   55.61  mean_qoe= 100.0  mean_qoe_q=    92.7  mean_stall=   0.00s  mean_quality=0.927
+arm 2 (rep 2,   35.5 Mbps): mean_reward=   51.50  mean_qoe= 100.0  mean_qoe_q=    85.8  mean_stall=   0.00s  mean_quality=0.859
+arm 3 (rep 3,   14.1 Mbps): mean_reward=   40.43  mean_qoe= 100.0  mean_qoe_q=    67.3  mean_stall=   0.00s  mean_quality=0.674
+arm 4 (rep 4,    3.4 Mbps): mean_reward=   20.85  mean_qoe= 100.0  mean_qoe_q=    34.7  mean_stall=   0.00s  mean_quality=0.348
+arm 5 (rep 5,    0.9 Mbps): mean_reward=    0.78  mean_qoe= 100.0  mean_qoe_q=     1.3  mean_stall=   0.00s  mean_quality=0.014
+----------------------------------------------------------------------------------------------------
+BEST FIXED ARM: arm_0 (rep 0, 102.4 Mbps) mean_reward=59.11
+saved: C:\Users\Mamtech\PointCloudStreaming\models\fixed_arm_baseline.json

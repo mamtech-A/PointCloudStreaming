@@ -42,7 +42,8 @@ class StreamingEnv:
     def __init__(self, manifest_frames, lstm_predictor=None, tcp_params=None,
                  feature_spec=None, mu=4.3, lam=1.0, hist_len=5,
                  target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
-                 num_reps=None, norm=None, bits_per_point=None, reward_spec=None):
+                 num_reps=None, norm=None, bits_per_point=None, reward_spec=None,
+                 segment_frames=1, playback_rate_min=1.0):
         # Normalize content to a pool {sequence_name: frames}; a plain frame list
         # (the historical single-manifest API) becomes {'default': frames}.
         if isinstance(manifest_frames, dict):
@@ -64,6 +65,11 @@ class StreamingEnv:
         self.buffer_capacity_s = buffer_capacity_s
         self.min_buffer_s = min_buffer_s
         self.bits_per_point = bits_per_point
+        # DASH-style segments: one env step = one segment of S frames
+        # (one ABR decision + one TCP transfer). S=1 = legacy per-frame.
+        self.segment_frames = max(1, int(segment_frames))
+        # Adaptive playback floor (1.0 = off; 0.9 = research-backed imperceptible).
+        self.playback_rate_min = float(playback_rate_min)
 
         # Every sequence in the pool must share one ladder size (= action space).
         sizes = {name: len(fr[0]['representations']) if fr else 0
@@ -133,7 +139,8 @@ class StreamingEnv:
                              abr_factory=lambda: _ManualABR(), bits_per_point=self.bits_per_point)
         self.topo = Topology(self.server)
         self.topo.add_edge(self.edge)
-        self.user = User("rl-user", self.target_fps, self.buffer_capacity_s, self.min_buffer_s)
+        self.user = User("rl-user", self.target_fps, self.buffer_capacity_s,
+                         self.min_buffer_s, playback_rate_min=self.playback_rate_min)
         self.session = self.topo.add_user(self.user, self.edge, trace=trace)
         self.session.start()
         self.manual = self.session.abr
@@ -154,23 +161,32 @@ class StreamingEnv:
         return build_state(self.feature_spec, st, predicted_bandwidth_bps=pred, norm=self.norm)
 
     def step(self, action):
-        frame = self.frames[self.frame_idx]
+        """One env step = one SEGMENT (segment_frames frames, one decision, one
+        transfer). Reward: per-frame qualities summed, one (bounded) stall
+        penalty, one switch penalty on mean quality vs the previous segment —
+        with segment_frames=1 this is exactly the legacy per-frame step."""
+        segment = self.frames[self.frame_idx:self.frame_idx + self.segment_frames]
         self.manual.next_action = int(action)
-        record = self.session.step(frame, self.frame_idx)
-        rep = record['rep']
-        q = self.reward_fn.quality(rep)
-        buffer_result = record['buffer_result']
-        stall = buffer_result.get('stall_time_s', 0.0) or 0.0
-        new_event = buffer_result.get('event') == 'rebuffering_start'
-        reward = self.reward_fn.step(q, self.prev_quality, stall, new_event)
-        self.prev_quality = q
+        record = self.session.step_segment(segment, self.frame_idx)
+        qs = [self.reward_fn.quality(f['rep']) if f['rep'] else 0.0
+              for f in record['frames']]
+        q_sum = sum(qs)
+        q_mean = q_sum / len(qs)
+        stall = sum((f['buffer_result'].get('stall_time_s', 0.0) or 0.0)
+                    for f in record['frames'])
+        new_event = any(f['buffer_result'].get('event') == 'rebuffering_start'
+                        for f in record['frames'])
+        reward = self.reward_fn.step_segment(q_sum, q_mean, self.prev_quality,
+                                             stall, new_event)
+        self.prev_quality = q_mean
 
-        self.frame_idx += 1
+        self.frame_idx += len(segment)
         done = self.frame_idx >= len(self.frames)
         info = {
-            'frame_id': record['frame_id'], 'rep_id': record['rep_id'], 'quality': q,
-            'stall_s': stall, 'buffer_s': self.user.buffer.buffer_level_s, 'reward': reward,
-            'sequence': self.sequence,
+            'frame_id': record['first_frame_id'], 'rep_id': record['rep_id'],
+            'quality': q_mean, 'n_frames': len(segment),
+            'stall_s': stall, 'buffer_s': self.user.buffer.buffer_level_s,
+            'reward': reward, 'sequence': self.sequence,
         }
         return self._observe(), reward, done, info
 

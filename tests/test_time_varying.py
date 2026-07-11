@@ -128,6 +128,119 @@ def test_tcp_scalar_none_capacity_unconstrained():
     assert abs(m['time_s'] - (0.072 + 0.072)) < 1e-6, m['time_s']
 
 
+# ---------------------------------------------------------------------------
+# Round 2: segment-based fetching + adaptive playback rate
+# ---------------------------------------------------------------------------
+
+from src.network_model.buffer import ClientBuffer
+
+
+def _mk_session(trace, segment_frames_hint=None, playback_rate_min=1.0, n_frames=20):
+    """Tiny session over synthetic 6-tier frames (1460 B per rep for exact math)."""
+    from src.network_model import Server, EdgeNode, User, Topology
+    from src.network_model.manifest import PointCloud
+    frames = [{'id': i, 'representations': [
+        {'id': r, 'density': 1000 * (6 - r), 'size': '1460', 'coded_bytes': 1460,
+         'bandwidth': 1460 * 8 * 30}
+        for r in range(6)]} for i in range(n_frames)]
+    server = Server("t://origin")
+    server.manifest.frames = frames
+    for fr in frames:
+        for rep in fr['representations']:
+            server.add_pointcloud(fr['id'], rep['id'], PointCloud(points=None))
+    topo = Topology(server)
+    edge = EdgeNode("e", server=server,
+                    tcp_params=dict(rtt_ms=72.0, rtt_jitter_ms=0.0, loss_prob=0.0,
+                                    cwnd_packets=10, mss_bytes=1460, log_packets=False))
+    topo.add_edge(edge)
+    user = User("u", playback_rate_min=playback_rate_min)
+    session = topo.add_user(user, edge, trace=trace)
+    session.start()
+    return session, frames
+
+
+def test_segment_amortizes_rtt():
+    """10 one-packet frames: S=1 pays ~10 RTTs, S=10 pays ~1 RTT + cwnd rounds."""
+    random.seed(0)
+    tr = BandwidthTrace([100e6] * 200)  # fast flat link: serialization negligible
+    s1, frames = _mk_session(tr)
+    for i in range(10):
+        s1.step(frames[i], i)
+    t_perframe = s1.cumulative_time_s          # handshake + 10 rounds ~ 11 * 0.072
+
+    random.seed(0)
+    s2, frames2 = _mk_session(tr)
+    s2.step_segment(frames2[:10], 0)
+    t_segment = s2.cumulative_time_s           # handshake + 1 cwnd-10 round ~ 2 * 0.072
+    assert abs(t_perframe - 11 * 0.072) < 1e-6, t_perframe
+    assert abs(t_segment - 2 * 0.072) < 1e-6, t_segment
+    assert t_segment < t_perframe / 5
+
+
+def test_segment_batch_buffer_accounting():
+    """S frames land at one arrival time; buffer level and stall math stay exact."""
+    random.seed(0)
+    tr = BandwidthTrace([100e6] * 200)
+    s, frames = _mk_session(tr)
+    rec = s.step_segment(frames[:10], 0)
+    assert len(rec['frames']) == 10
+    # 10 frames * 1/30 s buffered, none consumed (playback not started: 10/30 < 1 s min)
+    assert abs(s.user.buffer.buffer_level_s - 10 / 30.0) < 1e-9
+    assert s.user.buffer.playback_started is False
+    # throughput history: ONE sample per segment
+    assert len(s.observed_throughput_history) == 1
+
+
+def test_step_is_one_frame_segment():
+    """step() must be exactly step_segment([frame]) — same record content."""
+    random.seed(0)
+    tr = BandwidthTrace([50e6] * 200)
+    s1, frames = _mk_session(tr)
+    r1 = s1.step(frames[0], 0)
+    random.seed(0)
+    s2, frames2 = _mk_session(tr)
+    r2 = s2.step_segment([frames2[0]], 0)
+    assert r1['frame_time_s'] == r2['segment_time_s']
+    assert r1['rep_id'] == r2['rep_id']
+    assert r1['buffer_result'] == r2['frames'][0]['buffer_result']
+
+
+def test_amp_rate_floors_and_tracks_slowdown():
+    b = ClientBuffer(target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
+                     playback_rate_min=0.9)
+    # healthy buffer -> full rate
+    b.buffer_level_s = 2.0
+    assert b._playback_rate() == 1.0
+    # low buffer -> floored at 0.9 (0.3/1.0 = 0.3 would be below the floor)
+    b.buffer_level_s = 0.3
+    assert abs(b._playback_rate() - 0.9) < 1e-12
+    # near-full min buffer -> linear ramp region
+    b.buffer_level_s = 0.95
+    assert abs(b._playback_rate() - 0.95) < 1e-12
+    # consumption at the floor: 1 wall second drains 0.9 content-seconds
+    b.buffer_level_s = 0.5
+    b.is_playing = True
+    b.frames_in_buffer = [{'frame_id': i} for i in range(15)]
+    played_wall = b._consume_buffer(0.2)
+    assert abs(played_wall - 0.2) < 1e-12
+    assert abs(b.buffer_level_s - (0.5 - 0.2 * 0.9)) < 1e-12
+    assert abs(b.slowdown_time_s - 0.2) < 1e-12
+    assert abs(b.slowdown_integral - 0.1 * 0.2) < 1e-12
+
+
+def test_amp_off_is_legacy_exact():
+    """playback_rate_min=1.0 must reproduce the legacy consumption exactly."""
+    for level, elapsed in [(2.0, 0.5), (0.4, 0.5), (0.0, 0.3)]:
+        legacy = ClientBuffer(playback_rate_min=1.0)
+        legacy.buffer_level_s = level
+        legacy.is_playing = True
+        legacy.frames_in_buffer = [{'frame_id': i} for i in range(int(level * 30))]
+        got = legacy._consume_buffer(elapsed)
+        expect = elapsed if level >= elapsed else level  # old semantics
+        assert abs(got - expect) < 1e-12, (level, elapsed, got)
+        assert legacy.slowdown_time_s == 0.0
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns:
