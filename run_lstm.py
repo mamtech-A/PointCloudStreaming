@@ -48,11 +48,11 @@ topo.add_user(user, edge, trace=BandwidthTrace.from_file(bandwidth_log_path))
 sim = Simulator(topo)
 
 print("=" * 100)
-print("🤖 LSTM-Based Bandwidth Prediction for Video Quality Selection")
-print("=" * 100)
-print(f"LSTM Model: {lstm_model_path}")
-print(f"Bandwidth Log: {bandwidth_log_path}")
-print(f"MPD Config: {mpd_path}")
+print("🤖 LSTM-rule ABR — bandwidth prediction drives tier selection (rule, not learned)")
+print(f"   LSTM   : {os.path.basename(lstm_model_path)}")
+print(f"   Content: longdress · 300 frames @30fps · 6-tier G-PCC ladder")
+print(f"   Network: {os.path.basename(bandwidth_log_path)} (unseen test) · "
+      f"{segment_frames}-frame segments")
 print("=" * 100)
 
 sim.run(mpd_path=mpd_path, run_label="lstm", segment_frames=segment_frames)

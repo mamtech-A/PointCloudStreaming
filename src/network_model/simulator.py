@@ -10,7 +10,8 @@ is polymorphic via `session.abr.report(...)` — no per-algorithm branching.
 import os
 import csv
 
-from .manifest import parse_mpd_xml, PointCloud
+from .manifest import (parse_mpd_xml, PointCloud, density_quality,
+                       manifest_quality_endpoints)
 
 
 _BUFFER_EMOJI = {'critical': '🔴', 'low': '🟡', 'normal': '🟢', 'high': '🔵'}
@@ -31,7 +32,8 @@ class Simulator:
         1 (default) = legacy per-frame fetching; S>1 amortizes the per-request
         RTT over S frames (ONE ABR decision + ONE TCP transfer per segment)."""
         self._verbose = verbose
-        print("--- DASH-PC Point Cloud Streaming Simulation ---")
+        if verbose:
+            print("--- DASH-PC Point Cloud Streaming Simulation ---")
         if not mpd_path or not mpd_path.endswith('.xml') or not os.path.exists(mpd_path):
             raise FileNotFoundError("mpd.xml not found or invalid path.")
 
@@ -40,6 +42,11 @@ class Simulator:
         if max_frames:
             frames = frames[:max_frames]
         server.manifest.frames = frames
+        # Human-readable log helpers: manifest quality endpoints (lowest rep -> ~0,
+        # highest -> ~1) and a rep_id -> tier-name map, computed once per run.
+        self._q_lo, self._q_hi = manifest_quality_endpoints(frames)
+        self._tier_name = {r['id']: r.get('quality', f"rep{r['id']}")
+                           for r in frames[0]['representations']} if frames else {}
         for frame in frames:
             for rep in frame['representations']:
                 server.add_pointcloud(
@@ -47,6 +54,7 @@ class Simulator:
                     PointCloud(points=None, meta={'density': rep['density']})
                 )
         total_frames = len(frames)
+        self._total_frames = total_frames
 
         sessions = self.topology.all_sessions()
         for session in sessions:
@@ -78,11 +86,12 @@ class Simulator:
         buffer_log_file = open(buffer_log_path, 'w', encoding='utf-8')
         buffer_log_file.write('user_id,time_s,frame_id,status,buffer_level_s,buffer_health,stall_duration_s,event_type\n')
 
-        for session in sessions:
-            u = session.user
-            print(f"\n[Session] {u.user_id} via {session.edge.edge_id} - Buffer: "
-                  f"{u.buffer_capacity_s}s capacity, {u.min_buffer_s}s min, {u.target_fps} FPS target")
-        print("=" * 100)
+        if verbose:
+            for session in sessions:
+                u = session.user
+                print(f"\n[Session] {u.user_id} via {session.edge.edge_id} - Buffer: "
+                      f"{u.buffer_capacity_s}s capacity, {u.min_buffer_s}s min, {u.target_fps} FPS target")
+            print("=" * 100)
 
         # --- Segment-outer / session-inner main loop (S=1 == per-frame) ---
         seg = max(1, int(segment_frames or 1))
@@ -102,10 +111,11 @@ class Simulator:
         for session in sessions:
             summaries.append(self._report_session(session, total_frames))
 
-        print(f"\n📁 Output Files:")
-        print(f"   Per-frame results: {csv_path}")
-        print(f"   Packet log: {packet_log_path}")
-        print(f"   Buffer log: {buffer_log_path}")
+        if verbose:
+            print(f"\n📁 Output Files:")
+            print(f"   Per-frame results: {csv_path}")
+            print(f"   Packet log: {packet_log_path}")
+            print(f"   Buffer log: {buffer_log_path}")
 
         self.topology.close_all()
 
@@ -158,35 +168,45 @@ class Simulator:
 
         if not getattr(self, '_verbose', True):
             return
-        # ONE console line per segment, showing the post-segment buffer state.
-        last_br = frames[-1]['buffer_result']
+        # ONE readable sentence per segment (narrative log). The bandwidth shown is
+        # ACHIEVED throughput (bytes/time) — the number that matters — NOT the
+        # trace's capacity-at-start (that stays in results.csv).
         bstats = u.get_buffer_stats()
-        buffer_health = bstats['buffer_health']
-        buffer_level = bstats['buffer_level_s']
-        is_rebuffering = last_br.get('is_rebuffering', False)
-        is_playing = last_br.get('is_playing', False)
-        events = [f['buffer_result'].get('event', 'buffered') for f in frames]
-        if 'playback_started' in events:
-            state = " ▶️ PLAYBACK STARTED"
-        elif 'playback_resumed' in events:
-            state = f" ▶️ RESUMED (rebuffer={seg_stall:.2f}s)"
-        elif is_rebuffering:
-            state = " ⏸️ REBUFFERING..."
-        elif is_playing:
-            state = " ▶️ PLAYING"
-        else:
-            state = " ⏳ INITIAL BUFFER"
-        emoji = _BUFFER_EMOJI.get(buffer_health, '⚪')
-        dropped = sum(1 for f in frames if f['buffer_result'].get('status') == 'dropped')
-        icon = "❌" if dropped else "✅"
-        first_id, last_id = frames[0]['frame_id'], frames[-1]['frame_id']
-        label = (f"Frame {first_id:3d}" if len(frames) == 1
-                 else f"Frames {first_id:3d}-{last_id:3d}")
+        buf_level = bstats['buffer_level_s']
+        emoji = _BUFFER_EMOJI.get(bstats['buffer_health'], '⚪')
+        data_bytes = record['data_bytes']
+        thr_mbps = (data_bytes * 8 / seg_time / 1e6) if seg_time > 0 else 0.0
         rep0 = frames[0]['rep'] or {}
-        print(f"[{u.user_id}] {label}: {icon} Rep {record['rep_id']} "
-              f"(density={rep0.get('density', '?')}, {record['data_bytes']:>7.0f}B) | "
-              f"DL={seg_time:.2f}s | BW={capacity/1e6:.1f}Mbps | "
-              f"Buffer: {emoji} {buffer_level:.2f}s ({buffer_health}){state}")
+        tier = self._tier_name.get(record['rep_id'], f"rep{record['rep_id']}").upper()
+        q = density_quality(rep0.get('density'), self._q_lo, self._q_hi)
+        first_id, last_id = frames[0]['frame_id'], frames[-1]['frame_id']
+
+        events = [f['buffer_result'].get('event', 'buffered') for f in frames]
+        last_br = frames[-1]['buffer_result']
+        dropped = sum(1 for f in frames if f['buffer_result'].get('status') == 'dropped')
+        is_playing = last_br.get('is_playing', False)
+        rate = u.buffer._playback_rate()
+        # Slowdown is only meaningful while actually playing back.
+        rate_note = f" ⏩{rate:.2f}x" if (is_playing and rate < 1.0) else ""
+        if 'playback_started' in events:
+            state = "▶ PLAYBACK START"
+        elif 'playback_resumed' in events:
+            state = f"▶ RESUMED (stalled {seg_stall:.1f}s)"
+        elif last_br.get('is_rebuffering', False):
+            state = f"⏸ REBUFFERING ({seg_stall:.1f}s)"
+        elif is_playing:
+            state = "▶ playing"
+        else:
+            state = "⏳ buffering…"
+        if dropped:
+            state += f"  ❌{dropped} dropped (buffer full)"
+
+        played = bstats['frames_played']
+        total = getattr(self, '_total_frames', 0)
+        prog = f"{played}/{total}" if total else f"{played}"
+        print(f"[{u.user_id}] [t={cumulative:5.1f}s] seg {segment_id:<3d} f{first_id:03d}-{last_id:03d}: "
+              f"{tier:<7} q{q:.2f} — {data_bytes/1e6:.1f}MB in {seg_time:.2f}s @{thr_mbps:.0f}Mbps — "
+              f"buf {emoji}{buf_level:.2f}s · played {prog} · {state}{rate_note}")
 
     def _report_session(self, session, total_frames):
         u = session.user
@@ -197,41 +217,50 @@ class Simulator:
         qoe_q = session.qoe_quality()
         mean_q = session.mean_quality()
 
-        print(f"\n{'='*100}")
-        print(f"--- Session Finished: {u.user_id} ---")
-        print(f"\n📊 Playback Statistics:")
-        print(f"   Total Frames: {total_frames}")
-        print(f"   Total Download Time: {total_time:.2f}s")
-        print(f"   Real Video FPS: {fps_real:.2f} frames per second")
-        print(f"\n📦 Buffer Statistics:")
-        print(f"   Final Buffer Level: {stats['buffer_level_s']:.2f}s ({stats['buffer_level_frames']} frames)")
-        print(f"   Buffer Health: {stats['buffer_health']}")
-        print(f"   Frames Played: {stats['frames_played']}")
-        print(f"   Frames Dropped: {stats['frames_dropped']}")
-        print(f"\n⚠️  Stall Statistics:")
-        print(f"   Rebuffer Events: {stats['rebuffer_count']}")
-        print(f"   Total Stall Time: {stats['total_stall_time_s']:.2f}s")
-        if stats['rebuffer_count'] > 0:
-            print(f"   Average Rebuffer Duration: {stats['total_stall_time_s']/stats['rebuffer_count']:.3f}s")
-        if stats.get('playback_rate_min', 1.0) < 1.0:
-            print(f"   Adaptive Playback: {stats['slowdown_time_s']:.2f}s below 1.0x "
-                  f"(floor {stats['playback_rate_min']:.2f}x, "
-                  f"integral {stats['slowdown_integral']:.3f})")
-        print(f"\n🎯 QoE Score (legacy, stall-only): {qoe:.1f}/100")
-        print(f"🎯 Quality-aware QoE': {qoe_q:.1f} raw | {max(0.0, qoe_q):.1f}/100 clipped "
-              f"(mean quality {mean_q:.3f})")
-
-        pred = session.abr.report(session.observed_throughput_history)
-        if pred:
-            print(f"\n🤖 LSTM Prediction Statistics:")
-            print(f"   Total Predictions: {pred['total_predictions']}")
-            print(f"   Mean Predicted BW: {pred['mean_predicted_mbps']:.2f} Mbps")
-            print(f"   Mean Actual BW: {pred['mean_actual_mbps']:.2f} Mbps")
-            print(f"   Mean Absolute Error: {pred['mae_mbps']:.2f} Mbps")
-            print(f"   Mean Absolute % Error: {pred['mape_percent']:.1f}%")
-
+        # Tier mix (share of frames streamed at each quality tier) + achieved
+        # throughput distribution — the "what did the user actually get" view.
         qh = session.quality_history
         switches = sum(1 for i in range(1, len(qh)) if qh[i] != qh[i-1])
+        tier_counts = {}
+        for rid in qh:
+            name = getattr(self, '_tier_name', {}).get(rid, f"rep{rid}")
+            tier_counts[name] = tier_counts.get(name, 0) + 1
+        order = list(getattr(self, '_tier_name', {}).values())
+        tier_mix = " · ".join(
+            f"{name.upper()} {100*tier_counts[name]/len(qh):.0f}%"
+            for name in order if tier_counts.get(name))
+        thr = [t / 1e6 for t in session.observed_throughput_history if t > 0]
+        pred = session.abr.report(session.observed_throughput_history)
+
+        if getattr(self, '_verbose', True):
+            print(f"\n{'='*100}")
+            print(f"📊 Session Summary — {u.user_id}")
+            print(f"{'-'*100}")
+            print(f"   QoE (quality-aware) : {max(0.0, qoe_q):5.1f} / 100   "
+                  f"(raw {qoe_q:.1f})   ← headline")
+            print(f"   QoE (legacy stall)  : {qoe:5.1f} / 100")
+            print(f"   Quality             : mean {mean_q:.3f}" + (f"  ·  tiers {tier_mix}" if tier_mix else ""))
+            print(f"   Playback            : {stats['frames_played']}/{total_frames} frames · "
+                  f"{fps_real:.1f} real fps · {total_time:.1f}s to stream "
+                  f"{total_frames/30.0:.0f}s of video")
+            if stats['frames_dropped']:
+                print(f"   Frames dropped      : {stats['frames_dropped']} (buffer overflow — eager fetch)")
+            avg = (f" · avg {stats['total_stall_time_s']/stats['rebuffer_count']:.2f}s"
+                   if stats['rebuffer_count'] else "")
+            print(f"   Rebuffering         : {stats['rebuffer_count']} event(s) · "
+                  f"{stats['total_stall_time_s']:.2f}s total stall{avg}")
+            if stats.get('playback_rate_min', 1.0) < 1.0:
+                print(f"   Adaptive playback   : {stats['slowdown_time_s']:.2f}s slowed "
+                      f"(floor {stats['playback_rate_min']:.2f}x)")
+            if thr:
+                print(f"   Throughput (achieved): mean {sum(thr)/len(thr):.0f} · "
+                      f"min {min(thr):.0f} · max {max(thr):.0f} Mbps")
+            print(f"   Quality switches    : {switches}")
+            if pred:
+                print(f"   LSTM predictor      : MAE {pred['mae_mbps']:.1f} Mbps "
+                      f"(pred {pred['mean_predicted_mbps']:.0f} vs actual "
+                      f"{pred['mean_actual_mbps']:.0f} Mbps, {pred['total_predictions']} preds)")
+            print(f"{'='*100}")
         return {
             'user_id': u.user_id,
             'abr': session.abr.name,
@@ -248,5 +277,6 @@ class Simulator:
             'slowdown_time_s': stats.get('slowdown_time_s', 0.0),
             'mean_rep_id': (sum(qh) / len(qh)) if qh else 0,
             'quality_switches': switches,
+            'tier_mix': tier_mix,
             'prediction_stats': pred,
         }

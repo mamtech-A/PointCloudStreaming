@@ -47,4 +47,12 @@ user = User("User", target_fps=target_fps, buffer_capacity_s=buffer_capacity_s,
 topo.add_user(user, edge, trace=BandwidthTrace.from_file(bandwidth_log_path))
 
 sim = Simulator(topo)
+
+print("=" * 100)
+print("📏 Baseline rule ABR (BandwidthABR) — highest tier that fits the estimated throughput")
+print(f"   Content: longdress · 300 frames @30fps · 6-tier G-PCC ladder")
+print(f"   Network: {os.path.basename(bandwidth_log_path)} (unseen test) · "
+      f"RTT {tcp_params['rtt_ms']:.0f}ms · {segment_frames}-frame segments")
+print("=" * 100)
+
 sim.run(mpd_path=mpd_path, segment_frames=segment_frames)

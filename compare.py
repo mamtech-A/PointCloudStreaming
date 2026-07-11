@@ -96,19 +96,19 @@ def main():
 
     # 1) Baseline rule.
     sim = build_sim('baseline', lambda: BandwidthABR(), trace_path, args.playback_rate_min)
-    runs.append(sim.run(mpd_path, run_label='baseline', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames)[0])
+    runs.append(sim.run(mpd_path, run_label='baseline', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames, verbose=False)[0])
 
     # 2) LSTM-rule (one shared predictor; predictions rebuild their window each call).
     predictor_lstm = LSTMPredictor().load(lstm_path)
     sim = build_sim('lstm', lambda: LSTMABR(predictor_lstm, use_prediction=True), trace_path, args.playback_rate_min)
-    runs.append(sim.run(mpd_path, run_label='lstm', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames)[0])
+    runs.append(sim.run(mpd_path, run_label='lstm', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames, verbose=False)[0])
 
     # 3) DQN (if a trained policy exists).
     if os.path.exists(dqn_path):
         agent = DQNAgent.load(dqn_path)
         predictor_dqn = LSTMPredictor().load(lstm_path)
         sim = build_sim('dqn', lambda: DQNABR(policy=agent, lstm_provider=LSTMABR(predictor_dqn)), trace_path, args.playback_rate_min)
-        runs.append(sim.run(mpd_path, run_label='dqn', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames)[0])
+        runs.append(sim.run(mpd_path, run_label='dqn', return_summary=True, max_frames=max_frames, segment_frames=args.segment_frames, verbose=False)[0])
     else:
         print(f"\n(skipping DQN — no trained model at {dqn_path}; run train_dqn.py first)")
 
