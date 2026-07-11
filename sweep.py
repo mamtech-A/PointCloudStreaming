@@ -171,6 +171,18 @@ def main():
         bests = [s['best'] or s['final'] for s in per_seed.values()]
         agg = {k: sum(b[k] for b in bests) / len(bests)
                for k in ('reward', 'qoe', 'qoe_quality', 'mean_quality', 'stall_s')}
+        # Across-seed std of the SELECTION metric: turns the "seed 42 vs 43 spread"
+        # caveat into a reported number (population std; n>=2 or 0.0).
+        sel_vals = [b[select_by] for b in bests]
+        n = len(sel_vals)
+        if n >= 2:
+            mean = sum(sel_vals) / n
+            agg[f'{select_by}_std'] = (sum((v - mean) ** 2 for v in sel_vals) / n) ** 0.5
+        else:
+            agg[f'{select_by}_std'] = 0.0
+        agg[f'{select_by}_per_seed'] = {s: (results[idx][s]['best'] or
+                                            results[idx][s]['final'])[select_by]
+                                        for s in sorted(per_seed)}
         table.append({
             'trial': idx, 'config': combo, 'seeds': sorted(per_seed),
             'metrics': agg,
@@ -202,20 +214,25 @@ def main():
         'ranking': table,
         'pareto_front_trials': front,
         'winner': {'trial': winner['trial'], 'config': winner['config'],
-                   'seed': best_seed, 'metrics': winner['metrics'],
-                   'checkpoint': args.out},
+                   'seed': best_seed, 'seeds': winner['seeds'],
+                   'metrics': winner['metrics'], 'checkpoint': args.out},
     }
     with open(os.path.join(project_root, args.results), 'w', encoding='utf-8') as f:
         json.dump(payload, f, indent=2)
 
-    print("\n" + "=" * 90)
-    print(f"{'rank':<5}{'trial':<7}{select_by:>12}{'mean_q':>9}{'stall_s':>9}  config")
+    std_key = f'{select_by}_std'
+    print("\n" + "=" * 96)
+    print(f"{'rank':<5}{'trial':<7}{select_by:>12}{'±std':>8}{'mean_q':>9}{'stall_s':>9}  config")
     for rank, t in enumerate(table[:15], 1):
         m = t['metrics']
         star = ' *pareto' if t['trial'] in front else ''
-        print(f"{rank:<5}{t['trial']:<7}{m[select_by]:>12.2f}{m['mean_quality']:>9.3f}"
-              f"{m['stall_s']:>9.1f}  {t['config']}{star}")
-    print(f"\nWINNER trial {winner['trial']} (seed {best_seed}) -> {args.out}")
+        print(f"{rank:<5}{t['trial']:<7}{m[select_by]:>12.2f}{m.get(std_key, 0.0):>8.2f}"
+              f"{m['mean_quality']:>9.3f}{m['stall_s']:>9.1f}  {t['config']}{star}")
+    wm = winner['metrics']
+    print(f"\nWINNER trial {winner['trial']} -> {args.out}")
+    print(f"  {select_by} = {wm[select_by]:.2f} ± {wm.get(std_key, 0.0):.2f} "
+          f"over {len(winner['seeds'])} seeds {winner['seeds']}")
+    print(f"  per-seed: {wm.get(f'{select_by}_per_seed', {})}")
     print(f"results: {args.results}")
 
 

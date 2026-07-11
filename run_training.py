@@ -172,7 +172,20 @@ def main():
     # --- Stage 4: final eval ---------------------------------------------------
     if 'eval' not in skip:
         fe = cfg.get('final_eval', {})
-        fe_flags = ['--segment-frames', str(fe.get('segment_frames', 10)),
+        # Evaluate at the WINNING segment size (installed model was trained at it),
+        # so the final tables are apples-to-apples with models/abr_dqn.pkl. Fall
+        # back to the config value only when no sweep result exists.
+        eval_seg = fe.get('segment_frames', 10)
+        sweep_json = os.path.join(MODELS, 'dqn_sweep_results.json')
+        if os.path.exists(sweep_json):
+            with open(sweep_json, encoding='utf-8') as f:
+                w = json.load(f).get('winner', {}).get('config', {})
+            if 'segment-frames' in w:
+                eval_seg = w['segment-frames']
+                R.note(f"final eval at winner S={eval_seg} (from dqn_sweep_results.json)")
+        else:
+            R.note(f"final eval at S={eval_seg} (config fallback; no sweep result)")
+        fe_flags = ['--segment-frames', str(eval_seg),
                     '--playback-rate-min', str(fe.get('playback_rate_min', 1.0))]
         mf = ['--max-frames', '60'] if args.smoke else []
         if not R.stage('eval_fixed', py('eval_fixed.py', *(fe_flags + mf)),
@@ -210,19 +223,27 @@ def main():
         with open(sweep_json, encoding='utf-8') as f:
             sw = json.load(f)
         w = sw['winner']
+        sel = sw['select_by']
+        wm = w['metrics']
+        std = wm.get(f'{sel}_std', 0.0)
+        per_seed = wm.get(f'{sel}_per_seed', {})
+        scalar_metrics = ", ".join(f"{k}={v:.3f}" for k, v in wm.items()
+                                   if isinstance(v, (int, float)))
         summary_lines += [
             "## DQN sweep (models/abr_dqn.pkl)", "",
-            f"- {sw['n_configs']} configs x seeds {sw['seeds']} | select-by **{sw['select_by']}**",
-            f"- winner: trial {w['trial']} seed {w['seed']} — config `{json.dumps(w['config'])}`",
-            f"- winner metrics: " + ", ".join(f"{k}={v:.3f}" for k, v in w['metrics'].items()),
+            f"- {sw['n_configs']} configs x seeds {sw['seeds']} | select-by **{sel}**",
+            f"- winner: trial {w['trial']} — config `{json.dumps(w['config'])}`",
+            f"- **{sel} = {wm[sel]:.2f} ± {std:.2f}** over {len(w.get('seeds', sw['seeds']))} "
+            f"seeds (per-seed: {per_seed})",
+            f"- winner metrics: {scalar_metrics}",
             f"- Pareto front (quality vs stall): trials {sw['pareto_front_trials']}",
-            "", "| rank | trial | " + sw['select_by'] + " | mean_q | stall_s | config |",
-            "|---|---|---|---|---|---|",
+            "", f"| rank | trial | {sel} | ±std | mean_q | stall_s | config |",
+            "|---|---|---|---|---|---|---|",
         ]
         for rank, t in enumerate(sw['ranking'][:10], 1):
             m = t['metrics']
             summary_lines.append(
-                f"| {rank} | {t['trial']} | {m[sw['select_by']]:.2f} | "
+                f"| {rank} | {t['trial']} | {m[sel]:.2f} | {m.get(f'{sel}_std', 0.0):.2f} | "
                 f"{m['mean_quality']:.3f} | {m['stall_s']:.1f} | `{json.dumps(t['config'])}` |")
         summary_lines.append("")
     fixed_json = os.path.join(MODELS, 'fixed_arm_baseline.json')
