@@ -571,3 +571,13 @@ the 5 s buffer → rule ABRs drop 56–84 frames; the DQN avoids it by watching 
 buffer); more training seeds (seed 42→82 vs seed 43→62 at the winner config);
 S-matched final eval; reconsider the LSTM selection metric now that stalls are rare
 (log1p won low-bw MAE but lost aggregate MAE to persistence).
+
+**Round 3 close-out (2026-07-11, DQN_REPORT §10.8–10.9)**: the S-matched 8-seed run
+gives the honest robust winner — **S=8, μ=4.3, lstm-off: QoE′ 74.6 ± 19.8** (all four
+S∈{5,8}×lstm configs statistically tied; the lstm_pred feature is now confirmed
+irrelevant). Key reversal: with segmentation making the link comfortable, the best
+**fixed** arm (always-medhigh, QoE′ 90.3, zero stall) is NOT beaten by the DQN's robust
+mean — the good seeds (~90+) match it but ~40% underperform, so the binding constraint
+is now **RL training variance**, echoing the original 4G no-headroom finding. Next
+levers: RL variance reduction (n-step/PER/dueling/ensembling), a harder/more variable
+network regime with real adaptation headroom, and request pacing for the rule baselines.

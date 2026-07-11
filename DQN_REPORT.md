@@ -569,3 +569,64 @@ python run_training.py --jobs 2                        # full round-2 pipeline
 python eval_fixed.py --segment-frames 5 --playback-rate-min 0.9   # table 10.2
 python compare.py   --segment-frames 5 --playback-rate-min 0.9    # table 10.3 at the winning S
 ```
+
+### 10.8 Robust winner (round 3, 8 seeds, S-matched eval) — 2026-07-11
+
+Round 2's winner (QoE′ 77.3) was a 2-seed average of a wide spread. Round 3 narrows
+to the winning neighborhood (S∈{5,8} × μ=4.3 × lstm-ablation = 4 configs) and runs
+**8 training seeds** each (32 trials, 76 min), reporting mean ± std of the selection
+metric; the final eval now runs at the **winning S** (auto-read from the sweep result).
+Artifacts: `logs/train_runs/20260711_130607_full/`.
+
+**Robust ranking (held-out longdress, QoE′ mean ± std over 8 seeds):**
+
+| trial | config | QoE′ | ±std | mean q | stall |
+|---|---|---|---|---|---|
+| 3 | S=8, μ=4.3, **lstm off** | **74.60** | 19.79 | 0.909 | 3.2 s |
+| 0 | S=5, μ=4.3, lstm on | 74.23 | 20.26 | 0.909 | 3.3 s |
+| 2 | S=5, μ=4.3, lstm off | 73.77 | 20.63 | 0.905 | 3.2 s |
+| 1 | S=8, μ=4.3, lstm on | 72.60 | 19.03 | 0.893 | 3.3 s |
+
+**Three findings, all honest:**
+
+1. **All four configs are statistically tied** (74.6…72.6, every ±std ≈ 20). S=5 vs S=8
+   and lstm-on vs lstm-off are indistinguishable given the seed variance — the round-2
+   "S=5 wins" was within noise. The robust operating point is simply **S≈5–8, μ=4.3**.
+2. **The lstm_pred ablation verdict is now settled: the feature is irrelevant.** The
+   robust winner *drops* it (lstm off) and is tied with the lstm-on config. Consistent
+   with rounds 1–2; across 8 seeds it neither helps nor hurts.
+3. **The binding constraint is now training variance, not transport.** Even with 8
+   seeds the winner's std is ~20 QoE′ (per-seed range **38 → 96**). The *good* seeds
+   (90–96) match or beat the best fixed arm; the bad ones (~38) drag the mean to 74.6.
+   Round-2's 77.3 was the top of this band; **74.6 ± 19.8 is the honest level.**
+
+**S-matched final comparison (S=8, AMP, single held-out trace):**
+
+| strategy | legacy QoE | QoE′ | mean q | stall |
+|---|---|---|---|---|
+| best fixed arm (arm 1, always 59.6 Mbps) | 100 | **90.3** | 0.921 | 0.0 s |
+| bandwidth / LSTM rule | 0 | 2.5 | 0.030 | 0.0 s |
+| DQN (installed winner, single-seed draw) | 75.1 | 82.0 | 0.968 | 3.0 s |
+
+**The classic "no-headroom" result returns.** Once segmentation makes the link
+comfortable, a *static* always-medhigh arm streams at zero stall and QoE′ 90.3 — and
+the DQN does **not** clearly beat it on the robust mean (74.6 ± 19.8), because its good
+seeds (~90+) match arm 1 but ~40% of seeds underperform. This mirrors the original 4G
+finding (§4–5): when adaptation headroom is small, a well-chosen fixed arm is a strong
+baseline and the value of learned ABR is gated by **RL stability**, not the
+environment. On this comfortable 5-static-trace regime the honest takeaway is: the
+learned policy *can* match the best static arm but training is unreliable; the next
+lever is variance reduction (n-step returns / prioritized replay / dueling, or seed
+ensembling) — not more transport realism.
+
+### 10.9 Where the project stands
+
+The two-round transport overhaul achieved its goal: point-cloud streaming now plays at
+high quality with little/no stall (legacy QoE off 0, up to 100 for the best fixed arm
+and the good DQN seeds). The learned policy reaches that frontier but does not yet
+dominate a strong static baseline on this comfortable regime, and its run-to-run
+variance is the honest headline. Highest-value next steps: (a) **RL variance reduction**
+(§6.1) to make the learned policy reliably beat the best arm; (b) a **harder/more
+variable network regime** (more traces, mid-session bandwidth cliffs) where adaptation
+has real headroom to exploit; (c) **request pacing** to stop the eager-fetch buffer
+overflow that still cripples the rule baselines (§10.5).
