@@ -1,0 +1,14 @@
+[2026-07-11 07:37:59 UTC] pipeline start | config=configs\training.json smoke=True jobs=2 skip=none
+[2026-07-11 07:37:59 UTC] START gen: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 8 --segment-frames 10 --offsets 1 --policies fixed3 --max-frames 120  (log: 10_gen_lstm_dataset.log)
+[2026-07-11 07:38:09 UTC] DONE  gen in 0.2 min
+[2026-07-11 07:38:09 UTC] START lstm[none]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform none --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_073759_smoke\lstm\bandwidth_lstm_none.pkl --sequence-length 8 --epochs 5 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json --no-tune  (log: 20_lstm_none.log)
+[2026-07-11 07:38:12 UTC] DONE  lstm[none] in 0.1 min
+[2026-07-11 07:38:12 UTC] lstm[none] metrics: mae=44.56 low_bw_mae=0.000 dir_acc=0.750
+[2026-07-11 07:38:12 UTC] LSTM winner: transform=none (low_bw_mae=0.000) -> models/bandwidth_lstm.pkl
+[2026-07-11 07:38:12 UTC] START sweep: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_073759_smoke\sweep --smoke  (log: 30_sweep.log)
+[2026-07-11 07:38:21 UTC] DONE  sweep in 0.1 min
+[2026-07-11 07:38:21 UTC] START eval_fixed: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u eval_fixed.py --segment-frames 10 --playback-rate-min 0.9 --max-frames 60  (log: 40_eval_fixed.log)
+[2026-07-11 07:38:23 UTC] DONE  eval_fixed in 0.0 min
+[2026-07-11 07:38:23 UTC] START compare: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u compare.py --segment-frames 10 --playback-rate-min 0.9 --max-frames 40  (log: 41_compare.log)
+[2026-07-11 07:38:27 UTC] DONE  compare in 0.1 min
+[2026-07-11 07:38:27 UTC] summary -> models/TRAINING_SUMMARY.md | pipeline OK

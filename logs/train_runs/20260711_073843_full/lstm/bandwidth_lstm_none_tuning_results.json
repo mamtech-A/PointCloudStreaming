@@ -1,0 +1,427 @@
+{
+  "best_params": {
+    "hidden_size": 64,
+    "num_layers": 1,
+    "dropout": 0.1,
+    "learning_rate": 0.0005
+  },
+  "best_metrics": {
+    "mae": 4.496238403269883,
+    "mape": 21.605511980446117,
+    "rmse": 10.970512106277157,
+    "persistence_mae": 4.520298457446808,
+    "persistence_mape": 20.805817329245947,
+    "persistence_rmse": 11.148951914003995,
+    "low_bw_threshold_mbps": 5.0,
+    "low_bw_mae": 0.5423653175645616,
+    "low_bw_rmse": 2.4945034782533964,
+    "low_bw_fraction": 0.4787234042553192,
+    "persistence_low_bw_mae": 0.5748082259259258,
+    "directional_accuracy": 0.6578014184397163,
+    "transform": "none",
+    "best_epoch": 30,
+    "best_test_loss": 0.06089924912278851
+  },
+  "all_results": [
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 1,
+        "dropout": 0.1,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 4.867400604757972,
+        "mape": 31.65627941359442,
+        "rmse": 11.000835382221684,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.3900379133481624,
+        "low_bw_rmse": 2.7748851336721927,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5673758865248227,
+        "transform": "none",
+        "best_epoch": 31,
+        "best_test_loss": 0.061309137692054115
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 1,
+        "dropout": 0.1,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.496238403269883,
+        "mape": 21.605511980446117,
+        "rmse": 10.970512106277157,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.5423653175645616,
+        "low_bw_rmse": 2.4945034782533964,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.6578014184397163,
+        "transform": "none",
+        "best_epoch": 30,
+        "best_test_loss": 0.06089924912278851
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 1,
+        "dropout": 0.2,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 4.9834250019174124,
+        "mape": 33.122555407201034,
+        "rmse": 10.981937247657575,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.4895504324087634,
+        "low_bw_rmse": 2.842605774484793,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5620567375886525,
+        "transform": "none",
+        "best_epoch": 22,
+        "best_test_loss": 0.061113978218701154
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 1,
+        "dropout": 0.2,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.681680644843785,
+        "mape": 26.8372665646828,
+        "rmse": 11.023378230333725,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.9694243365496599,
+        "low_bw_rmse": 2.662302803482113,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5691489361702128,
+        "transform": "none",
+        "best_epoch": 28,
+        "best_test_loss": 0.06156294285837147
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.1,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 4.84446562339339,
+        "mape": 28.49132828802947,
+        "rmse": 11.246990816543109,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.0641633395358612,
+        "low_bw_rmse": 2.7034814215182346,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5762411347517731,
+        "transform": "none",
+        "best_epoch": 23,
+        "best_test_loss": 0.06413640425954428
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.1,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 5.077115218687882,
+        "mape": 35.299950324014475,
+        "rmse": 11.202566293140483,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.6816233023903173,
+        "low_bw_rmse": 2.9194520279530884,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5691489361702128,
+        "transform": "none",
+        "best_epoch": 40,
+        "best_test_loss": 0.06368159044844408
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.2,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 5.061378109663509,
+        "mape": 33.65142481834535,
+        "rmse": 11.146384970337209,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.579169597273763,
+        "low_bw_rmse": 2.7892672382277186,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5797872340425532,
+        "transform": "none",
+        "best_epoch": 16,
+        "best_test_loss": 0.06291884119208488
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.2,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.779114074845334,
+        "mape": 25.967553971020372,
+        "rmse": 11.180725162729427,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.8553222466855649,
+        "low_bw_rmse": 2.593151926569118,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5815602836879432,
+        "transform": "none",
+        "best_epoch": 24,
+        "best_test_loss": 0.06341709693272908
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 1,
+        "dropout": 0.1,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 4.610007385237241,
+        "mape": 21.447321334231205,
+        "rmse": 11.201252597557794,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.5262559344975224,
+        "low_bw_rmse": 2.40416218834779,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.6666666666666666,
+        "transform": "none",
+        "best_epoch": 13,
+        "best_test_loss": 0.06344610126689076
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 1,
+        "dropout": 0.1,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.57112977645506,
+        "mape": 23.720007929818003,
+        "rmse": 10.921776200692259,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.749006166317636,
+        "low_bw_rmse": 2.459925996868137,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5709219858156028,
+        "transform": "none",
+        "best_epoch": 29,
+        "best_test_loss": 0.06043104126325084
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 1,
+        "dropout": 0.2,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 4.599577655176041,
+        "mape": 23.32763855395677,
+        "rmse": 11.083063518759454,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.5864521288628471,
+        "low_bw_rmse": 2.681704557457998,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.648936170212766,
+        "transform": "none",
+        "best_epoch": 10,
+        "best_test_loss": 0.062214936026268534
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 1,
+        "dropout": 0.2,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.715389757623551,
+        "mape": 28.097465424820257,
+        "rmse": 10.928939280560963,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.0873191148193357,
+        "low_bw_rmse": 2.6871720472085676,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5726950354609929,
+        "transform": "none",
+        "best_epoch": 20,
+        "best_test_loss": 0.06055524215723077
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 2,
+        "dropout": 0.1,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 5.118900682923662,
+        "mape": 34.04600195664666,
+        "rmse": 11.302031886800245,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 1.5363311262496382,
+        "low_bw_rmse": 2.862746326875789,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5656028368794326,
+        "transform": "none",
+        "best_epoch": 8,
+        "best_test_loss": 0.06480763324846824
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 2,
+        "dropout": 0.1,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.633640248550739,
+        "mape": 22.61319573443529,
+        "rmse": 11.281090065286325,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.6005498904730903,
+        "low_bw_rmse": 2.4520378423741835,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.6170212765957447,
+        "transform": "none",
+        "best_epoch": 24,
+        "best_test_loss": 0.064361276725928
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 2,
+        "dropout": 0.2,
+        "learning_rate": 0.001
+      },
+      "metrics": {
+        "mae": 4.695179615604049,
+        "mape": 23.036617329283544,
+        "rmse": 11.405517474380945,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.6407493245062933,
+        "low_bw_rmse": 2.4128804967406117,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.5815602836879432,
+        "transform": "none",
+        "best_epoch": 11,
+        "best_test_loss": 0.06578737331761254
+      }
+    },
+    {
+      "params": {
+        "hidden_size": 128,
+        "num_layers": 2,
+        "dropout": 0.2,
+        "learning_rate": 0.0005
+      },
+      "metrics": {
+        "mae": 4.794857427843458,
+        "mape": 22.240472146769015,
+        "rmse": 11.259067077498942,
+        "persistence_mae": 4.520298457446808,
+        "persistence_mape": 20.805817329245947,
+        "persistence_rmse": 11.148951914003995,
+        "low_bw_threshold_mbps": 5.0,
+        "low_bw_mae": 0.5497267002115886,
+        "low_bw_rmse": 2.446786603398448,
+        "low_bw_fraction": 0.4787234042553192,
+        "persistence_low_bw_mae": 0.5748082259259258,
+        "directional_accuracy": 0.6542553191489362,
+        "transform": "none",
+        "best_epoch": 14,
+        "best_test_loss": 0.06419203334694935
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_073843_full\sweep
+sweep: 24 configs x 2 seed(s) = 48 trials | jobs=2 | select-by=qoe_quality
+  dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260711_073843_full\sweep
+  [trial 000 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 1}
+  [trial 000 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 1}
+  [trial 001 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 5}
+  [trial 002 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 001 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 5}
+  [trial 002 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 003 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 10}
+  [trial 003 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 10}
+  [trial 004 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 15}
+  [trial 005 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 30}
+  [trial 004 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 15}
+  [trial 005 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 30}
+  [trial 006 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 1}
+  [trial 007 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 5}
+  [trial 006 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 1}
+  [trial 008 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 007 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 5}
+  [trial 008 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 009 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 10}
+  [trial 010 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 15}
+  [trial 009 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 10}
+  [trial 011 seed 42] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 30}
+  [trial 010 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 15}
+  [trial 011 seed 43] ok  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 30}
+  [trial 012 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 1}
+  [trial 013 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 5}
+  [trial 012 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 1}
+  [trial 014 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 013 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 5}
+  [trial 015 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 10}
+  [trial 014 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 016 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 15}
+  [trial 015 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 10}
+  [trial 017 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 30}
+  [trial 016 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 15}
+  [trial 017 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 30}
+  [trial 018 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 1}
+  [trial 019 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 5}
+  [trial 018 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 1}
+  [trial 020 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 019 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 5}
+  [trial 020 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 021 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 10}
+  [trial 022 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 15}
+  [trial 021 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 10}
+  [trial 023 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 30}
+  [trial 022 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 15}
+  [trial 023 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 30}
+
+==========================================================================================
+rank trial   qoe_quality   mean_q  stall_s  config
+1    13            77.27    0.809      0.6  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 5} *pareto
+2    14            75.98    0.811      0.7  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8} *pareto
+3    19            75.94    0.813      0.9  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 5} *pareto
+4    15            68.94    0.845      2.8  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 10} *pareto
+5    21            64.74    0.853      4.1  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 10} *pareto
+6    20            64.61    0.884      4.6  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8} *pareto
+7    16            64.31    0.899      5.5  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 15} *pareto
+8    22            63.48    0.894      5.7  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 15}
+9    7             63.15    0.887      5.0  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 5} *pareto
+10   1             61.41    0.890      5.2  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 5} *pareto
+11   2             60.94    0.894      5.6  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 8}
+12   8             60.22    0.910      6.1  {'mu': 2.0, 'no-lstm-pred': True, 'segment-frames': 8} *pareto
+13   4             50.02    0.928      9.4  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 15} *pareto
+14   23            49.19    0.935     10.1  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 30} *pareto
+15   3             43.38    0.928     10.9  {'mu': 2.0, 'no-lstm-pred': False, 'segment-frames': 10}
+
+WINNER trial 13 (seed 42) -> models\abr_dqn.pkl
+results: models\dqn_sweep_results.json

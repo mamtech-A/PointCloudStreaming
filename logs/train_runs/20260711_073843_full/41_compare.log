@@ -1,0 +1,209 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u compare.py --segment-frames 10 --playback-rate-min 0.9
+====================================================================================================
+BASELINE vs LSTM vs DQN comparison
+trace: C:\Users\Nima\PointCloudStreaming\bandwidth_5g\static_B_2020.01.16_10.43.34.csv | frames: all | segment: 10 | amp_floor: 0.9
+====================================================================================================
+--- DASH-PC Point Cloud Streaming Simulation ---
+
+[Session] User via edge-1 - Buffer: 5.0s capacity, 1.0s min, 30.0 FPS target
+====================================================================================================
+[User] Frames   0-  9: ✅ Rep 5 (density=14057,   36996B) | DL=6.06s | BW=0.0Mbps | Buffer: 🔴 0.33s (critical) ⏳ INITIAL BUFFER
+[User] Frames  10- 19: ✅ Rep 5 (density=14721,   37181B) | DL=0.14s | BW=168.8Mbps | Buffer: 🟡 0.67s (low) ⏳ INITIAL BUFFER
+[User] Frames  20- 29: ✅ Rep 5 (density=14705,   37193B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟡 1.00s (low) ⏳ INITIAL BUFFER
+[User] Frames  30- 39: ✅ Rep 5 (density=14980,   39799B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟡 1.33s (low) ▶️ PLAYBACK STARTED
+[User] Frames  40- 49: ✅ Rep 5 (density=15330,   38579B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 1.59s (normal) ▶️ PLAYING
+[User] Frames  50- 59: ✅ Rep 5 (density=15287,   39547B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟢 1.85s (normal) ▶️ PLAYING
+[User] Frames  60- 69: ✅ Rep 5 (density=15652,   39149B) | DL=0.06s | BW=168.8Mbps | Buffer: 🟢 2.12s (normal) ▶️ PLAYING
+[User] Frames  70- 79: ✅ Rep 5 (density=14789,   38313B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 2.39s (normal) ▶️ PLAYING
+[User] Frames  80- 89: ✅ Rep 5 (density=15354,   40039B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟢 2.64s (normal) ▶️ PLAYING
+[User] Frames  90- 99: ✅ Rep 5 (density=16490,   40960B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟢 2.90s (normal) ▶️ PLAYING
+[User] Frames 100-109: ✅ Rep 5 (density=15646,   40117B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 3.16s (normal) ▶️ PLAYING
+[User] Frames 110-119: ✅ Rep 5 (density=15035,   38555B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟢 3.41s (normal) ▶️ PLAYING
+[User] Frames 120-129: ✅ Rep 5 (density=14633,   39080B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 3.68s (normal) ▶️ PLAYING
+[User] Frames 130-139: ✅ Rep 5 (density=16143,   40653B) | DL=0.08s | BW=160.5Mbps | Buffer: 🟢 3.94s (normal) ▶️ PLAYING
+[User] Frames 140-149: ✅ Rep 5 (density=15381,   37874B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 4.19s (high) ▶️ PLAYING
+[User] Frames 150-159: ✅ Rep 5 (density=14820,   38787B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 4.45s (high) ▶️ PLAYING
+[User] Frames 160-169: ✅ Rep 5 (density=15070,   40126B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 4.72s (high) ▶️ PLAYING
+[User] Frames 170-179: ✅ Rep 5 (density=15930,   42427B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 4.97s (high) ▶️ PLAYING
+[User] Frames 180-189: ❌ Rep 5 (density=16078,   41889B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 190-199: ❌ Rep 5 (density=15481,   38138B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 200-209: ❌ Rep 5 (density=13684,   35463B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 210-219: ❌ Rep 5 (density=14357,   38210B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 220-229: ❌ Rep 5 (density=15684,   40328B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 230-239: ❌ Rep 5 (density=15588,   39594B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 240-249: ❌ Rep 5 (density=15540,   39946B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 250-259: ❌ Rep 5 (density=15683,   39575B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 260-269: ❌ Rep 5 (density=15635,   39395B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 270-279: ❌ Rep 5 (density=14963,   39099B) | DL=0.08s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 280-289: ❌ Rep 5 (density=15659,   39786B) | DL=0.08s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 290-299: ❌ Rep 5 (density=15547,   39014B) | DL=0.08s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+
+====================================================================================================
+--- Session Finished: User ---
+
+📊 Playback Statistics:
+   Total Frames: 300
+   Total Download Time: 8.27s
+   Real Video FPS: 36.30 frames per second
+
+📦 Buffer Statistics:
+   Final Buffer Level: 5.00s (168 frames)
+   Buffer Health: high
+   Frames Played: 48
+   Frames Dropped: 84
+
+⚠️  Stall Statistics:
+   Rebuffer Events: 0
+   Total Stall Time: 0.00s
+   Adaptive Playback: 0.00s below 1.0x (floor 0.90x, integral 0.000)
+
+🎯 QoE Score (legacy, stall-only): 0.0/100
+🎯 Quality-aware QoE': 2.5 raw | 2.5/100 clipped (mean quality 0.030)
+
+📁 Output Files:
+   Per-frame results: C:\Users\Nima\PointCloudStreaming\logs\baseline\results.csv
+   Packet log: C:\Users\Nima\PointCloudStreaming\logs\baseline\packets.log
+   Buffer log: C:\Users\Nima\PointCloudStreaming\logs\baseline\buffer.log
+--- DASH-PC Point Cloud Streaming Simulation ---
+
+[Session] User via edge-1 - Buffer: 5.0s capacity, 1.0s min, 30.0 FPS target
+====================================================================================================
+[User] Frames   0-  9: ✅ Rep 5 (density=14057,   36996B) | DL=6.06s | BW=0.0Mbps | Buffer: 🔴 0.33s (critical) ⏳ INITIAL BUFFER
+[User] Frames  10- 19: ✅ Rep 5 (density=14721,   37181B) | DL=0.14s | BW=168.8Mbps | Buffer: 🟡 0.67s (low) ⏳ INITIAL BUFFER
+[User] Frames  20- 29: ✅ Rep 5 (density=14705,   37193B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟡 1.00s (low) ⏳ INITIAL BUFFER
+[User] Frames  30- 39: ✅ Rep 5 (density=14980,   39799B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟡 1.33s (low) ▶️ PLAYBACK STARTED
+[User] Frames  40- 49: ✅ Rep 5 (density=15330,   38579B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 1.60s (normal) ▶️ PLAYING
+[User] Frames  50- 59: ✅ Rep 5 (density=15287,   39547B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 1.86s (normal) ▶️ PLAYING
+[User] Frames  60- 69: ✅ Rep 5 (density=15652,   39149B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 2.12s (normal) ▶️ PLAYING
+[User] Frames  70- 79: ✅ Rep 5 (density=14789,   38313B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 2.38s (normal) ▶️ PLAYING
+[User] Frames  80- 89: ✅ Rep 5 (density=15354,   40039B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 2.65s (normal) ▶️ PLAYING
+[User] Frames  90- 99: ✅ Rep 5 (density=16490,   40960B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 2.91s (normal) ▶️ PLAYING
+[User] Frames 100-109: ✅ Rep 5 (density=15646,   40117B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 3.17s (normal) ▶️ PLAYING
+[User] Frames 110-119: ✅ Rep 5 (density=15035,   38555B) | DL=0.07s | BW=168.8Mbps | Buffer: 🟢 3.43s (normal) ▶️ PLAYING
+[User] Frames 120-129: ✅ Rep 4 (density=57790,  154841B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟢 3.69s (normal) ▶️ PLAYING
+[User] Frames 130-139: ✅ Rep 4 (density=64157,  162777B) | DL=0.08s | BW=168.8Mbps | Buffer: 🟢 3.94s (normal) ▶️ PLAYING
+[User] Frames 140-149: ✅ Rep 4 (density=60914,  151832B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 4.20s (high) ▶️ PLAYING
+[User] Frames 150-159: ✅ Rep 4 (density=58884,  153399B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 4.46s (high) ▶️ PLAYING
+[User] Frames 160-169: ✅ Rep 4 (density=59564,  159260B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 4.73s (high) ▶️ PLAYING
+[User] Frames 170-179: ✅ Rep 4 (density=62805,  168857B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 4.98s (high) ▶️ PLAYING
+[User] Frames 180-189: ❌ Rep 4 (density=63738,  167564B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 190-199: ❌ Rep 3 (density=234763,  617777B) | DL=0.07s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 200-209: ❌ Rep 2 (density=440802, 1425093B) | DL=0.08s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 210-219: ❌ Rep 1 (density=618056, 2573886B) | DL=0.13s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 220-229: ❌ Rep 0 (density=864920, 4726057B) | DL=0.28s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 230-239: ❌ Rep 0 (density=848392, 4700664B) | DL=0.28s | BW=160.5Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 240-249: ❌ Rep 1 (density=666570, 2799103B) | DL=0.20s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 250-259: ❌ Rep 1 (density=671844, 2798743B) | DL=0.14s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 260-269: ❌ Rep 1 (density=672250, 2730130B) | DL=0.14s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 270-279: ❌ Rep 1 (density=641062, 2637829B) | DL=0.15s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 280-289: ❌ Rep 1 (density=671095, 2745353B) | DL=0.15s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+[User] Frames 290-299: ❌ Rep 1 (density=670600, 2773655B) | DL=0.21s | BW=164.9Mbps | Buffer: 🔵 5.00s (high) ⏳ INITIAL BUFFER
+
+====================================================================================================
+--- Session Finished: User ---
+
+📊 Playback Statistics:
+   Total Frames: 300
+   Total Download Time: 9.25s
+   Real Video FPS: 32.42 frames per second
+
+📦 Buffer Statistics:
+   Final Buffer Level: 5.00s (164 frames)
+   Buffer Health: high
+   Frames Played: 80
+   Frames Dropped: 56
+
+⚠️  Stall Statistics:
+   Rebuffer Events: 0
+   Total Stall Time: 0.00s
+   Adaptive Playback: 0.00s below 1.0x (floor 0.90x, integral 0.000)
+
+🎯 QoE Score (legacy, stall-only): 0.0/100
+🎯 Quality-aware QoE': 41.1 raw | 41.1/100 clipped (mean quality 0.426)
+
+🤖 LSTM Prediction Statistics:
+   Total Predictions: 22
+   Mean Predicted BW: 64.59 Mbps
+   Mean Actual BW: 73.19 Mbps
+   Mean Absolute Error: 17.08 Mbps
+   Mean Absolute % Error: 19.8%
+
+📁 Output Files:
+   Per-frame results: C:\Users\Nima\PointCloudStreaming\logs\lstm\results.csv
+   Packet log: C:\Users\Nima\PointCloudStreaming\logs\lstm\packets.log
+   Buffer log: C:\Users\Nima\PointCloudStreaming\logs\lstm\buffer.log
+--- DASH-PC Point Cloud Streaming Simulation ---
+
+[Session] User via edge-1 - Buffer: 5.0s capacity, 1.0s min, 30.0 FPS target
+====================================================================================================
+[User] Frames   0-  9: ✅ Rep 1 (density=602139, 2558085B) | DL=9.02s | BW=0.0Mbps | Buffer: 🔴 0.33s (critical) ⏳ INITIAL BUFFER
+[User] Frames  10- 19: ✅ Rep 1 (density=630146, 2568723B) | DL=1.03s | BW=164.9Mbps | Buffer: 🟡 0.67s (low) ⏳ INITIAL BUFFER
+[User] Frames  20- 29: ✅ Rep 1 (density=629211, 2507015B) | DL=0.50s | BW=162.1Mbps | Buffer: 🟡 1.00s (low) ⏳ INITIAL BUFFER
+[User] Frames  30- 39: ✅ Rep 1 (density=636511, 2624271B) | DL=0.29s | BW=162.1Mbps | Buffer: 🟡 1.33s (low) ▶️ PLAYBACK STARTED
+[User] Frames  40- 49: ✅ Rep 1 (density=657967, 2655399B) | DL=0.21s | BW=162.1Mbps | Buffer: 🟡 1.45s (low) ▶️ PLAYING
+[User] Frames  50- 59: ✅ Rep 1 (density=659022, 2732163B) | DL=0.15s | BW=155.3Mbps | Buffer: 🟢 1.64s (normal) ▶️ PLAYING
+[User] Frames  60- 69: ✅ Rep 1 (density=678258, 2637689B) | DL=0.14s | BW=155.3Mbps | Buffer: 🟢 1.83s (normal) ▶️ PLAYING
+[User] Frames  70- 79: ✅ Rep 1 (density=635117, 2578393B) | DL=0.14s | BW=155.3Mbps | Buffer: 🟢 2.02s (normal) ▶️ PLAYING
+[User] Frames  80- 89: ✅ Rep 1 (density=665021, 2874309B) | DL=0.21s | BW=155.3Mbps | Buffer: 🟢 2.15s (normal) ▶️ PLAYING
+[User] Frames  90- 99: ✅ Rep 1 (density=719177, 2916225B) | DL=0.21s | BW=155.3Mbps | Buffer: 🟢 2.27s (normal) ▶️ PLAYING
+[User] Frames 100-109: ✅ Rep 1 (density=679529, 2725250B) | DL=0.14s | BW=155.3Mbps | Buffer: 🟢 2.46s (normal) ▶️ PLAYING
+[User] Frames 110-119: ✅ Rep 1 (density=646903, 2646803B) | DL=0.13s | BW=165.4Mbps | Buffer: 🟢 2.66s (normal) ▶️ PLAYING
+[User] Frames 120-129: ✅ Rep 1 (density=625134, 2734599B) | DL=0.15s | BW=165.4Mbps | Buffer: 🟢 2.84s (normal) ▶️ PLAYING
+[User] Frames 130-139: ✅ Rep 1 (density=692102, 2916856B) | DL=0.20s | BW=165.4Mbps | Buffer: 🟢 2.97s (normal) ▶️ PLAYING
+[User] Frames 140-149: ✅ Rep 1 (density=660109, 2734803B) | DL=0.15s | BW=165.4Mbps | Buffer: 🟢 3.16s (normal) ▶️ PLAYING
+[User] Frames 150-159: ✅ Rep 1 (density=634983, 2690701B) | DL=0.16s | BW=165.4Mbps | Buffer: 🟢 3.33s (normal) ▶️ PLAYING
+[User] Frames 160-169: ✅ Rep 1 (density=644956, 2684630B) | DL=0.16s | BW=165.4Mbps | Buffer: 🟢 3.51s (normal) ▶️ PLAYING
+[User] Frames 170-179: ✅ Rep 1 (density=678780, 2808114B) | DL=0.16s | BW=165.4Mbps | Buffer: 🟢 3.69s (normal) ▶️ PLAYING
+[User] Frames 180-189: ✅ Rep 1 (density=689549, 2812240B) | DL=0.16s | BW=151.8Mbps | Buffer: 🟢 3.86s (normal) ▶️ PLAYING
+[User] Frames 190-199: ✅ Rep 1 (density=665035, 2564110B) | DL=0.14s | BW=151.8Mbps | Buffer: 🔵 4.05s (high) ▶️ PLAYING
+[User] Frames 200-209: ✅ Rep 1 (density=584565, 2356927B) | DL=0.15s | BW=151.8Mbps | Buffer: 🔵 4.23s (high) ▶️ PLAYING
+[User] Frames 210-219: ✅ Rep 1 (density=618056, 2573886B) | DL=0.14s | BW=151.8Mbps | Buffer: 🔵 4.43s (high) ▶️ PLAYING
+[User] Frames 220-229: ✅ Rep 1 (density=680233, 2774082B) | DL=0.22s | BW=151.8Mbps | Buffer: 🔵 4.55s (high) ▶️ PLAYING
+[User] Frames 230-239: ✅ Rep 1 (density=666684, 2744058B) | DL=2.20s | BW=151.8Mbps | Buffer: 🟢 2.67s (normal) ▶️ PLAYING
+[User] Frames 240-249: ✅ Rep 1 (density=666570, 2799103B) | DL=1.30s | BW=17.8Mbps | Buffer: 🟢 1.71s (normal) ▶️ PLAYING
+[User] Frames 250-259: ✅ Rep 1 (density=671844, 2798743B) | DL=0.86s | BW=17.8Mbps | Buffer: 🟡 1.19s (low) ▶️ PLAYING
+[User] Frames 260-269: ✅ Rep 1 (density=672250, 2730130B) | DL=0.45s | BW=56.4Mbps | Buffer: 🟡 1.07s (low) ▶️ PLAYING
+[User] Frames 270-279: ✅ Rep 1 (density=641062, 2637829B) | DL=0.35s | BW=56.4Mbps | Buffer: 🟡 1.05s (low) ▶️ PLAYING
+[User] Frames 280-289: ✅ Rep 1 (density=671095, 2745353B) | DL=0.21s | BW=111.7Mbps | Buffer: 🟡 1.17s (low) ▶️ PLAYING
+[User] Frames 290-299: ✅ Rep 1 (density=670600, 2773655B) | DL=0.20s | BW=111.7Mbps | Buffer: 🟡 1.31s (low) ▶️ PLAYING
+
+====================================================================================================
+--- Session Finished: User ---
+
+📊 Playback Statistics:
+   Total Frames: 300
+   Total Download Time: 19.53s
+   Real Video FPS: 15.36 frames per second
+
+📦 Buffer Statistics:
+   Final Buffer Level: 1.31s (50 frames)
+   Buffer Health: low
+   Frames Played: 250
+   Frames Dropped: 0
+
+⚠️  Stall Statistics:
+   Rebuffer Events: 0
+   Total Stall Time: 0.00s
+   Adaptive Playback: 0.00s below 1.0x (floor 0.90x, integral 0.000)
+
+🎯 QoE Score (legacy, stall-only): 100.0/100
+🎯 Quality-aware QoE': 91.6 raw | 91.6/100 clipped (mean quality 0.921)
+
+📁 Output Files:
+   Per-frame results: C:\Users\Nima\PointCloudStreaming\logs\dqn\results.csv
+   Packet log: C:\Users\Nima\PointCloudStreaming\logs\dqn\packets.log
+   Buffer log: C:\Users\Nima\PointCloudStreaming\logs\dqn\buffer.log
+
+====================================================================================================
+COMPARISON SUMMARY
+====================================================================================================
+strategy      QoE    QoE_q  rebuf   stall_s  slow_s  dropped  mean_rep  switches  mean_qual    reward
+-----------------------------------------------------------------------------------------------------
+bandwidth     0.0      2.5      0       0.0     0.0       84      5.00         0      0.030       8.5
+lstm          0.0     41.1      0       0.0     0.0       56      3.33         6      0.426     126.3
+dqn         100.0     91.6      0       0.0     0.0        0      1.00         0      0.921     275.8
+
+QoE counts only stalls/drops (favors the lowest quality); QoE_q is the
+quality-aware QoE' = 100*mean_quality - 4.3*stall_s - 1.0*sum|dq| (raw, unclipped);
+'reward' is the Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.
+Logs written to logs/baseline/, logs/lstm/, logs/dqn/

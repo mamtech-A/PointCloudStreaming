@@ -1,0 +1,10 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 8 --segment-frames 10 --offsets 1 --policies fixed3 --max-frames 120
+  static_B_2019.12.16_13.40.04__fixed3__off0.csv: 12 samples (mean 20.55 Mbps)
+  static_B_2020.02.13_13.57.29__fixed3__off0.csv: 12 samples (mean 15.28 Mbps)
+  static_B_2020.02.14_13.21.26__fixed3__off0.csv: 12 samples (mean 15.87 Mbps)
+  static_B_2020.02.27_18.39.27__fixed3__off0.csv: 12 samples (mean 50.74 Mbps)
+  static_B_2020.01.16_10.43.34__fixed3__off0.csv: 12 samples (mean 50.95 Mbps)
+
+5 series -> C:\Users\Nima\PointCloudStreaming\data\lstm_achieved (4 train / 1 test files)
+split: C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json
+Train with: python train_model.py --bandwidth-dir data/lstm_achieved --split-from data/lstm_achieved/split.json
