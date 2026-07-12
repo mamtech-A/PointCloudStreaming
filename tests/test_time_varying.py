@@ -241,6 +241,82 @@ def test_amp_off_is_legacy_exact():
         assert legacy.slowdown_time_s == 0.0
 
 
+# ---------------------------------------------------------------------------
+# Integral serialization ("like a real network"): delivery time is the exact
+# integral of the time-varying capacity, not the round-start rate held flat.
+# ---------------------------------------------------------------------------
+
+
+def test_time_to_transmit_integral():
+    # 2 kbps for 3 s, then 14.2 Mbps forever.
+    tr = BandwidthTrace([2e3, 2e3, 2e3, 14.2e6], sample_times_s=[0, 1, 2, 3])
+    bits = 1460 * 8  # one MSS = 11680 bits
+    # 3 s in the fade delivers 6000 bits; remaining 5680 at 14.2 Mbps ~ 0.4 ms.
+    t = tr.time_to_transmit(0.0, bits)
+    expected = 3.0 + (bits - 3 * 2e3) / 14.2e6
+    assert abs(t - expected) < 1e-9, t
+    # Starting AFTER the fade: pure fast-rate serialization.
+    assert abs(tr.time_to_transmit(3.0, bits) - bits / 14.2e6) < 1e-12
+    # Flat region == legacy bits/rate formula exactly.
+    flat = BandwidthTrace([5e6] * 10)
+    assert abs(flat.time_to_transmit(2.0, 1e6) - 1e6 / 5e6) < 1e-12
+    # Past the end: last sample holds forever.
+    assert abs(flat.time_to_transmit(99.0, 5e6) - 1.0) < 1e-12
+
+
+def test_tcp_integral_serialization_finishes_when_trace_recovers():
+    """A 1-packet round starting in a 3 s dead zone completes ~t=3.0 s (real-link
+    behavior), NOT bits/fade_rate = 5.84 s (the old round-constant charge)."""
+    from src.network_model.links import _TraceCapacity
+    random.seed(0)
+    tr = BandwidthTrace([2e3, 2e3, 2e3, 14.2e6], sample_times_s=[0, 1, 2, 3])
+    c = _mk_conn()
+    m = c.send(1460, capacity_bps=_TraceCapacity(tr, 0.0))
+    # handshake (0.072) consumed first; the data round starts at t_rel=0.072 and
+    # its single packet completes when the integral reaches 11680 bits (~t=3.0).
+    expected_serialize = tr.time_to_transmit(0.072, 1460 * 8)
+    expected_total = 0.072 + max(0.072, expected_serialize)
+    assert abs(m['time_s'] - expected_total) < 1e-6, m['time_s']
+    assert m['time_s'] < 3.2, m['time_s']          # was ~5.9 under the old model
+
+
+def test_segment0_startup_realistic_on_heldout_trace():
+    """End-to-end: segment 0 (8 MED frames from t=0) on the real held-out trace
+    finishes ~5 s (fade integral ~3 s + genuine TCP slow-start ramp), not 7.8 s."""
+    import os
+    trace_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              'bandwidth_5g', 'static_B_2020.01.16_10.43.34.csv')
+    if not os.path.exists(trace_path):
+        return  # dataset not present: skip quietly
+    from src.network_model import Server, EdgeNode, User, Topology
+    from src.network_model.manifest import parse_mpd_xml, PointCloud
+    mpd = os.path.join(os.path.dirname(trace_path), '..', 'config', 'mpd_gpcc_longdress.xml')
+    frames = parse_mpd_xml(os.path.normpath(mpd))[:8]
+    random.seed(0)
+    server = Server("t://origin")
+    server.manifest.frames = frames
+    for fr in frames:
+        for rep in fr['representations']:
+            server.add_pointcloud(fr['id'], rep['id'], PointCloud(points=None))
+    topo = Topology(server)
+    edge = EdgeNode("e", server=server,
+                    tcp_params=dict(rtt_ms=72.0, rtt_jitter_ms=0.0, loss_prob=0.0,
+                                    cwnd_packets=10, mss_bytes=1460, log_packets=False))
+    topo.add_edge(edge)
+    user = User("u")
+    session = topo.add_user(user, edge, trace=BandwidthTrace.from_file(trace_path))
+    session.start()
+
+    class _Med:  # force the MED tier like the demo's first decision
+        name = 'fixed'
+        def reset(self): pass
+        def select(self, state): return 2
+        def report(self, *a): return None
+    session.abr = _Med()
+    rec = session.step_segment(frames, 0)
+    assert 3.0 < rec['segment_time_s'] < 5.6, rec['segment_time_s']
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith('test_')]
     for fn in fns:

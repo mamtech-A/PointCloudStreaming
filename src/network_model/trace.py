@@ -21,7 +21,11 @@ Time model (piecewise-constant, hold-previous):
 - a gap (`T_next - T > 1 s`) simply means the sample HOLDS until the next one
   (at t=1s -> 2 Mbps and t=3s -> 3 Mbps, the missing t=2s second is 2 Mbps);
 - the final sample (no successor) gets a default 1.0 s width;
-- lookups past the end clamp to the last sample.
+- lookups past the end clamp to the last sample;
+- `time_to_transmit(t, bits)` integrates the piecewise-constant capacity from
+  `t` so delivery time is exact even when the rate changes mid-transfer (a
+  transfer starting in a fade completes when the trace recovers — real-link
+  semantics, used by the TCP model for serialization).
 """
 
 import bisect
@@ -146,6 +150,42 @@ class BandwidthTrace:
         if idx < 0:
             idx = 0
         return self.samples[idx]
+
+    def time_to_transmit(self, t_start_s, bits):
+        """Seconds to deliver `bits` starting at wall-clock `t_start_s`, with the
+        link running at the trace's INSTANTANEOUS rate (exact integral over the
+        piecewise-constant capacity) — a transfer that starts inside a fade
+        finishes as soon as the trace recovers, like a real link, instead of
+        being charged the fade rate for its whole duration.
+
+        The final sample extends indefinitely (same clamp as capacity_at_time).
+        Rates are floored at 1e3 bps purely to keep synthetic all-zero traces
+        finite (cleaned bandwidth_5g traces are all > 0).
+        """
+        if not self.samples or bits <= 0:
+            return 0.0
+        n = len(self.samples)
+        idx = bisect.bisect_right(self._start_s, t_start_s) - 1
+        if idx < 0:
+            idx = 0
+        t = max(t_start_s, 0.0)
+        remaining = float(bits)
+        elapsed = 0.0
+        while True:
+            rate = max(float(self.samples[idx]), 1e3)
+            if idx + 1 < n:
+                window_end = self._start_s[idx + 1]
+                window_left = window_end - t
+                deliverable = rate * window_left
+                if deliverable >= remaining:
+                    return elapsed + remaining / rate
+                remaining -= deliverable
+                elapsed += window_left
+                t = window_end
+                idx += 1
+            else:
+                # Last sample holds forever.
+                return elapsed + remaining / rate
 
     def start_time_of_sample(self, idx):
         """Wall-clock start time (s) of sample `idx` (clamped to valid range)."""

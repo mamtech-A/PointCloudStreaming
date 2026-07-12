@@ -10,6 +10,23 @@ bandwidth trace, and is where `TCPConnection.send()` is reused verbatim.
 from .tcp_protocol import TCPConnection
 
 
+class _TraceCapacity:
+    """Capacity provider handed to TCPConnection.send(): maps the TCP model's
+    per-round relative clock onto the trace's wall-clock axis. Callable for the
+    round-start rate query; `time_to_transmit` gives the exact (integral)
+    delivery time so serialization tracks the rate as it changes mid-round."""
+
+    def __init__(self, trace, start_time_s):
+        self._trace = trace
+        self._base = float(start_time_s)
+
+    def __call__(self, t_rel_s):
+        return self._trace.capacity_at_time(self._base + t_rel_s)
+
+    def time_to_transmit(self, t_rel_s, bits):
+        return self._trace.time_to_transmit(self._base + t_rel_s, bits)
+
+
 class BackhaulLink:
     """Server <-> EdgeNode link. Unconstrained by default."""
 
@@ -82,11 +99,7 @@ class AccessLink:
             packet_log_start = 0
         else:
             packet_log_start = len(self.tcp.get_packet_log())
-        if self.trace is not None:
-            trace, base = self.trace, float(start_time_s)
-            capacity = lambda t_rel: trace.capacity_at_time(base + t_rel)
-        else:
-            capacity = None
+        capacity = _TraceCapacity(self.trace, start_time_s) if self.trace is not None else None
         metrics = self.tcp.send(int(data_bytes) if data_bytes else 0, capacity_bps=capacity)
         metrics['packet_log'] = self.tcp.get_packet_log()[packet_log_start:]
         return metrics

@@ -120,11 +120,14 @@ class TCPConnection:
           (so a long download traverses the bandwidth trace instead of freezing
           one sample).
 
-        Each round costs `max(RTT, serialization)` where serialization is the
-        transmission delay of the bytes sent that round (`round_bytes*8/capacity`).
-        On healthy links serialization < RTT so timing matches the legacy
-        RTT-round model exactly; in deep fades the transfer takes realistically
-        long instead of being floored at 1 MSS per RTT.
+        Each round costs `max(RTT, serialization)`. With a trace-backed provider
+        (exposes `.time_to_transmit(t_rel, bits)`), serialization is the exact
+        INTEGRAL of the time-varying capacity from the round start — a round that
+        begins inside a fade finishes as soon as the trace recovers, like a real
+        link. For scalars/bare callables it is `round_bytes*8/capacity` at the
+        round-start rate. On healthy links serialization < RTT so timing matches
+        the legacy RTT-round model exactly; in deep fades the transfer takes
+        realistically long instead of being floored at 1 MSS per RTT.
 
         Uses an ANALYTICAL model for speed (no real I/O).
         Returns a dict with simulated metrics: sent_bytes, time_s, rtt_ms, retransmissions, cwnd_start, cwnd_end, srtt_s, rto_s
@@ -179,8 +182,9 @@ class TCPConnection:
             # Capacity for THIS round: time-varying provider is queried with the
             # elapsed download time (same clock the session accumulates), a scalar
             # is used as-is (legacy behavior).
+            t_rel = sim_time - send_start_time
             if callable(capacity_bps):
-                cap_now = capacity_bps(sim_time - send_start_time)
+                cap_now = capacity_bps(t_rel)
             else:
                 cap_now = capacity_bps
             if cap_now and cap_now > 0:
@@ -242,7 +246,13 @@ class TCPConnection:
             # Round duration = max(RTT, serialization delay of this round's bytes).
             # Serialization dominates only when capacity is low (deep fades), where
             # the legacy pure-RTT model was unrealistically fast.
-            if cap_now and cap_now > 0:
+            # With a trace-backed provider, serialization is the EXACT integral of
+            # the time-varying capacity from the round start (real-link semantics:
+            # a round that starts in a fade completes as soon as the trace
+            # recovers, instead of being charged the fade rate throughout).
+            if hasattr(capacity_bps, 'time_to_transmit'):
+                serialize_s = capacity_bps.time_to_transmit(t_rel, round_bytes * 8.0)
+            elif cap_now and cap_now > 0:
                 serialize_s = (round_bytes * 8.0) / cap_now
             else:
                 serialize_s = 0.0

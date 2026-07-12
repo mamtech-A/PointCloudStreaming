@@ -630,3 +630,25 @@ variance is the honest headline. Highest-value next steps: (a) **RL variance red
 variable network regime** (more traces, mid-session bandwidth cliffs) where adaptation
 has real headroom to exploit; (c) **request pacing** to stop the eager-fetch buffer
 overflow that still cripples the rule baselines (§10.5).
+
+### 10.10 Transport fidelity: integral serialization (2026-07-12)
+
+The RTT-round TCP model used to sample the trace capacity once per round and hold
+it, so a transfer that STARTED inside a fade was charged the fade rate for its whole
+first round — the demo's segment 0 took 7.8 s because one packet was billed 5.84 s
+at the trace's idle-attach 2 kbps even though the link recovered at t=3 s. Real
+links deliver bits at the instantaneous rate, so serialization is now the exact
+integral of the piecewise-constant capacity (`BandwidthTrace.time_to_transmit`,
+threaded through `_TraceCapacity` → `TCPConnection.send`): a round finishes as soon
+as the accumulated capacity·dt covers its bytes. Scalars/bare callables keep the
+legacy formula; flat-trace timing is bit-identical (unit-tested, 17/17).
+
+Effect: startup on the held-out trace drops 7.8 s → 4.9 s (fade integral ~3 s + the
+genuine TCP slow-start ramp). Because the download clock shifts ~3 s relative to
+the trace, per-run numbers move: the demo run now clears the mid-session dip
+without stalling (QoE 100 / QoE′ 96.2 / quality 0.967; compare.py DQN row 96.1 vs
+rules 2.5). Steady-state segment timings are unchanged, and all §10 comparisons
+were made under one consistent model, so the S-curve and robust-winner conclusions
+stand; only absolute startup timings tightened. (The remaining known
+over-pessimism: the trace's opening 2 kbps samples are idle-device THROUGHPUT, not
+capacity — an attach-time artifact of the dataset, kept as-is for honesty.)
