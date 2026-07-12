@@ -314,7 +314,9 @@ def test_segment0_startup_realistic_on_heldout_trace():
         def report(self, *a): return None
     session.abr = _Med()
     rec = session.step_segment(frames, 0)
-    assert 3.0 < rec['segment_time_s'] < 5.6, rec['segment_time_s']
+    # Trace now starts clean at 14.2 Mbps (idle-attach rows stripped); seg 0
+    # completes via TCP slow-start in ~2 s (RTT=72 ms, 10-packet cwnd, 8 frames MED).
+    assert 0.5 < rec['segment_time_s'] < 4.0, rec['segment_time_s']
 
 
 def _run_all():
