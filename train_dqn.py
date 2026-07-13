@@ -174,6 +174,12 @@ def main():
                    help='held-out metric that picks the best checkpoint (qoe_quality is '
                         'comparable across reward specs; reward is not)')
     p.add_argument('--seed', type=int, default=42)
+    p.add_argument('--split-seed', type=int, default=42,
+                   help='seed for the file-level train/test split. FIXED across RL '
+                        'seeds on purpose: every training seed must share the same '
+                        'held-out set, or mean±std conflates policy variance with '
+                        'which traces landed in held-out (critical on the mixed '
+                        'static+driving pool where traces are heterogeneous).')
     p.add_argument('--lr', type=float, default=5e-4)
     p.add_argument('--gamma', type=float, default=0.99)
     p.add_argument('--mu', type=float, default=4.3, help='rebuffer penalty weight')
@@ -201,9 +207,11 @@ def main():
     bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
 
-    # File-level split shared with the LSTM: on the 5 static traces,
-    # test_size=0.2 => 4 train / 1 held-out test.
-    train_files, test_files = split_bandwidth_files(bandwidth_dir, test_size=0.2, random_state=args.seed)
+    # File-level split shared with the LSTM. On the 21-trace mixed pool
+    # (5 static + 16 driving), test_size=0.2 => 17 train / 4 held-out.
+    # random_state is --split-seed (default 42), DECOUPLED from --seed, so every
+    # RL seed evaluates on the SAME held-out traces.
+    train_files, test_files = split_bandwidth_files(bandwidth_dir, test_size=0.2, random_state=args.split_seed)
     if args.max_train_files:
         train_files = train_files[:args.max_train_files]
     if args.max_test_files:
