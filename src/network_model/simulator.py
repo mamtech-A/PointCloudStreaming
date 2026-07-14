@@ -27,11 +27,24 @@ class Simulator:
         self.duration = duration
 
     def run(self, mpd_path, run_label=None, return_summary=False, max_frames=None,
-            verbose=True, segment_frames=1):
+            verbose=True, segment_frames=1, reward_fn=None):
         """`segment_frames` = frames fetched per request (DASH-style segment).
         1 (default) = legacy per-frame fetching; S>1 amortizes the per-request
-        RTT over S frames (ONE ABR decision + ONE TCP transfer per segment)."""
+        RTT over S frames (ONE ABR decision + ONE TCP transfer per segment).
+
+        `reward_fn`: optional rl.reward.RewardFunction — when given, the run
+        accumulates the RL training objective per segment (same numbers the
+        sweep reports) and, for ABRs that expose `last_decision` (DQNABR with
+        log_decisions=True), logs each decision (state, Q-values, reward) to
+        the console and to <logs>/decisions.csv."""
         self._verbose = verbose
+        # Per-session RL-reward bookkeeping (active only when reward_fn given).
+        self._reward_fn = reward_fn
+        self._reward_total = {}
+        self._reward_prev_qmean = {}
+        self._prev_startup = {}
+        self._prev_dropped = {}
+        self._decision_rows = []
         if verbose:
             print("--- DASH-PC Point Cloud Streaming Simulation ---")
         if not mpd_path or not mpd_path.endswith('.xml') or not os.path.exists(mpd_path):
@@ -47,6 +60,8 @@ class Simulator:
         self._q_lo, self._q_hi = manifest_quality_endpoints(frames)
         self._tier_name = {r['id']: r.get('quality', f"rep{r['id']}")
                            for r in frames[0]['representations']} if frames else {}
+        if self._reward_fn is not None:
+            self._reward_fn.set_endpoints(self._q_lo, self._q_hi)
         for frame in frames:
             for rep in frame['representations']:
                 server.add_pointcloud(
@@ -106,6 +121,15 @@ class Simulator:
         packet_log_file.close()
         buffer_log_file.close()
 
+        # Per-decision CSV (one row per DQN decision) when reward_fn was given.
+        decisions_path = None
+        if self._decision_rows:
+            decisions_path = os.path.join(logs_dir, 'decisions.csv')
+            with open(decisions_path, 'w', newline='', encoding='utf-8') as f:
+                w = csv.DictWriter(f, fieldnames=list(self._decision_rows[0].keys()))
+                w.writeheader()
+                w.writerows(self._decision_rows)
+
         # --- Per-session summary ---
         summaries = []
         for session in sessions:
@@ -116,6 +140,8 @@ class Simulator:
             print(f"   Per-frame results: {csv_path}")
             print(f"   Packet log: {packet_log_path}")
             print(f"   Buffer log: {buffer_log_path}")
+            if decisions_path:
+                print(f"   DQN decisions: {decisions_path}")
 
         self.topology.close_all()
 
@@ -166,6 +192,47 @@ class Simulator:
                 f"{pkt['packet_num']},{pkt['size_bytes']},{pkt['event']},{pkt['src']},{pkt['dst']},"
                 f"{pkt['cwnd']},{pkt.get('seq_num',0)},{pkt.get('ack_num',0)},{pkt.get('rtt_ms',0):.2f}\n")
 
+        # --- RL reward accumulation + per-decision log (reward_fn runs only) ---
+        seg_reward = None
+        decision = getattr(session.abr, 'last_decision', None)
+        if decision is not None:
+            session.abr.last_decision = None  # consume (never reuse a stale one)
+        if self._reward_fn is not None:
+            rf = self._reward_fn
+            uid = u.user_id
+            qs = [rf.quality(f['rep']) if f['rep'] else 0.0 for f in frames]
+            q_sum, q_mean = sum(qs), sum(qs) / len(qs)
+            new_event = any(f['buffer_result'].get('event') == 'rebuffering_start'
+                            for f in frames)
+            bstats0 = u.get_buffer_stats()
+            startup_s = max(0.0, bstats0.get('startup_delay_s', 0.0)
+                            - self._prev_startup.get(uid, 0.0))
+            dropped_d = max(0, bstats0.get('frames_dropped', 0)
+                            - self._prev_dropped.get(uid, 0))
+            self._prev_startup[uid] = bstats0.get('startup_delay_s', 0.0)
+            self._prev_dropped[uid] = bstats0.get('frames_dropped', 0)
+            seg_reward = rf.step_segment(q_sum, q_mean,
+                                         self._reward_prev_qmean.get(uid), seg_stall,
+                                         new_event, startup_s=startup_s,
+                                         dropped=dropped_d)
+            self._reward_prev_qmean[uid] = q_mean
+            self._reward_total[uid] = self._reward_total.get(uid, 0.0) + seg_reward
+            if decision:
+                self._decision_rows.append({
+                    'user_id': uid, 'segment_id': segment_id,
+                    'first_frame_id': frames[0]['frame_id'],
+                    'buffer_s': round(decision['buffer_s'], 3),
+                    'tput_last_mbps': round(decision['tput_last_mbps'], 2),
+                    'tput_mean_mbps': round(decision['tput_mean_mbps'], 2),
+                    'lstm_pred_mbps': (round(decision['lstm_pred_mbps'], 2)
+                                       if decision['lstm_pred_mbps'] is not None else ''),
+                    **{f'q{i}': round(v, 3) for i, v in enumerate(decision['q_values'])},
+                    'action': decision['action'],
+                    'chosen_tier': self._tier_name.get(record['rep_id'], record['rep_id']),
+                    'greedy': decision['greedy'],
+                    'reward': round(seg_reward, 4),
+                })
+
         if not getattr(self, '_verbose', True):
             return
         # ONE readable sentence per segment (narrative log). The bandwidth shown is
@@ -208,14 +275,33 @@ class Simulator:
               f"{tier:<7} q{q:.2f} — {data_bytes/1e6:.1f}MB in {seg_time:.2f}s @{thr_mbps:.0f}Mbps — "
               f"buf {emoji}{buf_level:.2f}s · played {prog} · {state}{rate_note}")
 
+        # Per-decision model log: what the DQN saw and thought for this segment.
+        if decision:
+            qv = decision['q_values']
+            best2 = sorted(qv, reverse=True)[:2]
+            margin = best2[0] - best2[1] if len(best2) > 1 else 0.0
+            qv_str = " ".join(
+                (f"[{v:.1f}]" if i == decision['action'] else f"{v:.1f}")
+                for i, v in enumerate(qv))
+            seen = (f"buf {decision['buffer_s']:.1f}s · tput {decision['tput_last_mbps']:.0f}"
+                    f"/{decision['tput_mean_mbps']:.0f}Mbps")
+            if decision['lstm_pred_mbps'] is not None:
+                seen += f" · lstm {decision['lstm_pred_mbps']:.0f}Mbps"
+            r_str = f" · r {seg_reward:+.2f}" if seg_reward is not None else ""
+            greedy = "" if decision['greedy'] else " (explored!)"
+            print(f"    🤖 saw {seen} → Q {qv_str} → {tier}{greedy} "
+                  f"(margin {margin:+.2f}){r_str}")
+
     def _report_session(self, session, total_frames):
         u = session.user
         stats = u.get_buffer_stats()
         total_time = session.cumulative_time_s
         fps_real = total_frames / total_time if total_time > 0 else 0
         qoe = session.qoe()
-        qoe_q = session.qoe_quality()
+        qterms = session.qoe_quality_terms()
+        qoe_q = qterms['total']
         mean_q = session.mean_quality()
+        rl_reward = self._reward_total.get(u.user_id) if getattr(self, '_reward_total', None) else None
 
         # Tier mix (share of frames streamed at each quality tier) + achieved
         # throughput distribution — the "what did the user actually get" view.
@@ -238,7 +324,14 @@ class Simulator:
             print(f"{'-'*100}")
             print(f"   QoE (quality-aware) : {max(0.0, qoe_q):5.1f} / 100   "
                   f"(raw {qoe_q:.1f})   ← headline")
+            print(f"     breakdown         : quality {qterms['quality']:+.1f} · "
+                  f"stall {qterms['stall']:+.1f} · switch {qterms['switch']:+.1f} · "
+                  f"slowdown {qterms['slowdown']:+.1f} · startup {qterms['startup']:+.1f} · "
+                  f"drops {qterms['drops']:+.1f}")
             print(f"   QoE (legacy stall)  : {qoe:5.1f} / 100")
+            if rl_reward is not None:
+                print(f"   Reward (RL objective): {rl_reward:.1f}   "
+                      f"(comparable to dqn_sweep_results.json)")
             print(f"   Quality             : mean {mean_q:.3f}" + (f"  ·  tiers {tier_mix}" if tier_mix else ""))
             print(f"   Playback            : {stats['frames_played']}/{total_frames} frames · "
                   f"{fps_real:.1f} real fps · {total_time:.1f}s to stream "
@@ -267,6 +360,8 @@ class Simulator:
             'qoe': qoe,
             'qoe_quality': qoe_q,
             'qoe_quality_clipped': max(0.0, qoe_q),
+            'qoe_terms': qterms,
+            'rl_reward': rl_reward,
             'mean_quality': mean_q,
             'total_time_s': total_time,
             'fps': fps_real,

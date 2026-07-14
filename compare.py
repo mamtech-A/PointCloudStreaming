@@ -74,9 +74,9 @@ def main():
     p.add_argument('--trace', default=os.path.join('bandwidth_5g', 'static_B_2020.01.16_10.43.34.csv'),
                    help='bandwidth trace (default: an unseen test-split 5G trace)')
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
-    p.add_argument('--segment-frames', type=int, default=10,
+    p.add_argument('--segment-frames', type=int, default=5,
                    help='frames per DASH-style segment (1 = legacy per-frame)')
-    p.add_argument('--playback-rate-min', type=float, default=1.0,
+    p.add_argument('--playback-rate-min', type=float, default=0.9,
                    help='adaptive-playback floor (1.0 = off; 0.9 recommended)')
     args = p.parse_args()
 
@@ -132,7 +132,8 @@ def main():
               f"{r['frames_dropped']:>8d} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d} "
               f"{mq:>10.3f} {rw:>9.1f}")
     print("\nQoE counts only stalls/drops (favors the lowest quality); QoE_q is the")
-    print("quality-aware QoE' = 100*mean_quality - 4.3*stall_s - 1.0*sum|dq| (raw, unclipped);")
+    print("quality-aware QoE\" v2 = 100*mean_q - 4.3*stall_s - 1.0*sum|dq| - 10*slowdown")
+    print("                       - 1.0*startup_s - (100/N)*dropped (raw, unclipped);")
     print("'reward' is the Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.")
     print("Logs written to logs/baseline/, logs/lstm/, logs/dqn/")
 

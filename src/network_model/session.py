@@ -168,27 +168,54 @@ class StreamingSession:
         qs = [density_quality(d, lo, hi) for d in self.chosen_densities]
         return sum(qs) / len(qs)
 
-    def qoe_quality(self, w_stall=4.3, w_switch=1.0, w_slow=10.0):
-        """Quality-aware QoE' (DQN_REPORT §6.5 + AMP term): RAW (unclipped) score
+    def qoe_quality_terms(self, w_stall=4.3, w_switch=1.0, w_slow=10.0,
+                          w_startup=1.0, w_drop=None):
+        """Per-term breakdown of the quality-aware QoE″ (v2, round 4):
 
-            100 * mean_quality - w_stall * total_stall_s - w_switch * sum|dq|
-                               - w_slow * slowdown_integral
+            QoE″ = 100·mean_q − w_stall·total_stall_s − w_switch·Σ|dq|
+                   − w_slow·slowdown_integral
+                   − w_startup·startup_delay_s − w_drop·frames_dropped
 
-        Unlike the legacy stall-only qoe() it rewards delivered quality, so it
-        discriminates between bottom-tier hiding and actual adaptation. The
-        slowdown term charges adaptive playback: slowdown_integral = ∫(1−rate)dt,
-        so 10 s played at the 0.9x floor costs w_slow*1.0 = 10 points (zero when
-        AMP is off) — mild, per the subjective evidence that <=0.9x is
-        imperceptible, but not free. Callers wanting a 0-100 scale should clamp
-        with max(0, ...) — report both.
+        v2 adds the two network-caused perceptual costs that were tracked but
+        free in v1 (v1 = v2 without the last two terms — recoverable from this
+        breakdown):
+        - startup: seconds until playback first starts. w_startup=1.0/s ≈ ¼ of
+          the stall weight — startup waiting annoys less than mid-stream
+          freezing (Krishnan & Sitaraman). Stalls only accrue AFTER playback
+          starts, so there is no double-count.
+        - drops: buffer-overflow frames are never played; each is charged the
+          full quality it could have delivered: w_drop default = 100/N ("a
+          dropped frame delivers zero quality").
+        Raw network parameters (bandwidth, RTT) stay OUT by design: QoE is what
+        the user perceives; the network enters only via these outcomes.
+
+        Returns a dict of the SIGNED terms plus 'total' (raw, unclipped).
         """
         if not self.chosen_densities:
-            return 0.0
+            return {'quality': 0.0, 'stall': 0.0, 'switch': 0.0, 'slowdown': 0.0,
+                    'startup': 0.0, 'drops': 0.0, 'total': 0.0}
         lo, hi = self._density_lo, self._density_hi
         qs = [density_quality(d, lo, hi) for d in self.chosen_densities]
         mean_q = sum(qs) / len(qs)
         switch_sum = sum(abs(qs[i] - qs[i - 1]) for i in range(1, len(qs)))
         s = self.user.get_buffer_stats()
-        return (100.0 * mean_q - w_stall * s['total_stall_time_s']
-                - w_switch * switch_sum
-                - w_slow * s.get('slowdown_integral', 0.0))
+        if w_drop is None:
+            w_drop = 100.0 / len(qs)
+        terms = {
+            'quality': 100.0 * mean_q,
+            'stall': -w_stall * s['total_stall_time_s'],
+            'switch': -w_switch * switch_sum,
+            'slowdown': -w_slow * s.get('slowdown_integral', 0.0),
+            'startup': -w_startup * s.get('startup_delay_s', 0.0),
+            'drops': -w_drop * s.get('frames_dropped', 0),
+        }
+        terms['total'] = sum(terms.values())
+        return terms
+
+    def qoe_quality(self, w_stall=4.3, w_switch=1.0, w_slow=10.0,
+                    w_startup=1.0, w_drop=None):
+        """Quality-aware QoE″ (v2) total — see qoe_quality_terms() for the
+        formula and rationale. RAW (unclipped); callers wanting a 0-100 scale
+        should clamp with max(0, ...) — report both."""
+        return self.qoe_quality_terms(w_stall, w_switch, w_slow,
+                                      w_startup, w_drop)['total']

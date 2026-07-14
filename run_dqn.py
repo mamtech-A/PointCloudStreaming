@@ -51,7 +51,9 @@ predictor = LSTMPredictor().load(lstm_model_path) if lstm_used else None
 
 def _abr_factory():
     provider = LSTMABR(predictor) if (lstm_used and predictor is not None) else None
-    return DQNABR(policy=agent, lstm_provider=provider)
+    # log_decisions: every select() records state + Q-values so the run shows
+    # WHY the trained policy picked each tier (console line + decisions.csv).
+    return DQNABR(policy=agent, lstm_provider=provider, log_decisions=True)
 
 
 server = Server(base_url="http://localhost/")
@@ -94,4 +96,16 @@ print(f"Playback : {segment_frames}-frame segments · adaptive-rate floor "
       f"{user.playback_rate_min:.2f}x · {user.buffer_capacity_s:.0f}s buffer")
 print("=" * 100)
 
-sim.run(mpd_path=mpd_path, run_label="dqn", segment_frames=segment_frames)
+# The RL objective for this run, built from the SWEEP WINNER's reward spec (the
+# exact objective the checkpoint was trained on) + the checkpoint's mu/lam — so
+# the printed total is directly comparable to dqn_sweep_results.json metrics.
+from src.rl.reward import RewardFunction
+_winner_args = (sweep or {}).get("base_args", {})
+_spec = dict(_winner_args.get("reward-spec") or {})
+_spec.setdefault("mu", agent.mu)
+_spec.setdefault("lam", agent.lam)
+reward_fn = RewardFunction(_spec)
+print(f"Reward   : {reward_fn.describe()}  (sweep training objective)")
+
+sim.run(mpd_path=mpd_path, run_label="dqn", segment_frames=segment_frames,
+        reward_fn=reward_fn)

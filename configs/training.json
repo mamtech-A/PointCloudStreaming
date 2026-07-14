@@ -1,5 +1,5 @@
 {
-  "_comment": "ROUND-4 pipeline config (run_training.py): MIXED static+driving 5G pool (21 traces, ~11.4h) — driving traces reintroduced now that integral serialization (42b7389) makes deep fades realistic. This gives real adaptation headroom (capacity crosses the ladder 57-76% of the time) vs the too-easy static-only regime. All hyperparameters are SETTLED (S=8, mu=4.3, bounded reward), so no grid: the only axis is the lstm_pred ablation, and the freed budget goes into 12 seeds + a 4-trace held-out eval (fixed split, --split-seed decoupled from RL seed). Goal: shrink the round-3 seed std (74.6 ± 19.8) and show the DQN beating fixed arms in the harder regime. Commit this file with any change: a run is fully described by repo state.",
+  "_comment": "ROUND-4 pipeline config (run_training.py): MIXED static+driving 5G pool (21 traces, ~11.4h) — driving traces reintroduced now that integral serialization (42b7389) makes deep fades realistic. This gives real adaptation headroom (capacity crosses the ladder 57-76% of the time) vs the too-easy static-only regime. All hyperparameters are SETTLED (S=8, mu=4.3, bounded reward), so no wide grid: two targeted ablations (lstm_pred; reward v1 vs v2 with startup/drop terms matching QoE'' v2) x 12 seeds + a 4-trace held-out eval (fixed split, --split-seed decoupled from RL seed). Goal: shrink the round-3 seed std (74.6 ± 19.8) and show the DQN beating fixed arms in the harder regime. Commit this file with any change: a run is fully described by repo state.",
 
   "lstm": {
     "signal": "achieved",
@@ -36,9 +36,14 @@
     "axes": {
       "segment-frames": [8],
       "mu": [4.3],
-      "no-lstm-pred": [false, true]
+      "no-lstm-pred": [false, true],
+      "reward-spec": [
+        { "stall_mode": "bounded", "stall_cap_s": 2.0, "event_penalty": 2.0 },
+        { "stall_mode": "bounded", "stall_cap_s": 2.0, "event_penalty": 2.0,
+          "startup_weight": 1.0, "drop_weight": 1.0 }
+      ]
     },
-    "_axes": "ROUND 4: S=8 FIXED (round-3 winner; S=5≈S=8 statistically tied), mu=4.3 FIXED (mu=2.0 consistently worse), reward FIXED (bounded-stall round-1 winner). The ONLY axis is the lstm_pred ablation — re-tested on the high-volatility driving regime to confirm/refute that the forecast is irrelevant even here (expected: irrelevant, since driving traces are less autocorrelated than static). 1 S x 1 mu x 2 lstm = 2 configs x 12 seeds = 24 trials."
+    "_axes": "ROUND 4: S=8 FIXED (round-3 winner; S=5≈S=8 tied), mu=4.3 FIXED. TWO axes: (a) lstm_pred ablation re-tested on the high-volatility driving regime (expected: still irrelevant — driving traces are less autocorrelated); (b) reward-shape ablation, v1 (settled round-1 bounded shape) vs v2 (+startup_weight 1.0 +drop_weight 1.0, mirroring the QoE″ v2 terms) — tests whether charging cold-start waiting during training improves startup behavior now that traces keep their near-zero idle-attach openings. 2 lstm x 2 reward x 12 seeds = 48 trials (~round-2 scale). The axis value overrides base_args.reward-spec."
   },
 
   "final_eval": {

@@ -150,6 +150,11 @@ class StreamingEnv:
             self.lstm_provider.reset()
         self.frame_idx = 0
         self.prev_quality = None
+        # Deltas for the optional startup/drop reward terms (see reward.py):
+        # startup_delay_s grows until playback starts then freezes, so the
+        # per-step delta is nonzero only during the cold start.
+        self._prev_startup_s = 0.0
+        self._prev_dropped = 0
         return self._observe()
 
     def _observe(self):
@@ -176,8 +181,14 @@ class StreamingEnv:
                     for f in record['frames'])
         new_event = any(f['buffer_result'].get('event') == 'rebuffering_start'
                         for f in record['frames'])
+        stats = self.user.get_buffer_stats()
+        startup_s = max(0.0, stats.get('startup_delay_s', 0.0) - self._prev_startup_s)
+        dropped = max(0, stats.get('frames_dropped', 0) - self._prev_dropped)
+        self._prev_startup_s = stats.get('startup_delay_s', 0.0)
+        self._prev_dropped = stats.get('frames_dropped', 0)
         reward = self.reward_fn.step_segment(q_sum, q_mean, self.prev_quality,
-                                             stall, new_event)
+                                             stall, new_event,
+                                             startup_s=startup_s, dropped=dropped)
         self.prev_quality = q_mean
 
         self.frame_idx += len(segment)

@@ -24,6 +24,13 @@ Spec keys:
   switch_mode:   'l1' (default) | 'l2'
   lam_down:      optional separate weight for DOWNWARD switches (asymmetric;
                  None => symmetric lam for both directions)
+  startup_weight: penalty per second of PRE-playback waiting (default 0.0 = off,
+                 old shape bit-identical). Mirrors the QoE″ startup term so the
+                 policy is charged for slow cold starts (binding now that traces
+                 keep their near-zero idle-attach openings).
+  drop_weight:   penalty per frame dropped this step from buffer overflow
+                 (default 0.0 = off). Guardrail — a buffer-watching policy
+                 rarely drops, but the harder driving regime may tempt it.
 """
 
 from ..network_model.manifest import density_quality
@@ -40,6 +47,8 @@ DEFAULT_REWARD_SPEC = {
     'lam': 1.0,
     'switch_mode': 'l1',
     'lam_down': None,
+    'startup_weight': 0.0,
+    'drop_weight': 0.0,
 }
 
 _UTILITIES = ('log_density', 'linear_density', 'coded_psnr')
@@ -88,14 +97,23 @@ class RewardFunction:
             return 0.0
         return density_quality(rep.get('density'), self.q_lo, self.q_hi)
 
-    def step(self, q, prev_q, stall_s, new_stall_event=False):
-        """Per-step reward from this step's quality, stall and the previous q."""
+    def step(self, q, prev_q, stall_s, new_stall_event=False,
+             startup_s=0.0, dropped=0):
+        """Per-step reward from this step's quality, stall and the previous q.
+
+        startup_s: seconds of pre-playback waiting elapsed THIS step (charged
+        at startup_weight; 0.0 weight by default = old shape). dropped: frames
+        dropped to buffer overflow this step (charged at drop_weight)."""
         s = float(stall_s or 0.0)
         if self.spec['stall_mode'] == 'bounded':
             s = min(s, float(self.spec['stall_cap_s']))
         penalty = float(self.spec['mu']) * s
         if new_stall_event and self.spec['event_penalty']:
             penalty += float(self.spec['event_penalty'])
+        if startup_s and self.spec.get('startup_weight'):
+            penalty += float(self.spec['startup_weight']) * float(startup_s)
+        if dropped and self.spec.get('drop_weight'):
+            penalty += float(self.spec['drop_weight']) * float(dropped)
         switch = 0.0
         if prev_q is not None:
             dq = q - prev_q
@@ -106,13 +124,15 @@ class RewardFunction:
             switch = w * mag
         return q - penalty - switch
 
-    def step_segment(self, q_sum, q_mean, prev_q_mean, stall_s, new_stall_event=False):
+    def step_segment(self, q_sum, q_mean, prev_q_mean, stall_s, new_stall_event=False,
+                     startup_s=0.0, dropped=0):
         """Per-SEGMENT reward: per-frame qualities SUMMED (so episode reward
         magnitudes stay comparable across segment sizes), ONE stall penalty
         (the bounded cap applies to the whole segment's stall) and ONE switch
         penalty on mean quality vs the previous segment. With a 1-frame segment
         this equals step() exactly."""
-        base = self.step(q_mean, prev_q_mean, stall_s, new_stall_event)
+        base = self.step(q_mean, prev_q_mean, stall_s, new_stall_event,
+                         startup_s=startup_s, dropped=dropped)
         return base - q_mean + q_sum
 
     def describe(self):
@@ -125,4 +145,9 @@ class RewardFunction:
         dq = '|dq|' if sp['switch_mode'] == 'l1' else 'dq^2'
         lam = (f"{sp['lam']}(up)/{sp['lam_down']}(down)"
                if sp.get('lam_down') is not None else f"{sp['lam']}")
-        return f"q[{sp['utility']}] - {stall} - {lam}*{dq}"
+        extra = ''
+        if sp.get('startup_weight'):
+            extra += f" - {sp['startup_weight']}*startup"
+        if sp.get('drop_weight'):
+            extra += f" - {sp['drop_weight']}*drops"
+        return f"q[{sp['utility']}] - {stall} - {lam}*{dq}{extra}"

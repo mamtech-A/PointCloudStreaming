@@ -314,9 +314,10 @@ def test_segment0_startup_realistic_on_heldout_trace():
         def report(self, *a): return None
     session.abr = _Med()
     rec = session.step_segment(frames, 0)
-    # Trace now starts clean at 14.2 Mbps (idle-attach rows stripped); seg 0
-    # completes via TCP slow-start in ~2 s (RTT=72 ms, 10-packet cwnd, 8 frames MED).
-    assert 0.5 < rec['segment_time_s'] < 4.0, rec['segment_time_s']
+    # The trace keeps its ~3 s near-zero idle-attach opening (restored for
+    # round 4 — a realistic cold start): fade integral ~3 s + TCP slow-start
+    # ramp ≈ 5 s total, not the 7.8 s of the old round-constant model.
+    assert 3.0 < rec['segment_time_s'] < 5.6, rec['segment_time_s']
 
 
 def _run_all():

@@ -652,3 +652,52 @@ were made under one consistent model, so the S-curve and robust-winner conclusio
 stand; only absolute startup timings tightened. (The remaining known
 over-pessimism: the trace's opening 2 kbps samples are idle-device THROUGHPUT, not
 capacity — an attach-time artifact of the dataset, kept as-is for honesty.)
+
+## 11. Round-4 prep: mixed regime, QoE″ v2, reward ablation (2026-07-14)
+
+Setup changes ahead of the round-4 retrain (all committed; run executes on the
+fast PC via `run_training.py --jobs 2`):
+
+**Dataset.** The 16 driving 5G traces return (removed in §9 as "unsuitable" —
+a verdict issued under the pre-§10.10 transport model that over-charged fades).
+With integral serialization they are realistic, and they supply what the static
+regime lacked: capacity crosses the 6-tier ladder 57–76 % of the time, so
+adaptation has genuine headroom and fixed arms can actually be beaten. Pool:
+21 traces (5 static + 16 driving), ~11.4 h, split seed 42 → 17 train / 4
+held-out (3 driving + 1 static; one held-out driving trace contains a genuine
+137 s coverage blackout — reported per-trace, not hidden). Traces keep their
+near-zero idle-attach openings (restored): under the integral transport these
+are a legitimate cold-start scenario, not a pathology. The train/test split is
+now DECOUPLED from the RL seed (`--split-seed`, fixed 42): previously each seed
+evaluated on a different held-out set, which on a heterogeneous pool would have
+conflated split luck with policy variance (part of round-3's ±19.8).
+
+**QoE″ v2.** Two tracked-but-free perceptual costs join the quality-aware QoE
+(raw network parameters stay out by design — QoE is what the user perceives):
+
+    QoE″ = 100·mean_q − 4.3·stall_s − 1.0·Σ|dq| − 10·slowdown_integral
+           − 1.0·startup_delay_s − (100/N)·frames_dropped
+
+Startup (1.0/s ≈ ¼ of the stall weight; waiting at t=0 annoys less than
+mid-stream freezing) is binding now that cold starts are real; stalls only
+accrue after playback begins, so there is no double-count. Drops charge the
+rule baselines honestly (56–84 dropped frames were previously free). The
+simulator summary prints the per-term breakdown; v1 = v2 minus the two new
+terms, so §10 numbers remain interpretable. Absolute QoE′ comparability with
+§9–10 is intentionally broken (new regime anyway).
+
+**Reward ablation (the round-4 second axis).** The reward spec gains optional
+`startup_weight` / `drop_weight` (defaults 0.0 = old shape, unit-tested
+bit-identical). Sweep axes: reward v1 (settled bounded shape) vs v2
+(startup 1.0 + drop 1.0) × lstm on/off × 12 seeds = 48 trials, S=8 and μ=4.3
+fixed. Open questions the run answers: does charging cold-start waiting during
+training improve startup behavior; is lstm_pred still irrelevant on the
+low-autocorrelation driving traces; how much of round-3's seed variance
+survives a fixed split + 4-trace held-out eval + non-trivial task.
+
+**Introspection.** `run_dqn.py` now logs every decision of the trained policy
+(state seen, Q-values for all 6 tiers, chosen tier + margin, per-segment
+reward from the winner's own training objective) to the console and
+`logs/dqn/decisions.csv`, and the summary prints the accumulated RL reward —
+directly comparable to `dqn_sweep_results.json`. Tests: 17 transport + 7 new
+QoE/reward = 24.

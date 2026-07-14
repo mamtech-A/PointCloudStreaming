@@ -93,6 +93,13 @@ class DQNAgent:
             x = torch.as_tensor(features, dtype=torch.float32, device=self.device).unsqueeze(0)
             return int(self.policy(x).argmax(dim=1).item())
 
+    def q_values(self, features):
+        """Q-value per action for one state (inference-time introspection —
+        run_dqn.py logs these per decision; not part of the training path)."""
+        with torch.no_grad():
+            x = torch.as_tensor(features, dtype=torch.float32, device=self.device).unsqueeze(0)
+            return self.policy(x).squeeze(0).cpu().numpy()
+
     def push(self, s, a, r, s2, done):
         if self.reward_norm:
             self._r_count += 1

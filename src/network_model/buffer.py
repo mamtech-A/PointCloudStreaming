@@ -323,6 +323,11 @@ class ClientBuffer:
             'buffer_capacity_s': self.buffer_capacity_s,
             'buffer_health': self.get_buffer_health(),
             'playback_started': self.playback_started,
+            # Startup delay = wall-clock wait until playback FIRST started. Before
+            # that moment it grows with the clock (an unstarted session is all
+            # startup delay). Distinct from stalls, which only accrue after start.
+            'startup_delay_s': (self.playback_start_time if self.playback_started
+                                else self.last_update_time),
             'is_playing': self.is_playing,
             'is_rebuffering': self.is_rebuffering,
             'frames_played': self.frames_played,

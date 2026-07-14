@@ -213,11 +213,17 @@ class DQNABR(ABRStrategy):
 
     name = 'dqn'
 
-    def __init__(self, policy=None, lstm_provider=None, epsilon=0.0):
+    def __init__(self, policy=None, lstm_provider=None, epsilon=0.0,
+                 log_decisions=False):
         self.policy = policy            # path or a loaded DQNAgent (resolved lazily)
         self.lstm_provider = lstm_provider
         self.epsilon = epsilon
         self._agent = None
+        # When log_decisions is on, every select() stores what the policy saw
+        # and thought in `last_decision` (state summary, per-action Q-values,
+        # chosen action) — run_dqn.py reads it for the decision log + CSV.
+        self.log_decisions = log_decisions
+        self.last_decision = None
 
     def _ensure_agent(self):
         if self._agent is None:
@@ -242,6 +248,19 @@ class DQNABR(ABRStrategy):
             norm=agent.norm_constants,
         )
         action = agent.act(features, epsilon=self.epsilon)
+        if self.log_decisions:
+            q = agent.q_values(features)
+            hist = [bw / 1e6 for bw in state.observed_throughput_history[-5:]]
+            self.last_decision = {
+                'q_values': [float(v) for v in q],
+                'action': int(action),
+                'greedy': int(action) == int(q.argmax()),
+                'buffer_s': float(state.buffer_level_s),
+                'tput_last_mbps': hist[-1] if hist else 0.0,
+                'tput_mean_mbps': (sum(hist) / len(hist)) if hist else 0.0,
+                'lstm_pred_mbps': (predicted_bps / 1e6) if predicted_bps else None,
+                'features': [float(v) for v in features],
+            }
         # The Q-net outputs an ACTION INDEX; map it to a representation id
         # (same convention as the training env's _ManualABR: reps sorted by id).
         reps_sorted = sorted(state.reps, key=lambda r: r['id'])
