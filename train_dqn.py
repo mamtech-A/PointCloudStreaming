@@ -108,6 +108,7 @@ def evaluate(agent, env, trace_paths, eval_seeds, sequence):
     rng_state = random.getstate()
     np_state = np.random.get_state()
     out = {'reward': [], 'qoe': [], 'qoe_quality': [], 'mean_quality': [], 'stall_s': []}
+    by_trace = {}   # trace basename -> same metric lists (per-trace chart data)
     try:
         for eval_seed in eval_seeds:
             for path in trace_paths:
@@ -120,15 +121,25 @@ def evaluate(agent, env, trace_paths, eval_seeds, sequence):
                     a = agent.act(s, epsilon=0.0)
                     s, r, done, _ = env.step(a)
                     total += r
-                out['reward'].append(total)
-                out['qoe'].append(env.qoe())
-                out['qoe_quality'].append(env.qoe_quality())
-                out['mean_quality'].append(env.mean_quality())
-                out['stall_s'].append(env.total_stall_s())
+                vals = {'reward': total, 'qoe': env.qoe(),
+                        'qoe_quality': env.qoe_quality(),
+                        'mean_quality': env.mean_quality(),
+                        'stall_s': env.total_stall_s()}
+                tkey = os.path.basename(path)
+                tb = by_trace.setdefault(tkey, {k: [] for k in out})
+                for k, v in vals.items():
+                    out[k].append(v)
+                    tb[k].append(v)
     finally:
         random.setstate(rng_state)
         np.random.set_state(np_state)
-    return {k: float(np.mean(v)) for k, v in out.items()}
+    agg = {k: float(np.mean(v)) for k, v in out.items()}
+    # Per-trace means (averaged over eval seeds): the held-out set is
+    # heterogeneous (driving traces incl. a 137 s blackout + one static), so
+    # the aggregate alone hides WHERE a policy wins/loses — charts need this.
+    agg['per_trace'] = {t: {k: float(np.mean(v)) for k, v in m.items()}
+                        for t, m in by_trace.items()}
+    return agg
 
 
 def main():

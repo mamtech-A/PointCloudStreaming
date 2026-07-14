@@ -74,6 +74,8 @@ def trial_args(base_args, combo, seed):
     merged['seed'] = seed
     argv = []
     for k, v in sorted(merged.items()):
+        if k.startswith('_'):
+            continue  # config-file comment key (e.g. "_epochs"), not a CLI flag
         flag = k.replace('_', '-')
         if isinstance(v, bool):
             if flag in STORE_TRUE_FLAGS:
@@ -183,6 +185,18 @@ def main():
         agg[f'{select_by}_per_seed'] = {s: (results[idx][s]['best'] or
                                             results[idx][s]['final'])[select_by]
                                         for s in sorted(per_seed)}
+        # Per-TRACE mean of the selection metric across seeds (train_dqn's
+        # evaluate() stores per_trace in each best entry). The held-out set is
+        # heterogeneous (3 driving incl. a 137s blackout + 1 static), so charts
+        # need WHERE a config wins/loses, not just the aggregate. Missing key =
+        # pre-round-4 summary (skipped quietly).
+        trace_keys = set().union(*(b.get('per_trace', {}).keys() for b in bests))
+        if trace_keys:
+            agg[f'{select_by}_per_trace'] = {
+                t: (lambda vs: sum(vs) / len(vs))(
+                    [b['per_trace'][t][select_by] for b in bests
+                     if t in b.get('per_trace', {})])
+                for t in sorted(trace_keys)}
         table.append({
             'trial': idx, 'config': combo, 'seeds': sorted(per_seed),
             'metrics': agg,

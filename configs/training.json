@@ -21,7 +21,8 @@
     "sample_seed": 0,
     "budget": 12,
     "base_args": {
-      "epochs": 8,
+      "epochs": 20,
+      "_epochs": "ROUND 4 FINAL RUN: 8 -> 20. Round-3 evidence: 10/32 trials found their best checkpoint in the LAST quarter of training (median position 0.46) = not saturated at 8. With the 2.7x bigger mixed pool (~535 episodes/epoch vs 199), 20 epochs = ~6.7x round-3 episodes/trial. Best-checkpoint selection (eval-every + multi-seed, multi-trace eval) makes extra epochs safe. Est. ~13h for 48 trials at jobs=2 on the fast PC (~32 min/trial).",
       "coverage-stride": 60,
       "eval-every": 100,
       "target-update": 3000,
