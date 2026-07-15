@@ -2,7 +2,7 @@ import os
 import sys
 
 # Project root on sys.path so `from src.network_model import ...` resolves.
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -16,7 +16,7 @@ from src.network_model import Server, EdgeNodeLSTM, User, Topology, Simulator, D
 from src.network_model.trace import BandwidthTrace
 
 # Default paths: real G-PCC coded manifest + an UNSEEN test-split 5G trace.
-mpd_path = os.path.join(project_root, "config", "mpd_gpcc_longdress.xml")
+mpd_path = os.path.join(project_root, "manifests", "mpd_gpcc_longdress.xml")
 bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
                                   "static_B_2020.01.16_10.43.34.csv")
 lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")

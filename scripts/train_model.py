@@ -30,9 +30,10 @@ try:
 except Exception:
     pass
 
-# Add src directory to path
+# Add src directory to path (this file lives in scripts/, src/ is a sibling).
 script_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.join(script_dir, 'src')
+project_root = os.path.dirname(script_dir)
+src_dir = os.path.join(project_root, 'src')
 sys.path.insert(0, src_dir)
 
 from lstm_model import train_lstm_model, prepare_dataset
@@ -75,8 +76,7 @@ def main():
     print("🤖 LSTM Bandwidth Prediction Model Training")
     print("="*80)
     
-    # Set paths
-    project_root = script_dir
+    # Set paths (project_root computed at module top: parent of scripts/)
     bandwidth_dir = args.bandwidth_dir or os.path.join(project_root, 'bandwidth_5g')
     model_dir = os.path.join(project_root, 'models')
     output_path = args.out or os.path.join(model_dir, 'bandwidth_lstm.pkl')

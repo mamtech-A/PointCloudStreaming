@@ -296,11 +296,11 @@ comparable across strategies. Keep the legacy stall-only QoE for continuity.
 
 ```bash
 # train (stabilized config used for the shipped model)
-python train_dqn.py --epochs 40 --target-update 3000 --lr 1e-4
+python scripts/train_dqn.py --epochs 40 --target-update 3000 --lr 1e-4
 
 # evaluate / compare on the unseen test trace
-python run_dqn.py
-python compare.py
+python scripts/run_dqn.py
+python scripts/compare.py
 ```
 
 ---
@@ -459,9 +459,9 @@ pipelined/segment fetching (§6.4) is still the binding next step.
 ### 9.6 Reproduce
 
 ```
-python run_training.py --jobs 2          # full pipeline (see TRAINING.md)
-python compare.py                        # table 9.4
-python eval_fixed.py                     # table 9.2
+python scripts/run_training.py --jobs 2          # full pipeline (see TRAINING.md)
+python scripts/compare.py                        # table 9.4
+python scripts/eval_fixed.py                     # table 9.2
 ```
 
 ---
@@ -565,9 +565,9 @@ transport limit.
 ### 10.7 Reproduce
 
 ```
-python run_training.py --jobs 2                        # full round-2 pipeline
-python eval_fixed.py --segment-frames 5 --playback-rate-min 0.9   # table 10.2
-python compare.py   --segment-frames 5 --playback-rate-min 0.9    # table 10.3 at the winning S
+python scripts/run_training.py --jobs 2                        # full round-2 pipeline
+python scripts/eval_fixed.py --segment-frames 5 --playback-rate-min 0.9   # table 10.2
+python scripts/compare.py   --segment-frames 5 --playback-rate-min 0.9    # table 10.3 at the winning S
 ```
 
 ### 10.8 Robust winner (round 3, 8 seeds, S-matched eval) — 2026-07-11

@@ -20,7 +20,7 @@ python -m venv .venv && .venv\Scripts\activate     # (or your env)
 python -m pip install -r requirements.txt          # torch/numpy/pandas/scikit-learn (CPU is fine)
 python -c "import torch, numpy, sklearn, pandas; print('deps ok', torch.__version__)"
 python tests/test_time_varying.py                  # must print "9 tests passed"
-python run_training.py --smoke                     # ~minutes; validates the whole pipeline
+python scripts/run_training.py --smoke                     # ~minutes; validates the whole pipeline
 ```
 
 Note: use `python -m pip` (not bare `pip`) so the packages land in the SAME
@@ -33,7 +33,7 @@ different Python — rerun the `python -m pip install` line above with the exact
 
 ```
 git pull
-python run_training.py --jobs 2        # --jobs ~= physical cores / 4 (each trial uses torch threads)
+python scripts/run_training.py --jobs 2        # --jobs ~= physical cores / 4 (each trial uses torch threads)
 ```
 
 Then sleep. Everything is logged under `logs/train_runs/<UTC-timestamp>_full/`:
@@ -44,7 +44,7 @@ and per-trial dirs `sweep/trial_*/` with `train.log`, `train_summary.json`,
 Interrupted? Rerun and skip finished stages — the sweep also resumes per trial:
 
 ```
-python run_training.py --skip-stages gen,lstm --jobs 2
+python scripts/run_training.py --skip-stages gen,lstm --jobs 2
 ```
 
 What the stages do:

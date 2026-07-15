@@ -32,7 +32,7 @@ import shutil
 import argparse
 import subprocess
 
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -114,7 +114,7 @@ def main():
     achieved = lstm_cfg.get('signal', 'capacity') == 'achieved'
     achieved_dir = os.path.join(project_root, 'data', 'lstm_achieved')
     if achieved and 'gen' not in skip:
-        cmd = py('gen_lstm_dataset.py')
+        cmd = py(os.path.join('scripts', 'gen_lstm_dataset.py'))
         for k, v in lstm_cfg.get('gen_args', {}).items():
             cmd += [f"--{k.replace('_', '-')}", str(v)]
         if args.smoke:
@@ -135,7 +135,7 @@ def main():
         candidates = []
         for tf in transforms:
             out = os.path.join(lstm_dir, f'bandwidth_lstm_{tf}.pkl')
-            cmd = py('train_model.py', '--transform', tf, '--out', out,
+            cmd = py(os.path.join('scripts', 'train_model.py'), '--transform', tf, '--out', out,
                      '--sequence-length', lstm_cfg.get('sequence_length', 20),
                      '--epochs', 5 if args.smoke else lstm_cfg.get('epochs', 100),
                      '--test-size', 0.2)
@@ -162,7 +162,7 @@ def main():
 
     # --- Stage 3: DQN sweep ---------------------------------------------------
     if 'sweep' not in skip:
-        cmd = py('sweep.py', '--config', args.config, '--jobs', args.jobs,
+        cmd = py(os.path.join('scripts', 'sweep.py'), '--config', args.config, '--jobs', args.jobs,
                  '--sweep-dir', os.path.join(run_dir, 'sweep'))
         if args.smoke:
             cmd += ['--smoke']
@@ -188,11 +188,11 @@ def main():
         fe_flags = ['--segment-frames', str(eval_seg),
                     '--playback-rate-min', str(fe.get('playback_rate_min', 1.0))]
         mf = ['--max-frames', '60'] if args.smoke else []
-        if not R.stage('eval_fixed', py('eval_fixed.py', *(fe_flags + mf)),
+        if not R.stage('eval_fixed', py(os.path.join('scripts', 'eval_fixed.py'), *(fe_flags + mf)),
                        '40_eval_fixed.log'):
             ok = False
         mf = ['--max-frames', '40'] if args.smoke else []
-        if not R.stage('compare', py('compare.py', *(fe_flags + mf)), '41_compare.log'):
+        if not R.stage('compare', py(os.path.join('scripts', 'compare.py'), *(fe_flags + mf)), '41_compare.log'):
             ok = False
 
     # --- Stage 5: TRAINING_SUMMARY.md -----------------------------------------

@@ -6,7 +6,7 @@ comparable and leak-free), keeping the LSTM as a feature provider (drop it with
 --no-lstm-pred for the ablation). Saves the best agent (by held-out
 quality-aware QoE by default) to models/abr_dqn.pkl.
 
-Content: every manifest matching --mpd (default config/mpd_gpcc*.xml) forms the
+Content: every manifest matching --mpd (default manifests/mpd_gpcc*.xml) forms the
 training pool; each episode draws a (sequence, trace, offset) triple. Held-out
 eval always runs --eval-sequence (default longdress) at offset 0 so the metric
 stays comparable across runs.
@@ -35,7 +35,7 @@ import random
 import numpy as np
 import torch
 
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 try:
@@ -59,7 +59,7 @@ MIN_TAIL_SAMPLES = 120
 
 
 def sequence_name(mpd_path):
-    """config/mpd_gpcc.xml -> 'longdress'; config/mpd_gpcc_<seq>.xml -> '<seq>'."""
+    """manifests/mpd_gpcc.xml -> 'longdress'; manifests/mpd_gpcc_<seq>.xml -> '<seq>'."""
     stem = os.path.splitext(os.path.basename(mpd_path))[0]
     if stem == 'mpd_gpcc':
         return 'longdress'
@@ -147,7 +147,7 @@ def main():
     p.add_argument('--epochs', type=int, default=10,
                    help='full passes over the coverage-tiled training set; no cap — '
                         'more epochs are fine if held-out metrics keep improving')
-    p.add_argument('--mpd', type=str, default=os.path.join('config', 'mpd_gpcc*.xml'),
+    p.add_argument('--mpd', type=str, default=os.path.join('manifests', 'mpd_gpcc*.xml'),
                    help='manifest path or glob; every match is one content sequence')
     p.add_argument('--eval-sequence', type=str, default='longdress',
                    help='sequence used for held-out eval (kept fixed for comparability)')

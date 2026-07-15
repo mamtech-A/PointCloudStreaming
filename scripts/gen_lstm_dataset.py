@@ -29,7 +29,7 @@ import sys
 import json
 import argparse
 
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 try:
@@ -93,7 +93,7 @@ def run_series(frames, trace, abr_factory, segment_frames=1):
 def main():
     p = argparse.ArgumentParser(description="Generate achieved-throughput LSTM dataset")
     p.add_argument('--trace-dir', default=os.path.join(project_root, 'bandwidth_5g'))
-    p.add_argument('--mpd', default=os.path.join(project_root, 'config', 'mpd_gpcc_longdress.xml'))
+    p.add_argument('--mpd', default=os.path.join(project_root, 'manifests', 'mpd_gpcc_longdress.xml'))
     p.add_argument('--out-dir', default=os.path.join(project_root, 'data', 'lstm_achieved'))
     p.add_argument('--policies', nargs='*', default=list(POLICIES),
                    choices=list(POLICIES), help='which policies generate series')

@@ -17,7 +17,7 @@ import csv
 import math
 import argparse
 
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 try:
@@ -80,7 +80,7 @@ def main():
                    help='adaptive-playback floor (1.0 = off; 0.9 recommended)')
     args = p.parse_args()
 
-    mpd_path = os.path.join(project_root, 'config', 'mpd_gpcc_longdress.xml')
+    mpd_path = os.path.join(project_root, 'manifests', 'mpd_gpcc_longdress.xml')
     trace_path = os.path.join(project_root, args.trace)
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
     dqn_path = os.path.join(project_root, 'models', 'abr_dqn.pkl')

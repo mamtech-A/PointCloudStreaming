@@ -42,7 +42,7 @@ import subprocess
 import random as _random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -97,7 +97,7 @@ def run_trial(idx, seed, argv, sweep_dir):
     if os.path.exists(summary_path):
         with open(summary_path, encoding='utf-8') as f:
             return idx, seed, json.load(f), 'resumed'
-    cmd = [sys.executable, '-u', os.path.join(project_root, 'train_dqn.py'),
+    cmd = [sys.executable, '-u', os.path.join(project_root, 'scripts', 'train_dqn.py'),
            '--out', os.path.join(tdir, 'abr_dqn.pkl'), '--run-dir', tdir] + argv
     with open(os.path.join(tdir, 'train.log'), 'w', encoding='utf-8') as log:
         log.write('# ' + ' '.join(cmd) + '\n')

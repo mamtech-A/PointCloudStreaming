@@ -3,7 +3,7 @@ import sys
 import json
 
 # Project root on sys.path so `from src.network_model import ...` resolves.
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 try:
@@ -19,7 +19,7 @@ from src.lstm_model import LSTMPredictor
 from src.rl.dqn import DQNAgent
 
 # Default paths — evaluate on an UNSEEN test-split 5G trace.
-mpd_path = os.path.join(project_root, "config", "mpd_gpcc_longdress.xml")
+mpd_path = os.path.join(project_root, "manifests", "mpd_gpcc_longdress.xml")
 bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
                                   "static_B_2020.01.16_10.43.34.csv")
 dqn_model_path = os.path.join(project_root, "models", "abr_dqn.pkl")

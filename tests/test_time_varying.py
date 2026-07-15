@@ -290,7 +290,7 @@ def test_segment0_startup_realistic_on_heldout_trace():
         return  # dataset not present: skip quietly
     from src.network_model import Server, EdgeNode, User, Topology
     from src.network_model.manifest import parse_mpd_xml, PointCloud
-    mpd = os.path.join(os.path.dirname(trace_path), '..', 'config', 'mpd_gpcc_longdress.xml')
+    mpd = os.path.join(os.path.dirname(trace_path), '..', 'manifests', 'mpd_gpcc_longdress.xml')
     frames = parse_mpd_xml(os.path.normpath(mpd))[:8]
     random.seed(0)
     server = Server("t://origin")
