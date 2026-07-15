@@ -78,15 +78,16 @@ print(f"Policy   : {os.path.relpath(dqn_model_path, project_root)}", end="")
 if sweep and sweep.get("winner"):
     w = sweep["winner"]; wm = w.get("metrics", {}); wc = w.get("config", {})
     std = wm.get("qoe_quality_std", 0.0)
-    print("  (round-3 sweep winner)")
+    n_seeds = len(sweep.get("seeds", w.get("seeds", []))) or "?"
+    print("  (sweep winner)")
     print(f"   config : {wc.get('segment-frames', segment_frames)} frames/segment · "
           f"μ={wc.get('mu', agent.mu)} · LSTM feature: {'ON' if lstm_used else 'OFF'}")
     ctx = ""
     if fixed and fixed.get("results", {}).get(fixed.get("best_arm", ""), {}).get("qoe_quality") is not None:
         ba = fixed["results"][fixed["best_arm"]]
-        ctx = f" · best fixed arm ≈ QoE′ {ba['qoe_quality']:.0f}"
-    print(f"   held-out QoE′ {wm.get('qoe_quality', float('nan')):.1f} ± {std:.1f} "
-          f"(8-seed robust{ctx})")
+        ctx = f" · best fixed arm ≈ QoE″ {ba['qoe_quality']:.0f}"
+    print(f"   held-out QoE″ {wm.get('qoe_quality', float('nan')):.1f} ± {std:.1f} "
+          f"({n_seeds}-seed robust{ctx})")
 else:
     print(f"  ·  LSTM feature: {'ON' if lstm_used else 'OFF'}")
 print(f"Content  : longdress · 300 frames @30fps (10 s) · 6-tier G-PCC ladder")
@@ -99,9 +100,13 @@ print("=" * 100)
 # The RL objective for this run, built from the SWEEP WINNER's reward spec (the
 # exact objective the checkpoint was trained on) + the checkpoint's mu/lam — so
 # the printed total is directly comparable to dqn_sweep_results.json metrics.
+# reward-spec is a sweep AXIS since round 4, so the winner's own config takes
+# precedence over base_args.
 from src.rl.reward import RewardFunction
+_winner_cfg = ((sweep or {}).get("winner") or {}).get("config", {})
 _winner_args = (sweep or {}).get("base_args", {})
-_spec = dict(_winner_args.get("reward-spec") or {})
+_spec = dict(_winner_cfg.get("reward-spec")
+             or _winner_args.get("reward-spec") or {})
 _spec.setdefault("mu", agent.mu)
 _spec.setdefault("lam", agent.lam)
 reward_fn = RewardFunction(_spec)
