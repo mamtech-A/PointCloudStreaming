@@ -701,3 +701,50 @@ reward from the winner's own training objective) to the console and
 `logs/dqn/decisions.csv`, and the summary prints the accumulated RL reward —
 directly comparable to `dqn_sweep_results.json`. Tests: 17 transport + 7 new
 QoE/reward = 24.
+
+## 12. Round-4 results: the variance problem is solved (2026-07-15)
+
+48 trials (4 configs × 12 seeds), 20 epochs each on the 17-trace mixed train
+split, evaluated on the FIXED 4-trace held-out (3 driving + 1 static) × 3 eval
+seeds. All numbers are QoE″ v2 (startup + drop terms included).
+
+| config | QoE″ (12-seed) | q | stall |
+|---|---|---|---|
+| **reward-v2 · lstm-ON (winner)** | **54.50 ± 0.95** | 0.775 | 1.8 s |
+| reward-v1 · lstm-OFF | 54.33 ± 0.86 | 0.782 | 1.8 s |
+| reward-v2 · lstm-OFF | 53.56 ± 1.61 | 0.759 | 1.7 s |
+| reward-v1 · lstm-ON | 53.43 ± 1.43 | 0.777 | 1.9 s |
+
+**1. Seed variance collapsed: ±19.8 → ±0.95.** Round-3's binding constraint is
+gone. Per-seed spread is 51.9–55.3 (was 38–96). The fix was NOT algorithmic
+(no dueling/n-step needed — Phase 3 cancelled): it was (a) a non-trivial
+regime where decisions matter, (b) the split decoupled from the RL seed,
+(c) 4-trace held-out eval, (d) 12 seeds, (e) 20 saturated epochs.
+
+**2. The DQN now clearly beats every fixed arm: 54.5 vs 40.6 (+13.9).** In the
+driving regime no static tier works — arm_0 stalls 76 s, arm_5 wastes 97% of
+quality; the best compromise (arm_3, always-med) reaches only 40.6. Per-trace
+shows WHERE the DQN wins: it ~ties the best arm on the 137 s-blackout trace
+(33.0 vs 32.2 — nothing can stream through a blackout) but nearly doubles it
+on the static trace (85.1 vs 41.1) because it rides high tiers when capacity
+allows while the fixed arm is stuck at med. That asymmetry — match the safe
+policy in the worst case, crush it in the good case — is the adaptation story
+round 1–3 could never show.
+
+**3. Both ablations are settled null results.** lstm_pred: irrelevant even on
+low-autocorrelation driving traces (Δ < 1.1, within noise) — the measured
+tput last/mean/std features carry all usable signal. Reward v2 vs v1: no
+outcome difference (the policy already avoids slow startups/drops because
+they cost quality-time); winner keeps v2 since it aligns objective and metric
+at zero cost.
+
+**4. 20 epochs over-saturated (good).** Winner-config best checkpoints landed
+at mean position 0.10 of training (0/12 in the final quarter) — convergence is
+fast on this task and the run definitively brackets it. No further training
+warranted: this is the final model.
+
+Installed winner: trial 1 (reward-v2, lstm-ON), models/abr_dqn.pkl.
+Caveat for the paper: winner vs runner-ups is within noise — the honest claim
+is "all four configs are equivalent at ≈54 ± 1.5"; we ship trial 1's median
+behavior. Per-trace chart data: dqn_sweep_results.json
+(qoe_quality_per_trace), per-trial history eval entries, fixed-arm per_trace.
