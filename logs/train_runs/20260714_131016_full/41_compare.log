@@ -1,0 +1,20 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u compare.py --segment-frames 8 --playback-rate-min 0.9
+====================================================================================================
+BASELINE vs LSTM vs DQN comparison
+trace: C:\Users\Nima\PointCloudStreaming\bandwidth_5g\static_B_2020.01.16_10.43.34.csv | frames: all | segment: 8 | amp_floor: 0.9
+====================================================================================================
+
+====================================================================================================
+COMPARISON SUMMARY
+====================================================================================================
+strategy      QoE    QoE_q  rebuf   stall_s  slow_s  dropped  mean_rep  switches  mean_qual    reward
+-----------------------------------------------------------------------------------------------------
+bandwidth     0.0    -24.2      0       0.0     0.0       70      5.00         0      0.030       8.5
+lstm          0.0    -23.8      0       0.0     0.0       69      5.00         0      0.030       8.5
+dqn         100.0     86.5      0       0.0     0.0        0      0.53         5      0.940     280.9
+
+QoE counts only stalls/drops (favors the lowest quality); QoE_q is the
+quality-aware QoE" v2 = 100*mean_q - 4.3*stall_s - 1.0*sum|dq| - 10*slowdown
+                       - 1.0*startup_s - (100/N)*dropped (raw, unclipped);
+'reward' is the Pensieve objective: sum(quality) - 4.3*stall_s - 1.0*|quality change|.
+Logs written to logs/baseline/, logs/lstm/, logs/dqn/

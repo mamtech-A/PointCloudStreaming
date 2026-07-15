@@ -1,0 +1,7 @@
+[2026-07-14 06:58:05 UTC] pipeline start | config=configs\training.json smoke=False jobs=2 skip=none
+[2026-07-14 06:58:05 UTC] START gen: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u gen_lstm_dataset.py --offsets 8 --segment-frames 10  (log: 10_gen_lstm_dataset.log)
+[2026-07-14 06:58:17 UTC] DONE  gen in 0.2 min
+[2026-07-14 06:58:17 UTC] START lstm[none]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform none --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_065805_full\lstm\bandwidth_lstm_none.pkl --sequence-length 8 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json  (log: 20_lstm_none.log)
+[2026-07-14 07:00:22 UTC] DONE  lstm[none] in 2.1 min
+[2026-07-14 07:00:23 UTC] lstm[none] metrics: mae=3.89 low_bw_mae=0.511 dir_acc=0.665
+[2026-07-14 07:00:23 UTC] START lstm[log1p]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform log1p --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_065805_full\lstm\bandwidth_lstm_log1p.pkl --sequence-length 8 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json  (log: 20_lstm_log1p.log)

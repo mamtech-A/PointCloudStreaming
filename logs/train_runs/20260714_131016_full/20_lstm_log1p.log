@@ -1,0 +1,127 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform log1p --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p.pkl --sequence-length 8 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json
+================================================================================
+🤖 LSTM Bandwidth Prediction Model Training
+================================================================================
+📋 Explicit split from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json: 536 train / 128 test files
+
+📁 Found 664 bandwidth trace files
+📂 Output directory: C:\Users\Nima\PointCloudStreaming\models
+🔧 Hyperparameter tuning: Enabled
+📊 Sequence length: 8
+🧪 File-level test split: 0.20
+🎲 Split random seed: 42
+
+================================================================================
+Training Process:
+  1. Load and prepare dataset
+  2. Split files into train/test sets (file-level)
+  3. Perform hyperparameter grid search
+  4. Train final model with best hyperparameters
+  5. Save trained model and best model
+================================================================================
+
+Loading bandwidth traces from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved...
+Dataset size: 19920 sequences
+Bandwidth range: 0.01 - 278.40 Mbps
+Mean bandwidth: 19.49 Mbps, Std: 34.94 Mbps
+File-level split (80/20): 536 train files, 128 test files
+
+Testing 16 hyperparameter combinations...
+============================================================
+
+[1/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 3.2034, MAPE: 21.79%, RMSE: 9.8622
+
+[2/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 3.2445, MAPE: 21.71%, RMSE: 10.1080
+
+[3/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 3.2003, MAPE: 21.96%, RMSE: 10.1660
+
+[4/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 3.3362, MAPE: 22.11%, RMSE: 9.9941
+
+[5/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 3.2066, MAPE: 21.62%, RMSE: 9.7328
+
+[6/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 3.2351, MAPE: 22.12%, RMSE: 9.8740
+
+[7/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 3.5415, MAPE: 22.50%, RMSE: 10.3241
+
+[8/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 3.5096, MAPE: 22.24%, RMSE: 10.1716
+
+[9/16] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 3.3772, MAPE: 22.16%, RMSE: 10.1089
+
+[10/16] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 3.2216, MAPE: 21.90%, RMSE: 10.2395
+
+[11/16] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 3.2614, MAPE: 22.49%, RMSE: 10.4709
+
+[12/16] Testing: {'hidden_size': 128, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 3.2219, MAPE: 21.58%, RMSE: 9.9177
+
+[13/16] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 3.3494, MAPE: 21.81%, RMSE: 9.9334
+
+[14/16] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 3.2718, MAPE: 21.68%, RMSE: 9.8650
+
+[15/16] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 3.2482, MAPE: 21.56%, RMSE: 9.8349
+
+[16/16] Testing: {'hidden_size': 128, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 3.2134, MAPE: 21.52%, RMSE: 9.7555
+
+============================================================
+Best hyperparameters: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+Best MAE: 3.2003 Mbps
+
+Tuning results saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_tuning_results.json
+
+Retraining final model with best hyperparameters...
+
+Training final model...
+Epoch 10/100 - Train Loss: 0.064252, Test Loss: 0.045504
+Epoch 20/100 - Train Loss: 0.064377, Test Loss: 0.044354
+Epoch 30/100 - Train Loss: 0.062650, Test Loss: 0.047547
+Early stopping at epoch 35 (no improvement for 15 epochs)
+Loaded best model from epoch 20 with test loss: 0.044354
+
+Final Test Metrics:
+  MAE: 2.6704 Mbps  (persistence baseline: 2.7491)
+  MAPE: 22.20%  (persistence baseline: 21.52%)
+  RMSE: 9.1246 Mbps  (persistence baseline: 10.2712)
+  Low-bw (<5 Mbps, 61% of test) MAE: 0.4965  (persistence: 0.5065)
+  Directional accuracy: 0.616
+
+Saving model to C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p.pkl...
+Best model saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_best.pkl
+Split metadata saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_split.json
+
+Sample predictions:
+  Actual: 1.79 Mbps, Predicted: 1.63 Mbps
+  Actual: 1.67 Mbps, Predicted: 1.72 Mbps
+  Actual: 1.74 Mbps, Predicted: 1.73 Mbps
+  Actual: 1.80 Mbps, Predicted: 1.78 Mbps
+  Actual: 1.81 Mbps, Predicted: 1.85 Mbps
+
+================================================================================
+✅ Training complete!
+📦 Model saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p.pkl
+📦 Best model saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_best.pkl
+🧾 Split metadata saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_split.json
+📊 Tuning results saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_tuning_results.json
+
+Next steps:
+  1. Run the system with LSTM prediction:
+     python3 run_lstm.py
+  2. Or compare with baseline (no LSTM):
+     python3 run.py
+  3. Use a test-only simulation trace from:
+     C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\lstm\bandwidth_lstm_log1p_split.json -> test_files
+================================================================================

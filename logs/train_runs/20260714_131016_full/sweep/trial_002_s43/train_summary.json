@@ -1,0 +1,211 @@
+{
+  "args": {
+    "epochs": 20,
+    "mpd": "config\\mpd_gpcc*.xml",
+    "eval_sequence": "longdress",
+    "max_train_files": 0,
+    "max_test_files": 0,
+    "coverage_stride": 60,
+    "random_offset": true,
+    "reward_scale": 1.0,
+    "reward_norm": true,
+    "reward_spec": "{\"stall_mode\": \"bounded\", \"stall_cap_s\": 2.0, \"event_penalty\": 2.0}",
+    "no_lstm_pred": true,
+    "segment_frames": 8,
+    "playback_rate_min": 0.9,
+    "eval_seeds": "42,43,44",
+    "max_frames": 0,
+    "eval_every": 100,
+    "select_by": "qoe_quality",
+    "seed": 43,
+    "split_seed": 42,
+    "lr": 0.0001,
+    "gamma": 0.99,
+    "mu": 4.3,
+    "lam": 1.0,
+    "hidden": 128,
+    "batch_size": 64,
+    "target_update": 3000,
+    "eps_start": 1.0,
+    "eps_end": 0.05,
+    "eps_decay_frac": 0.6,
+    "out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260714_131016_full\\sweep\\trial_002_s43\\abr_dqn.pkl",
+    "run_dir": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260714_131016_full\\sweep\\trial_002_s43"
+  },
+  "reward": "q[log_density] - 4.3*min(stall,2.0) + 2.0*new_event - 1.0*|dq|",
+  "reward_spec": {
+    "utility": "log_density",
+    "psnr_key": "d1_psnr",
+    "psnr_lo": 30.0,
+    "psnr_hi": 75.0,
+    "mu": 4.3,
+    "stall_mode": "bounded",
+    "stall_cap_s": 2.0,
+    "event_penalty": 2.0,
+    "lam": 1.0,
+    "switch_mode": "l1",
+    "lam_down": null,
+    "startup_weight": 0.0,
+    "drop_weight": 0.0
+  },
+  "feature_spec": [
+    "buffer",
+    "last_rep_onehot",
+    "tput_last",
+    "tput_mean",
+    "tput_std",
+    "rep_bitrates",
+    "rep_densities"
+  ],
+  "sequences": [
+    "longdress",
+    "loot",
+    "redandblack",
+    "soldier"
+  ],
+  "eval_sequence": "longdress",
+  "train_files": [
+    "driving_B_2019.12.16_11.49.59.csv",
+    "driving_B_2019.12.16_12.27.05.csv",
+    "driving_B_2019.12.16_14.23.32.csv",
+    "driving_B_2019.12.17_07.32.39.csv",
+    "driving_B_2020.01.16_07.26.43.csv",
+    "driving_B_2020.01.16_09.56.56.csv",
+    "driving_B_2020.01.16_12.10.03.csv",
+    "driving_B_2020.02.13_13.03.24.csv",
+    "driving_B_2020.02.13_15.02.01.csv",
+    "driving_B_2020.02.14_07.29.00.csv",
+    "driving_B_2020.02.14_09.38.22.csv",
+    "driving_B_2020.02.14_12.58.17.csv",
+    "driving_B_2020.02.27_17.30.15.csv",
+    "static_B_2019.12.16_13.40.04.csv",
+    "static_B_2020.02.13_13.57.29.csv",
+    "static_B_2020.02.14_13.21.26.csv",
+    "static_B_2020.02.27_18.39.27.csv"
+  ],
+  "test_files": [
+    "driving_B_2019.12.14_10.16.30.csv",
+    "driving_B_2019.12.16_07.22.43.csv",
+    "driving_B_2020.02.27_20.35.57.csv",
+    "static_B_2020.01.16_10.43.34.csv"
+  ],
+  "episodes_per_epoch": 556,
+  "episodes_run": 11120,
+  "untrained": {
+    "reward": 156.16561279814633,
+    "qoe": 47.46842773254127,
+    "qoe_quality": 21.291541597829088,
+    "mean_quality": 0.6304217730364429,
+    "stall_s": 2.6729811201584126,
+    "per_trace": {
+      "driving_B_2019.12.14_10.16.30.csv": {
+        "reward": 143.1706555928522,
+        "qoe": 54.15931195527108,
+        "qoe_quality": 12.279100871801925,
+        "mean_quality": 0.6304217730364429,
+        "stall_s": 5.168137608945784
+      },
+      "driving_B_2019.12.16_07.22.43.csv": {
+        "reward": 138.64163846460994,
+        "qoe": 50.73047137161793,
+        "qoe_quality": 13.725953821376315,
+        "mean_quality": 0.6304217730364429,
+        "stall_s": 4.520572392343081
+      },
+      "driving_B_2020.02.27_20.35.57.csv": {
+        "reward": 166.11125630637898,
+        "qoe": 84.98392760327607,
+        "qoe_quality": 34.64889312751287,
+        "mean_quality": 0.6304217730364429,
+        "stall_s": 1.003214479344786
+      },
+      "static_B_2020.01.16_10.43.34.csv": {
+        "reward": 176.73890082874414,
+        "qoe": 0.0,
+        "qoe_quality": 24.51221857062525,
+        "mean_quality": 0.6304217730364429,
+        "stall_s": 0.0
+      }
+    }
+  },
+  "final": {
+    "reward": 196.2042101952708,
+    "qoe": 62.036271899070066,
+    "qoe_quality": 37.76830186355078,
+    "mean_quality": 0.763874007573547,
+    "stall_s": 3.426078953519319,
+    "per_trace": {
+      "driving_B_2019.12.14_10.16.30.csv": {
+        "reward": 126.05884681700803,
+        "qoe": 24.77328816347284,
+        "qoe_quality": -3.5393944745450603,
+        "mean_quality": 0.6437802528606293,
+        "stall_s": 7.712009033972099
+      },
+      "driving_B_2019.12.16_07.22.43.csv": {
+        "reward": 146.38112575435932,
+        "qoe": 31.90472885918429,
+        "qoe_quality": 11.514503064071897,
+        "mean_quality": 0.6744502059542019,
+        "stall_s": 5.619054228163143
+      },
+      "driving_B_2020.02.27_20.35.57.csv": {
+        "reward": 241.72693364627162,
+        "qoe": 100.0,
+        "qoe_quality": 63.10949799718282,
+        "mean_quality": 0.8160914955516915,
+        "stall_s": 0.0
+      },
+      "static_B_2020.01.16_10.43.34.csv": {
+        "reward": 270.6499345634442,
+        "qoe": 91.46707057362316,
+        "qoe_quality": 79.98860086749347,
+        "mean_quality": 0.9211740759276649,
+        "stall_s": 0.37325255194203466
+      }
+    }
+  },
+  "best": {
+    "episode": 200,
+    "reward": 210.98395600624454,
+    "qoe": 77.47905271756453,
+    "qoe_quality": 53.61952817288074,
+    "mean_quality": 0.7591993916722543,
+    "stall_s": 1.7708561231537603,
+    "per_trace": {
+      "driving_B_2019.12.14_10.16.30.csv": {
+        "reward": 174.0584780675929,
+        "qoe": 56.209464069961406,
+        "qoe_quality": 33.09728110465755,
+        "mean_quality": 0.7037920969524668,
+        "stall_s": 4.09144051934105
+      },
+      "driving_B_2019.12.16_07.22.43.csv": {
+        "reward": 186.62436132606845,
+        "qoe": 74.98278016930223,
+        "qoe_quality": 39.15134678239676,
+        "mean_quality": 0.6740532076494544,
+        "stall_s": 1.6701106328062199
+      },
+      "driving_B_2020.02.27_20.35.57.csv": {
+        "reward": 219.5738621269337,
+        "qoe": 83.39063329766114,
+        "qoe_quality": 60.44754811539271,
+        "mean_quality": 0.7782470751085345,
+        "stall_s": 1.321873340467771
+      },
+      "static_B_2020.01.16_10.43.34.csv": {
+        "reward": 263.6791225043832,
+        "qoe": 95.33333333333333,
+        "qoe_quality": 81.78193668907598,
+        "mean_quality": 0.880705186978561,
+        "stall_s": 0.0
+      }
+    }
+  },
+  "best_metric": 53.61952817288074,
+  "select_by": "qoe_quality",
+  "out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260714_131016_full\\sweep\\trial_002_s43\\abr_dqn.pkl",
+  "history": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260714_131016_full\\sweep\\trial_002_s43\\abr_dqn_train_history.json",
+  "episodes_csv": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260714_131016_full\\sweep\\trial_002_s43\\episodes.csv"
+}

@@ -1,0 +1,63 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u sweep.py --config configs\training.json --jobs 3 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\sweep
+sweep: 4 configs x 12 seed(s) = 48 trials | jobs=3 | select-by=qoe_quality
+  dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_131016_full\sweep
+  [trial 000 seed 44] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 45] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 47] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 46] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 48] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 49] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 50] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 51] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 53] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 000 seed 52] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 001 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 44] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 45] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 46] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 47] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 48] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 50] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 49] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 51] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 52] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 001 seed 53] ok  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 002 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 44] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 45] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 46] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 47] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 48] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 49] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 50] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 52] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 51] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 002 seed 53] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+  [trial 003 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 44] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 45] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 46] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 47] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 49] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 48] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 50] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 51] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 52] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+  [trial 003 seed 53] ok  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8}
+
+================================================================================================
+rank trial   qoe_quality    ±std   mean_q  stall_s  config
+1    1             54.50    0.95    0.775      1.8  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8} *pareto
+2    2             54.33    0.86    0.782      1.8  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8} *pareto
+3    3             53.56    1.61    0.759      1.7  {'mu': 4.3, 'no-lstm-pred': True, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0, 'startup_weight': 1.0, 'drop_weight': 1.0}, 'segment-frames': 8} *pareto
+4    0             53.43    1.43    0.777      1.9  {'mu': 4.3, 'no-lstm-pred': False, 'reward-spec': {'stall_mode': 'bounded', 'stall_cap_s': 2.0, 'event_penalty': 2.0}, 'segment-frames': 8}
+
+WINNER trial 1 -> models\abr_dqn.pkl
+  qoe_quality = 54.50 ± 0.95 over 12 seeds [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
+  per-seed: {42: 55.292351959975264, 43: 51.9440962600954, 44: 55.27339464800906, 45: 55.062627724828864, 46: 53.44293693159978, 47: 54.83911983928189, 48: 54.931816796657166, 49: 54.8837701042047, 50: 55.11641256925078, 51: 54.93891548616009, 52: 53.69469675464233, 53: 54.551778621535625}
+results: models\dqn_sweep_results.json

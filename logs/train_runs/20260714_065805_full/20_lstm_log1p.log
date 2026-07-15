@@ -1,0 +1,109 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u train_model.py --transform log1p --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260714_065805_full\lstm\bandwidth_lstm_log1p.pkl --sequence-length 8 --epochs 100 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json
+================================================================================
+🤖 LSTM Bandwidth Prediction Model Training
+================================================================================
+📋 Explicit split from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json: 128 train / 32 test files
+
+📁 Found 160 bandwidth trace files
+📂 Output directory: C:\Users\Nima\PointCloudStreaming\models
+🔧 Hyperparameter tuning: Enabled
+📊 Sequence length: 8
+🧪 File-level test split: 0.20
+🎲 Split random seed: 42
+
+================================================================================
+Training Process:
+  1. Load and prepare dataset
+  2. Split files into train/test sets (file-level)
+  3. Perform hyperparameter grid search
+  4. Train final model with best hyperparameters
+  5. Save trained model and best model
+================================================================================
+
+Loading bandwidth traces from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved...
+Dataset size: 3520 sequences
+Bandwidth range: 0.15 - 175.32 Mbps
+Mean bandwidth: 34.82 Mbps, Std: 45.15 Mbps
+File-level split (80/20): 128 train files, 32 test files
+
+Testing 16 hyperparameter combinations...
+============================================================
+
+[1/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 3.4221, MAPE: 14.69%, RMSE: 7.6768
+
+[2/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 3.7711, MAPE: 15.18%, RMSE: 8.3797
+
+[3/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.001}
+  MAE: 3.7756, MAPE: 15.06%, RMSE: 8.4095
+
+[4/16] Testing: {'hidden_size': 64, 'num_layers': 1, 'dropout': 0.2, 'learning_rate': 0.0005}
+  MAE: 3.8379, MAPE: 15.67%, RMSE: 8.4325
+
+[5/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.001}
+  MAE: 3.6510, MAPE: 14.85%, RMSE: 8.0775
+
+[6/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.1, 'learning_rate': 0.0005}
+  MAE: 3.5060, MAPE: 15.43%, RMSE: 7.8605
+
+[7/16] Testing: {'hidden_size': 64, 'num_layers': 2, 'dropout': 0.2, 'learning_rate': 0.001}
+Traceback (most recent call last):
+  File "C:\Users\Nima\PointCloudStreaming\train_model.py", line 168, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Nima\PointCloudStreaming\train_model.py", line 129, in main
+    model = train_lstm_model(
+        bandwidth_dir,
+    ...<13 lines>...
+        test_files=test_files
+    )
+  File "C:\Users\Nima\PointCloudStreaming\src\lstm_model.py", line 849, in train_lstm_model
+    best_params, best_metrics, all_results = tune_hyperparameters(
+                                             ~~~~~~~~~~~~~~~~~~~~^
+        X_train_all, y_train_all, param_grid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        transform=transform
+        ^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Nima\PointCloudStreaming\src\lstm_model.py", line 739, in tune_hyperparameters
+    metrics = predictor.fit(
+        X, y,
+    ...<4 lines>...
+        verbose=False
+    )
+  File "C:\Users\Nima\PointCloudStreaming\src\lstm_model.py", line 233, in fit
+    return self.fit_from_split(
+           ~~~~~~~~~~~~~~~~~~~^
+        X_train,
+        ^^^^^^^^
+    ...<7 lines>...
+        print_split=False
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Nima\PointCloudStreaming\src\lstm_model.py", line 326, in fit_from_split
+    outputs = self.model(batch_X)
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Nima\PointCloudStreaming\src\lstm_model.py", line 106, in forward
+    output = self.fc(last_hidden)
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\container.py", line 253, in forward
+    input = module(input)
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Nima\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\nn\modules\module.py", line 1782, in _call_impl
+    def _call_impl(self, *args, **kwargs):
+    
+KeyboardInterrupt
