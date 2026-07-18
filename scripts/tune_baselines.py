@@ -153,6 +153,8 @@ def main():
         if name == "mpc":
             return lambda: MPCABR(
                 **params, segment_frames=args.segment_frames,
+                fps=env.target_fps,
+                buffer_capacity_s=env.buffer_capacity_s,
                 episode_frames=int(sum(map(len, pool.values())) / len(pool)),
                 mu=reward_spec["mu"],
                 rebuffer_weight=reward_spec["rebuffer_weight"],
@@ -189,6 +191,8 @@ def main():
         "offsets_per_trace": offsets,
         "jitter_seeds": seeds,
         "segment_frames": args.segment_frames,
+        "target_fps": env.target_fps,
+        "buffer_capacity_s": env.buffer_capacity_s,
         "families": families,
     }
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)

@@ -53,6 +53,14 @@ def test_mpc_uses_low_tier_without_history_and_higher_tier_on_fast_link():
     assert policy.select(warm) < 5
 
 
+def test_mpc_uses_explicit_playback_and_buffer_settings():
+    policy = MPCABR(
+        horizon=2, segment_frames=12, fps=24.0, buffer_capacity_s=7.5,
+    )
+    assert policy.segment_duration_s == 0.5
+    assert policy.buffer_capacity_s == 7.5
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:

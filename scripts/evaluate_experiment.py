@@ -268,6 +268,22 @@ def main():
         validate_lstm_provenance(
             lstm_path, segment_frames, protocol_digest(protocol))
 
+    # One shared environment defines the playback clock and buffer capacity
+    # used by every rule-based baseline, including the MPC planner.
+    baseline_env = StreamingEnv(
+        manifest_pool, lstm_predictor=None,
+        tcp_params={**DEFAULT_TCP_PARAMS, "log_packets": False},
+        feature_spec=DEFAULT_FEATURE_SPEC,
+        reward_spec=reward_spec,
+        segment_frames=segment_frames,
+    )
+    if baseline_config_rel:
+        if float(baseline_config.get("target_fps", -1)) != baseline_env.target_fps:
+            raise ValueError("baseline tuning/evaluation FPS mismatch")
+        if (float(baseline_config.get("buffer_capacity_s", -1)) !=
+                baseline_env.buffer_capacity_s):
+            raise ValueError("baseline tuning/evaluation buffer capacity mismatch")
+
     print("=" * 96)
     print(f"REGISTERED EVALUATION | split={args.split} | protocol={protocol_digest(protocol)}")
     print(f"traces={len(trace_paths)} sequences={sequences} offsets/trace={offsets} "
@@ -289,6 +305,8 @@ def main():
         "winner_trial": sweep["winner"]["trial"],
         "winner_config": winner_config,
         "segment_frames": segment_frames,
+        "target_fps": baseline_env.target_fps,
+        "buffer_capacity_s": baseline_env.buffer_capacity_s,
         "reward_spec": reward_spec,
         "baseline_config": baseline_config_rel,
         "baseline_selection_split": "validation" if baseline_config_rel else None,
@@ -322,6 +340,8 @@ def main():
                 feature_spec=agent.feature_spec, norm=agent.norm_constants,
                 reward_spec=agent.reward_spec or reward_spec,
                 segment_frames=segment_frames,
+                target_fps=baseline_env.target_fps,
+                buffer_capacity_s=baseline_env.buffer_capacity_s,
             )
             result = evaluate_agent(
                 agent, env, trace_paths, eval_seeds, sequences,
@@ -338,14 +358,6 @@ def main():
         dqn_result["training_seed_count"] = len(per_training_seed)
         dqn_result["checkpoint_selection_split"] = "validation"
         payload["results"]["dqn"] = dqn_result
-
-    baseline_env = StreamingEnv(
-        manifest_pool, lstm_predictor=None,
-        tcp_params={**DEFAULT_TCP_PARAMS, "log_packets": False},
-        feature_spec=DEFAULT_FEATURE_SPEC,
-        reward_spec=reward_spec,
-        segment_frames=segment_frames,
-    )
 
     fixed_results = {}
     if "fixed" in requested:
@@ -379,6 +391,8 @@ def main():
         "mpc": lambda: MPCABR(
             **baseline_params["mpc"],
             segment_frames=segment_frames,
+            fps=baseline_env.target_fps,
+            buffer_capacity_s=baseline_env.buffer_capacity_s,
             episode_frames=int(
                 sum(map(len, manifest_pool.values())) / len(manifest_pool)
             ),
