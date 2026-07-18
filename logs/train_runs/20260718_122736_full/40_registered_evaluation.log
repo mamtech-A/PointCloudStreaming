@@ -1,0 +1,28 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\evaluate_experiment.py --protocol configs/experiment_protocol.json --baseline-config C:\Users\Nima\PointCloudStreaming\models\baseline_config.json --strategies dqn,fixed,throughput,lstm_rule,buffer,mpc --split test --max-frames 0 --out models\final_test_results.json
+================================================================================================
+REGISTERED EVALUATION | split=test | protocol=73916fc9adae6232
+traces=4 sequences=['longdress', 'loot', 'redandblack', 'soldier'] offsets/trace=3 jitter_seeds=[42, 43, 44] segment_frames=8
+================================================================================================
+DQN seed 42: qoe_quality=27.984 stall=4.953s
+DQN seed 43: qoe_quality=35.506 stall=4.000s
+DQN seed 44: qoe_quality=5.627 stall=10.950s
+DQN seed 45: qoe_quality=25.752 stall=7.754s
+DQN seed 46: qoe_quality=34.196 stall=4.187s
+DQN seed 47: qoe_quality=24.137 stall=2.312s
+DQN seed 48: qoe_quality=17.120 stall=6.035s
+DQN seed 49: qoe_quality=25.673 stall=5.032s
+DQN seed 50: qoe_quality=32.746 stall=3.521s
+DQN seed 51: qoe_quality=29.473 stall=6.679s
+DQN seed 52: qoe_quality=29.609 stall=6.656s
+DQN seed 53: qoe_quality=24.421 stall=8.784s
+fixed_arm_0: qoe_quality=-206.410
+fixed_arm_1: qoe_quality=-81.231
+fixed_arm_2: qoe_quality=-32.830
+fixed_arm_3: qoe_quality=20.542
+fixed_arm_4: qoe_quality=15.353
+fixed_arm_5: qoe_quality=-18.543
+throughput: qoe_quality=-12.377 stall=0.000s
+lstm_rule: qoe_quality=-16.187 stall=0.000s
+buffer: qoe_quality=36.165 stall=0.007s
+mpc: qoe_quality=38.819 stall=0.480s
+saved case-level results: C:\Users\Nima\PointCloudStreaming\models\final_test_results.json

@@ -1,0 +1,326 @@
+{
+  "args": {
+    "protocol": "configs/experiment_protocol.json",
+    "epochs": 1,
+    "mpd": "manifests\\mpd_gpcc*.xml",
+    "eval_sequences": "longdress",
+    "eval_offsets": 1,
+    "max_train_files": 0,
+    "max_validation_files": 1,
+    "coverage_stride": 2000,
+    "random_offset": true,
+    "reward_scale": 1.0,
+    "reward_norm": true,
+    "reward_spec": "{\"stall_mode\": \"bounded\", \"stall_cap_s\": 2.0, \"event_penalty\": 2.0, \"startup_weight\": 1.0, \"drop_weight\": 1.0}",
+    "no_lstm_pred": false,
+    "segment_frames": 8,
+    "playback_rate_min": 0.9,
+    "eval_seeds": "42",
+    "max_frames": 30,
+    "eval_every": 3,
+    "early_stop_patience": 8,
+    "select_by": "qoe_quality",
+    "seed": 42,
+    "lr": 0.0001,
+    "gamma": 0.99,
+    "mu": 4.3,
+    "lam": 1.0,
+    "hidden": 128,
+    "batch_size": 64,
+    "target_update": 3000,
+    "eps_start": 1.0,
+    "eps_end": 0.05,
+    "eps_decay_frac": 0.6,
+    "out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke\\sweep\\trial_000_s42\\abr_dqn.pkl",
+    "run_dir": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke\\sweep\\trial_000_s42"
+  },
+  "reward": "q[log_density] - 4.3*min(stall,2.0) + 2.0*new_event - 1.0*|dq| - 1.0*startup - 1.0*drops",
+  "reward_spec": {
+    "utility": "log_density",
+    "psnr_key": "d1_psnr",
+    "psnr_lo": 30.0,
+    "psnr_hi": 75.0,
+    "mu": 4.3,
+    "stall_mode": "bounded",
+    "stall_cap_s": 2.0,
+    "event_penalty": 2.0,
+    "lam": 1.0,
+    "switch_mode": "l1",
+    "lam_down": null,
+    "startup_weight": 1.0,
+    "drop_weight": 1.0
+  },
+  "feature_spec": [
+    "lstm_pred",
+    "buffer",
+    "last_rep_onehot",
+    "tput_last",
+    "tput_mean",
+    "tput_std",
+    "rep_bitrates",
+    "rep_densities"
+  ],
+  "sequences": [
+    "longdress",
+    "loot",
+    "redandblack",
+    "soldier"
+  ],
+  "validation_sequences": [
+    "longdress"
+  ],
+  "validation_offsets_per_trace": 1,
+  "validation_seeds": [
+    42
+  ],
+  "protocol": "configs\\experiment_protocol.json",
+  "protocol_digest": "73916fc9adae6232",
+  "train_files": [
+    "driving_B_2019.12.16_12.27.05.csv",
+    "driving_B_2019.12.17_07.32.39.csv",
+    "driving_B_2020.01.16_07.26.43.csv",
+    "driving_B_2020.01.16_09.56.56.csv",
+    "driving_B_2020.01.16_12.10.03.csv",
+    "driving_B_2020.02.13_13.03.24.csv",
+    "driving_B_2020.02.13_15.02.01.csv",
+    "driving_B_2020.02.14_09.38.22.csv",
+    "driving_B_2020.02.14_12.58.17.csv",
+    "driving_B_2020.02.27_17.30.15.csv",
+    "static_B_2019.12.16_13.40.04.csv",
+    "static_B_2020.02.14_13.21.26.csv",
+    "static_B_2020.02.27_18.39.27.csv"
+  ],
+  "validation_files": [
+    "driving_B_2019.12.14_10.16.30.csv"
+  ],
+  "registered_test_files_not_evaluated": [
+    "driving_B_2019.12.16_11.49.59.csv",
+    "driving_B_2019.12.16_14.23.32.csv",
+    "driving_B_2020.02.14_07.29.00.csv",
+    "static_B_2020.02.13_13.57.29.csv"
+  ],
+  "episodes_per_epoch": 15,
+  "episodes_run": 15,
+  "stopped_early": false,
+  "untrained": {
+    "n_cases": 1,
+    "reward": -0.2789092605938446,
+    "reward_std": 0.0,
+    "qoe": 100.0,
+    "qoe_std": 0.0,
+    "qoe_quality": 23.985143982114515,
+    "qoe_quality_std": 0.0,
+    "mean_quality": 0.3471558904288143,
+    "mean_quality_std": 0.0,
+    "stall_s": 0.0,
+    "stall_s_std": 0.0,
+    "per_trace": {
+      "driving_B_2019.12.14_10.16.30.csv": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "per_sequence": {
+      "longdress": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "per_seed": {
+      "42": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "cases": [
+      {
+        "trace": "driving_B_2019.12.14_10.16.30.csv",
+        "sequence": "longdress",
+        "offset": 0,
+        "eval_seed": 42,
+        "reward": -0.2789092605938446,
+        "qoe": 100.0,
+        "qoe_quality": 23.985143982114515,
+        "mean_quality": 0.3471558904288143,
+        "stall_s": 0.0
+      }
+    ]
+  },
+  "final": {
+    "episode": 15,
+    "n_cases": 1,
+    "reward": -0.2789092605938446,
+    "reward_std": 0.0,
+    "qoe": 100.0,
+    "qoe_std": 0.0,
+    "qoe_quality": 23.985143982114515,
+    "qoe_quality_std": 0.0,
+    "mean_quality": 0.3471558904288143,
+    "mean_quality_std": 0.0,
+    "stall_s": 0.0,
+    "stall_s_std": 0.0,
+    "per_trace": {
+      "driving_B_2019.12.14_10.16.30.csv": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "per_sequence": {
+      "longdress": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "per_seed": {
+      "42": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "cases": [
+      {
+        "trace": "driving_B_2019.12.14_10.16.30.csv",
+        "sequence": "longdress",
+        "offset": 0,
+        "eval_seed": 42,
+        "reward": -0.2789092605938446,
+        "qoe": 100.0,
+        "qoe_quality": 23.985143982114515,
+        "mean_quality": 0.3471558904288143,
+        "stall_s": 0.0
+      }
+    ]
+  },
+  "best": {
+    "episode": 3,
+    "n_cases": 1,
+    "reward": -0.2789092605938446,
+    "reward_std": 0.0,
+    "qoe": 100.0,
+    "qoe_std": 0.0,
+    "qoe_quality": 23.985143982114515,
+    "qoe_quality_std": 0.0,
+    "mean_quality": 0.3471558904288143,
+    "mean_quality_std": 0.0,
+    "stall_s": 0.0,
+    "stall_s_std": 0.0,
+    "per_trace": {
+      "driving_B_2019.12.14_10.16.30.csv": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "per_sequence": {
+      "longdress": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "per_seed": {
+      "42": {
+        "n_cases": 1,
+        "reward": -0.2789092605938446,
+        "reward_std": 0.0,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 23.985143982114515,
+        "qoe_quality_std": 0.0,
+        "mean_quality": 0.3471558904288143,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0
+      }
+    },
+    "cases": [
+      {
+        "trace": "driving_B_2019.12.14_10.16.30.csv",
+        "sequence": "longdress",
+        "offset": 0,
+        "eval_seed": 42,
+        "reward": -0.2789092605938446,
+        "qoe": 100.0,
+        "qoe_quality": 23.985143982114515,
+        "mean_quality": 0.3471558904288143,
+        "stall_s": 0.0
+      }
+    ]
+  },
+  "best_metric": 23.985143982114515,
+  "select_by": "qoe_quality",
+  "out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke\\sweep\\trial_000_s42\\abr_dqn.pkl",
+  "last_out": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke\\sweep\\trial_000_s42\\abr_dqn_last.pkl",
+  "history": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke\\sweep\\trial_000_s42\\abr_dqn_train_history.json",
+  "episodes_csv": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke\\sweep\\trial_000_s42\\episodes.csv"
+}

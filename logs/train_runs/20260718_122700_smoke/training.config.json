@@ -1,0 +1,59 @@
+{
+  "_comment": "IST-2026 clean final experiment. The explicit split lives in configs/experiment_protocol.json. Checkpoints/configs are selected only on validation; the final test is run once after the method is frozen. Reward, segment size, optimizer, and network architecture are fixed from Round 4. The only preregistered ablation is whether the LSTM prediction feature is present.",
+  "protocol": "configs/experiment_protocol.json",
+
+  "lstm": {
+    "signal": "achieved",
+    "gen_args": {
+      "offsets": 8,
+      "segment-frames": 8,
+      "protocol": "configs/experiment_protocol.json"
+    },
+    "transforms": ["none", "log1p"],
+    "tune": true,
+    "sequence_length": 8,
+    "epochs": 100,
+    "select_metric": "low_bw_mae",
+    "_selection_note": "LSTM transform/hyperparameters are selected on the registered validation sources. Final-test trace sources are not generated into the achieved-throughput training data."
+  },
+
+  "dqn_sweep": {
+    "mode": "grid",
+    "seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "base_args": {
+      "protocol": "configs/experiment_protocol.json",
+      "epochs": 8,
+      "coverage-stride": 60,
+      "eval-every": 200,
+      "early-stop-patience": 8,
+      "target-update": 3000,
+      "lr": 0.0001,
+      "lam": 1.0,
+      "select-by": "qoe_quality",
+      "eval-seeds": "42,43,44",
+      "eval-offsets": 3,
+      "eval-sequences": "longdress",
+      "playback-rate-min": 0.9,
+      "reward-spec": {
+        "stall_mode": "bounded",
+        "stall_cap_s": 2.0,
+        "event_penalty": 2.0,
+        "startup_weight": 1.0,
+        "drop_weight": 1.0
+      }
+    },
+    "axes": {
+      "segment-frames": [8],
+      "mu": [4.3],
+      "no-lstm-pred": [false, true]
+    },
+    "_selection_note": "Two fixed configurations x 12 seeds. Rank configurations by mean validation qoe_quality and install the seed closest to that configuration mean, not the lucky best seed."
+  },
+
+  "final_eval": {
+    "split": "test",
+    "max_frames": 0,
+    "strategies": "dqn,fixed,throughput,lstm_rule,buffer,mpc",
+    "_note": "Uses every registered test trace, all four content sequences, three deterministic offsets per trace, and three paired jitter seeds. The output retains case-level rows."
+  }
+}

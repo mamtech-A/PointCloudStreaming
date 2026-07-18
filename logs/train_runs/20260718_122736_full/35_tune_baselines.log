@@ -1,0 +1,42 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\tune_baselines.py --protocol configs/experiment_protocol.json --segment-frames 8 --playback-rate-min 0.9 --out C:\Users\Nima\PointCloudStreaming\models\baseline_config.json
+fixed {'arm': 0}: qoe_quality=-34432.114 stall=7832.491s
+fixed {'arm': 1}: qoe_quality=-19902.823 stall=4536.058s
+fixed {'arm': 2}: qoe_quality=-11753.609 stall=2685.397s
+fixed {'arm': 3}: qoe_quality=-4637.965 stall=1067.659s
+fixed {'arm': 4}: qoe_quality=-1090.195 stall=256.376s
+fixed {'arm': 5}: qoe_quality=-234.002 stall=50.077s
+WINNER fixed: {'arm': 5}
+throughput {'history_window': 3, 'safety_factor': 0.75}: qoe_quality=-234.002 stall=50.077s
+throughput {'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-234.002 stall=50.077s
+throughput {'history_window': 3, 'safety_factor': 0.95}: qoe_quality=-224.244 stall=50.077s
+throughput {'history_window': 5, 'safety_factor': 0.75}: qoe_quality=-234.002 stall=50.077s
+throughput {'history_window': 5, 'safety_factor': 0.85}: qoe_quality=-234.002 stall=50.077s
+throughput {'history_window': 5, 'safety_factor': 0.95}: qoe_quality=-227.016 stall=50.077s
+throughput {'history_window': 8, 'safety_factor': 0.75}: qoe_quality=-234.002 stall=50.077s
+throughput {'history_window': 8, 'safety_factor': 0.85}: qoe_quality=-234.002 stall=50.077s
+throughput {'history_window': 8, 'safety_factor': 0.95}: qoe_quality=-227.661 stall=50.077s
+WINNER throughput: {'history_window': 3, 'safety_factor': 0.95}
+lstm_rule {'safety_factor': 0.75}: qoe_quality=-234.002 stall=50.077s
+lstm_rule {'safety_factor': 0.85}: qoe_quality=-234.002 stall=50.077s
+lstm_rule {'safety_factor': 0.95}: qoe_quality=-231.956 stall=50.077s
+WINNER lstm_rule: {'safety_factor': 0.95}
+buffer {'reservoir_s': 0.5, 'cushion_s': 2.0}: qoe_quality=-404.319 stall=102.056s
+buffer {'reservoir_s': 0.5, 'cushion_s': 3.0}: qoe_quality=-404.989 stall=101.982s
+buffer {'reservoir_s': 0.5, 'cushion_s': 4.0}: qoe_quality=-184.671 stall=50.307s
+buffer {'reservoir_s': 1.0, 'cushion_s': 2.0}: qoe_quality=-183.935 stall=50.226s
+buffer {'reservoir_s': 1.0, 'cushion_s': 3.0}: qoe_quality=-185.289 stall=50.126s
+buffer {'reservoir_s': 1.0, 'cushion_s': 4.0}: qoe_quality=-187.472 stall=50.121s
+buffer {'reservoir_s': 1.5, 'cushion_s': 2.0}: qoe_quality=-186.789 stall=50.146s
+buffer {'reservoir_s': 1.5, 'cushion_s': 3.0}: qoe_quality=-188.165 stall=50.077s
+buffer {'reservoir_s': 1.5, 'cushion_s': 4.0}: qoe_quality=-190.179 stall=50.077s
+WINNER buffer: {'reservoir_s': 1.0, 'cushion_s': 2.0}
+mpc {'horizon': 2, 'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-179.886 stall=50.476s
+mpc {'horizon': 2, 'history_window': 3, 'safety_factor': 0.95}: qoe_quality=-180.943 stall=50.797s
+mpc {'horizon': 2, 'history_window': 5, 'safety_factor': 0.85}: qoe_quality=-181.114 stall=50.612s
+mpc {'horizon': 2, 'history_window': 5, 'safety_factor': 0.95}: qoe_quality=-181.948 stall=50.967s
+mpc {'horizon': 3, 'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-179.134 stall=50.391s
+mpc {'horizon': 3, 'history_window': 3, 'safety_factor': 0.95}: qoe_quality=-180.096 stall=50.683s
+mpc {'horizon': 3, 'history_window': 5, 'safety_factor': 0.85}: qoe_quality=-180.968 stall=50.312s
+mpc {'horizon': 3, 'history_window': 5, 'safety_factor': 0.95}: qoe_quality=-180.414 stall=50.454s
+WINNER mpc: {'horizon': 3, 'history_window': 3, 'safety_factor': 0.85}
+saved frozen baseline parameters: C:\Users\Nima\PointCloudStreaming\models\baseline_config.json

@@ -1,0 +1,14 @@
+[2026-07-18 12:27:00 UTC] pipeline start | config=configs\training.json smoke=True jobs=1 skip=none
+[2026-07-18 12:27:00 UTC] START gen: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\gen_lstm_dataset.py --offsets 8 --segment-frames 8 --protocol configs/experiment_protocol.json --offsets 1 --policies fixed3 --max-frames 120  (log: 10_gen_lstm_dataset.log)
+[2026-07-18 12:27:01 UTC] DONE  gen in 0.0 min
+[2026-07-18 12:27:01 UTC] START lstm[none]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\train_model.py --transform none --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\lstm\bandwidth_lstm_none.pkl --sequence-length 8 --epochs 5 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data\lstm_achieved --split-from C:\Users\Nima\PointCloudStreaming\data\lstm_achieved\split.json --no-tune  (log: 20_lstm_none.log)
+[2026-07-18 12:27:12 UTC] DONE  lstm[none] in 0.2 min
+[2026-07-18 12:27:12 UTC] lstm[none] metrics: mae=12.83 low_bw_mae=0.000 dir_acc=0.500
+[2026-07-18 12:27:12 UTC] LSTM winner: transform=none (low_bw_mae=0.000) -> models/bandwidth_lstm.pkl
+[2026-07-18 12:27:12 UTC] START sweep: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\sweep.py --config configs\training.json --jobs 1 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep --smoke  (log: 30_sweep.log)
+[2026-07-18 12:27:20 UTC] DONE  sweep in 0.1 min
+[2026-07-18 12:27:20 UTC] START baseline_tuning: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\tune_baselines.py --protocol configs/experiment_protocol.json --segment-frames 8 --playback-rate-min 0.9 --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_baseline_config.json --quick --max-frames 40 --offsets 1 --eval-seeds 42 --sequences longdress --overwrite  (log: 35_tune_baselines.log)
+[2026-07-18 12:27:22 UTC] DONE  baseline_tuning in 0.0 min
+[2026-07-18 12:27:22 UTC] START smoke_validation: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\evaluate_experiment.py --protocol configs/experiment_protocol.json --baseline-config C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_baseline_config.json --strategies dqn,fixed,throughput,lstm_rule,buffer,mpc --split validation --max-frames 40 --offsets 1 --eval-seeds 42 --sequences longdress --max-dqn-seeds 1 --overwrite --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_evaluation.json  (log: 40_registered_evaluation.log)
+[2026-07-18 12:27:26 UTC] DONE  smoke_validation in 0.1 min
+[2026-07-18 12:27:26 UTC] summary -> models/TRAINING_SUMMARY.md | pipeline OK

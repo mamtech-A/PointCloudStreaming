@@ -1,0 +1,37 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u C:\Users\Nima\PointCloudStreaming\scripts\train_dqn.py --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42\abr_dqn.pkl --run-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42 --coverage-stride 2000 --early-stop-patience 8 --epochs 1 --eval-every 3 --eval-offsets 1 --eval-seeds 42 --eval-sequences longdress --lam 1.0 --lr 0.0001 --max-frames 30 --max-validation-files 1 --mu 4.3 --no-lstm-pred --playback-rate-min 0.9 --protocol configs/experiment_protocol.json --reward-spec {"stall_mode": "bounded", "stall_cap_s": 2.0, "event_penalty": 2.0, "startup_weight": 1.0, "drop_weight": 1.0} --seed 42 --segment-frames 8 --select-by qoe_quality --target-update 3000
+==========================================================================================
+🤖 DQN ABR training
+   sequences: ['longdress', 'loot', 'redandblack', 'soldier'] | validation sequences: ['longdress']
+   protocol: 73916fc9adae6232 | train files: 13 | validation files: 1 | registered test files: 4 (NOT evaluated) | frames/episode: 30
+   coverage stride: 2000 samples -> 15 episodes/epoch x 1 epochs = 15 episodes (~60 env steps)
+   segment: 8 frames/request (4 decisions/episode) | playback-rate-min: 0.9 | validation offsets/trace: 1 | validation seeds: [42]
+   state_dim: 22 | actions: 6 | feature_spec: ['buffer', 'last_rep_onehot', 'tput_last', 'tput_mean', 'tput_std', 'rep_bitrates', 'rep_densities']
+   reward: q[log_density] - 4.3*min(stall,2.0) + 2.0*new_event - 1.0*|dq| - 1.0*startup - 1.0*drops  (gamma=0.99, lr=0.0001, reward_norm=True, reward_scale=1.0)
+   select-by: qoe_quality | out: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42\abr_dqn.pkl | run-dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42
+==========================================================================================
+[validation @ ep 0] untrained: reward=12.21 qoe=100.0 qoe_q=72.8
+[ep    1] longdress    driving_B_2020.01.16_07.26.43.csv@1425  reward=   13.74 qoe= 100.0 qoe_q=   78.9 eps=0.921 loss=0.0000
+[ep    2] loot         static_B_2019.12.16_13.40.04.csv@1623  reward=   23.14 qoe= 100.0 qoe_q=   86.2 eps=0.815 loss=0.0000
+[ep    3] redandblack  static_B_2020.02.27_18.39.27.csv@2928  reward=   16.90 qoe= 100.0 qoe_q=   64.4 eps=0.710 loss=0.0000
+    [eval @ ep 3] reward=12.21 qoe=100.0 qoe_q=72.8 mean_q=0.866 stall=0.0s  <-- best (saved)
+[ep    4] soldier      driving_B_2020.01.16_12.10.03.csv@244   reward=   15.67 qoe= 100.0 qoe_q=   60.3 eps=0.604 loss=0.0000
+[ep    5] longdress    static_B_2020.02.14_13.21.26.csv@197   reward=   12.36 qoe= 100.0 qoe_q=   54.3 eps=0.499 loss=0.0000
+[ep    6] loot         driving_B_2019.12.17_07.32.39.csv@585   reward=   22.83 qoe= 100.0 qoe_q=   83.5 eps=0.393 loss=0.0000
+    [eval @ ep 6] reward=12.21 qoe=100.0 qoe_q=72.8 mean_q=0.866 stall=0.0s
+[ep    7] redandblack  driving_B_2020.01.16_09.56.56.csv@1561  reward=   23.03 qoe= 100.0 qoe_q=   83.4 eps=0.288 loss=0.0000
+[ep    8] soldier      static_B_2020.02.27_18.39.27.csv@928   reward=   17.78 qoe= 100.0 qoe_q=   68.8 eps=0.182 loss=0.0000
+[ep    9] longdress    driving_B_2020.02.13_13.03.24.csv@1964  reward=   -5.14 qoe= 100.0 qoe_q=   55.5 eps=0.076 loss=0.0000
+    [eval @ ep 9] reward=12.21 qoe=100.0 qoe_q=72.8 mean_q=0.866 stall=0.0s
+[ep   10] loot         driving_B_2020.02.13_15.02.01.csv@947   reward=   23.04 qoe= 100.0 qoe_q=   83.8 eps=0.050 loss=0.0000
+[ep   11] redandblack  driving_B_2020.02.14_12.58.17.csv@800   reward=   20.23 qoe= 100.0 qoe_q=   81.6 eps=0.050 loss=0.0000
+[ep   12] soldier      driving_B_2019.12.16_12.27.05.csv@78    reward=   19.55 qoe= 100.0 qoe_q=   80.4 eps=0.050 loss=0.0000
+    [eval @ ep 12] reward=12.21 qoe=100.0 qoe_q=72.8 mean_q=0.866 stall=0.0s
+[ep   13] longdress    static_B_2020.02.27_18.39.27.csv@4928  reward=   20.61 qoe= 100.0 qoe_q=   83.6 eps=0.050 loss=0.0000
+[ep   14] loot         driving_B_2020.02.14_09.38.22.csv@757   reward=   20.93 qoe= 100.0 qoe_q=   81.6 eps=0.050 loss=0.0000
+[ep   15] redandblack  driving_B_2020.02.27_17.30.15.csv@720   reward=   17.48 qoe= 100.0 qoe_q=   77.9 eps=0.050 loss=0.0000
+    [eval @ ep 15] reward=12.21 qoe=100.0 qoe_q=72.8 mean_q=0.866 stall=0.0s
+==========================================================================================
+✅ Training done. untrained qoe_quality=72.80 -> final 72.80 (best=72.80)
+📦 Saved: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42\abr_dqn.pkl  (+ C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42\abr_dqn_best.pkl)
+🧾 History: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42\abr_dqn_train_history.json
+🧾 Summary: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep\trial_001_s42\train_summary.json

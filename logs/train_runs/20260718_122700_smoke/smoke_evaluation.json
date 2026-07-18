@@ -1,0 +1,2112 @@
+{
+  "schema_version": 1,
+  "split": "validation",
+  "protocol": "configs\\experiment_protocol.json",
+  "protocol_digest": "73916fc9adae6232",
+  "git_commit": "f94005a9e5b4ba11d7dff4bb24acbd1abb18c4ee",
+  "trace_files": [
+    "driving_B_2019.12.14_10.16.30.csv",
+    "driving_B_2019.12.16_07.22.43.csv",
+    "driving_B_2020.02.27_20.35.57.csv",
+    "static_B_2020.01.16_10.43.34.csv"
+  ],
+  "sequences": [
+    "longdress"
+  ],
+  "offsets_per_trace": 1,
+  "jitter_seeds": [
+    42
+  ],
+  "max_frames": 40,
+  "winner_trial": 1,
+  "winner_config": {
+    "mu": 4.3,
+    "no-lstm-pred": true,
+    "segment-frames": 8
+  },
+  "segment_frames": 8,
+  "playback_rate_min": 0.9,
+  "reward_spec": {
+    "stall_mode": "bounded",
+    "stall_cap_s": 2.0,
+    "event_penalty": 2.0,
+    "startup_weight": 1.0,
+    "drop_weight": 1.0,
+    "mu": 4.3,
+    "lam": 1.0
+  },
+  "baseline_config": "logs\\train_runs\\20260718_122700_smoke\\smoke_baseline_config.json",
+  "baseline_selection_split": "validation",
+  "baseline_parameters": {
+    "fixed": {
+      "arm": 0
+    },
+    "throughput": {
+      "history_window": 3,
+      "safety_factor": 0.75
+    },
+    "lstm_rule": {
+      "safety_factor": 0.75
+    },
+    "buffer": {
+      "reservoir_s": 0.5,
+      "cushion_s": 2.0
+    },
+    "mpc": {
+      "horizon": 2,
+      "history_window": 3,
+      "safety_factor": 0.85
+    }
+  },
+  "results": {
+    "dqn": {
+      "n_cases": 4,
+      "reward": 22.8631505053552,
+      "reward_std": 3.1584191655435325,
+      "qoe": 100.0,
+      "qoe_std": 0.0,
+      "qoe_quality": 74.43944438735775,
+      "qoe_quality_std": 3.1584191655435347,
+      "mean_quality": 0.8602461765610704,
+      "mean_quality_std": 0.0,
+      "stall_s": 0.0,
+      "stall_s_std": 0.0,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": 20.415586833514066,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 71.99188071551663,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8602461765610704,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": 20.83685596719036,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 72.41314984919292,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8602461765610704,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": 21.953787715415928,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.53008159741849,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8602461765610704,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": 28.246371505300452,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 79.82266538730302,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8602461765610704,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": 22.8631505053552,
+          "reward_std": 3.1584191655435325,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 74.43944438735775,
+          "qoe_quality_std": 3.1584191655435347,
+          "mean_quality": 0.8602461765610704,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": 22.8631505053552,
+          "reward_std": 3.1584191655435325,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 74.43944438735775,
+          "qoe_quality_std": 3.1584191655435347,
+          "mean_quality": 0.8602461765610704,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 20.415586833514066,
+          "qoe": 100.0,
+          "qoe_quality": 71.99188071551663,
+          "mean_quality": 0.8602461765610704,
+          "stall_s": 0.0,
+          "training_seed": 42
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 20.83685596719036,
+          "qoe": 100.0,
+          "qoe_quality": 72.41314984919292,
+          "mean_quality": 0.8602461765610704,
+          "stall_s": 0.0,
+          "training_seed": 42
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 21.953787715415928,
+          "qoe": 100.0,
+          "qoe_quality": 73.53008159741849,
+          "mean_quality": 0.8602461765610704,
+          "stall_s": 0.0,
+          "training_seed": 42
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 28.246371505300452,
+          "qoe": 100.0,
+          "qoe_quality": 79.82266538730302,
+          "mean_quality": 0.8602461765610704,
+          "stall_s": 0.0,
+          "training_seed": 42
+        }
+      ],
+      "per_training_seed": [
+        {
+          "training_seed": 42,
+          "reward": 22.8631505053552,
+          "qoe": 100.0,
+          "qoe_quality": 74.43944438735775,
+          "mean_quality": 0.8602461765610704,
+          "stall_s": 0.0
+        }
+      ],
+      "training_seed_count": 1,
+      "checkpoint_selection_split": "validation"
+    },
+    "fixed": {
+      "fixed_arm_0": {
+        "n_cases": 4,
+        "reward": 19.26432807731333,
+        "reward_std": 8.681682891220325,
+        "qoe": 90.74202159463496,
+        "qoe_std": 9.669276619358751,
+        "qoe_quality": 78.95554933933653,
+        "qoe_quality_std": 8.480089684640202,
+        "mean_quality": 0.9876222720137008,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.8515956810730092,
+        "stall_s_std": 1.0181380316642208,
+        "per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": {
+            "n_cases": 1,
+            "reward": 8.014448592736827,
+            "reward_std": 0.0,
+            "qoe": 77.53822358176825,
+            "qoe_std": 0.0,
+            "qoe_quality": 67.11782406500053,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9876222720137008,
+            "mean_quality_std": 0.0,
+            "stall_s": 2.4923552836463507,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2019.12.16_07.22.43.csv": {
+            "n_cases": 1,
+            "reward": 14.363940723619677,
+            "reward_std": 0.0,
+            "qoe": 85.42986279677157,
+            "qoe_std": 0.0,
+            "qoe_quality": 75.58444391556269,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9876222720137008,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.9140274406456859,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2020.02.27_20.35.57.csv": {
+            "n_cases": 1,
+            "reward": 24.138108096132335,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 83.35861128807535,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9876222720137008,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "static_B_2020.01.16_10.43.34.csv": {
+            "n_cases": 1,
+            "reward": 30.540814896764473,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 89.7613180887075,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9876222720137008,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_sequence": {
+          "longdress": {
+            "n_cases": 4,
+            "reward": 19.26432807731333,
+            "reward_std": 8.681682891220325,
+            "qoe": 90.74202159463496,
+            "qoe_std": 9.669276619358751,
+            "qoe_quality": 78.95554933933653,
+            "qoe_quality_std": 8.480089684640202,
+            "mean_quality": 0.9876222720137008,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.8515956810730092,
+            "stall_s_std": 1.0181380316642208
+          }
+        },
+        "per_seed": {
+          "42": {
+            "n_cases": 4,
+            "reward": 19.26432807731333,
+            "reward_std": 8.681682891220325,
+            "qoe": 90.74202159463496,
+            "qoe_std": 9.669276619358751,
+            "qoe_quality": 78.95554933933653,
+            "qoe_quality_std": 8.480089684640202,
+            "mean_quality": 0.9876222720137008,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.8515956810730092,
+            "stall_s_std": 1.0181380316642208
+          }
+        },
+        "cases": [
+          {
+            "trace": "driving_B_2019.12.14_10.16.30.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 8.014448592736827,
+            "qoe": 77.53822358176825,
+            "qoe_quality": 67.11782406500053,
+            "mean_quality": 0.9876222720137008,
+            "stall_s": 2.4923552836463507
+          },
+          {
+            "trace": "driving_B_2019.12.16_07.22.43.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 14.363940723619677,
+            "qoe": 85.42986279677157,
+            "qoe_quality": 75.58444391556269,
+            "mean_quality": 0.9876222720137008,
+            "stall_s": 0.9140274406456859
+          },
+          {
+            "trace": "driving_B_2020.02.27_20.35.57.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 24.138108096132335,
+            "qoe": 100.0,
+            "qoe_quality": 83.35861128807535,
+            "mean_quality": 0.9876222720137008,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "static_B_2020.01.16_10.43.34.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 30.540814896764473,
+            "qoe": 100.0,
+            "qoe_quality": 89.7613180887075,
+            "mean_quality": 0.9876222720137008,
+            "stall_s": 0.0
+          }
+        ]
+      },
+      "fixed_arm_1": {
+        "n_cases": 4,
+        "reward": 21.888205328109116,
+        "reward_std": 5.329680830535394,
+        "qoe": 94.00027046801874,
+        "qoe_std": 6.135570702875968,
+        "qoe_quality": 78.59427578179583,
+        "qoe_quality_std": 4.490421048163253,
+        "mean_quality": 0.9290592009369358,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.19994590639625265,
+        "stall_s_std": 0.3254493834793525,
+        "per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": {
+            "n_cases": 1,
+            "reward": 15.408044972207295,
+            "reward_std": 0.0,
+            "qoe": 86.18479128751112,
+            "qoe_std": 0.0,
+            "qoe_quality": 73.11411542589401,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9290592009369358,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.7630417424977762,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2019.12.16_07.22.43.csv": {
+            "n_cases": 1,
+            "reward": 19.126749118422087,
+            "reward_std": 0.0,
+            "qoe": 89.81629058456383,
+            "qoe_std": 0.0,
+            "qoe_quality": 76.8328195721088,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9290592009369358,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.03674188308723436,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2020.02.27_20.35.57.csv": {
+            "n_cases": 1,
+            "reward": 23.245569570276984,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 78.9516400239637,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9290592009369358,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "static_B_2020.01.16_10.43.34.csv": {
+            "n_cases": 1,
+            "reward": 29.7724576515301,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 85.47852810521681,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.9290592009369358,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_sequence": {
+          "longdress": {
+            "n_cases": 4,
+            "reward": 21.888205328109116,
+            "reward_std": 5.329680830535394,
+            "qoe": 94.00027046801874,
+            "qoe_std": 6.135570702875968,
+            "qoe_quality": 78.59427578179583,
+            "qoe_quality_std": 4.490421048163253,
+            "mean_quality": 0.9290592009369358,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.19994590639625265,
+            "stall_s_std": 0.3254493834793525
+          }
+        },
+        "per_seed": {
+          "42": {
+            "n_cases": 4,
+            "reward": 21.888205328109116,
+            "reward_std": 5.329680830535394,
+            "qoe": 94.00027046801874,
+            "qoe_std": 6.135570702875968,
+            "qoe_quality": 78.59427578179583,
+            "qoe_quality_std": 4.490421048163253,
+            "mean_quality": 0.9290592009369358,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.19994590639625265,
+            "stall_s_std": 0.3254493834793525
+          }
+        },
+        "cases": [
+          {
+            "trace": "driving_B_2019.12.14_10.16.30.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 15.408044972207295,
+            "qoe": 86.18479128751112,
+            "qoe_quality": 73.11411542589401,
+            "mean_quality": 0.9290592009369358,
+            "stall_s": 0.7630417424977762
+          },
+          {
+            "trace": "driving_B_2019.12.16_07.22.43.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 19.126749118422087,
+            "qoe": 89.81629058456383,
+            "qoe_quality": 76.8328195721088,
+            "mean_quality": 0.9290592009369358,
+            "stall_s": 0.03674188308723436
+          },
+          {
+            "trace": "driving_B_2020.02.27_20.35.57.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 23.245569570276984,
+            "qoe": 100.0,
+            "qoe_quality": 78.9516400239637,
+            "mean_quality": 0.9290592009369358,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "static_B_2020.01.16_10.43.34.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 29.7724576515301,
+            "qoe": 100.0,
+            "qoe_quality": 85.47852810521681,
+            "mean_quality": 0.9290592009369358,
+            "stall_s": 0.0
+          }
+        ]
+      },
+      "fixed_arm_2": {
+        "n_cases": 4,
+        "reward": 22.8631505053552,
+        "reward_std": 3.1584191655435325,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 74.43944438735775,
+        "qoe_quality_std": 3.1584191655435347,
+        "mean_quality": 0.8602461765610704,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0,
+        "per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": {
+            "n_cases": 1,
+            "reward": 20.415586833514066,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 71.99188071551663,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.8602461765610704,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2019.12.16_07.22.43.csv": {
+            "n_cases": 1,
+            "reward": 20.83685596719036,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 72.41314984919292,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.8602461765610704,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2020.02.27_20.35.57.csv": {
+            "n_cases": 1,
+            "reward": 21.953787715415928,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 73.53008159741849,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.8602461765610704,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "static_B_2020.01.16_10.43.34.csv": {
+            "n_cases": 1,
+            "reward": 28.246371505300452,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 79.82266538730302,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.8602461765610704,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_sequence": {
+          "longdress": {
+            "n_cases": 4,
+            "reward": 22.8631505053552,
+            "reward_std": 3.1584191655435325,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 74.43944438735775,
+            "qoe_quality_std": 3.1584191655435347,
+            "mean_quality": 0.8602461765610704,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_seed": {
+          "42": {
+            "n_cases": 4,
+            "reward": 22.8631505053552,
+            "reward_std": 3.1584191655435325,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 74.43944438735775,
+            "qoe_quality_std": 3.1584191655435347,
+            "mean_quality": 0.8602461765610704,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "cases": [
+          {
+            "trace": "driving_B_2019.12.14_10.16.30.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 20.415586833514066,
+            "qoe": 100.0,
+            "qoe_quality": 71.99188071551663,
+            "mean_quality": 0.8602461765610704,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2019.12.16_07.22.43.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 20.83685596719036,
+            "qoe": 100.0,
+            "qoe_quality": 72.41314984919292,
+            "mean_quality": 0.8602461765610704,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2020.02.27_20.35.57.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 21.953787715415928,
+            "qoe": 100.0,
+            "qoe_quality": 73.53008159741849,
+            "mean_quality": 0.8602461765610704,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "static_B_2020.01.16_10.43.34.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 28.246371505300452,
+            "qoe": 100.0,
+            "qoe_quality": 79.82266538730302,
+            "mean_quality": 0.8602461765610704,
+            "stall_s": 0.0
+          }
+        ]
+      },
+      "fixed_arm_3": {
+        "n_cases": 4,
+        "reward": 17.460078042823515,
+        "reward_std": 2.903664131556552,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 57.90117694104005,
+        "qoe_quality_std": 2.9036641315565532,
+        "mean_quality": 0.6746530375673255,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0,
+        "per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": {
+            "n_cases": 1,
+            "reward": 14.744841754521282,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 55.18594065273781,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.6746530375673255,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2019.12.16_07.22.43.csv": {
+            "n_cases": 1,
+            "reward": 15.437861467589855,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 55.878960365806385,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.6746530375673255,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2020.02.27_20.35.57.csv": {
+            "n_cases": 1,
+            "reward": 17.479180700454734,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 57.920279598671264,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.6746530375673255,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "static_B_2020.01.16_10.43.34.csv": {
+            "n_cases": 1,
+            "reward": 22.178428248728185,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 62.61952714694472,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.6746530375673255,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_sequence": {
+          "longdress": {
+            "n_cases": 4,
+            "reward": 17.460078042823515,
+            "reward_std": 2.903664131556552,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 57.90117694104005,
+            "qoe_quality_std": 2.9036641315565532,
+            "mean_quality": 0.6746530375673255,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_seed": {
+          "42": {
+            "n_cases": 4,
+            "reward": 17.460078042823515,
+            "reward_std": 2.903664131556552,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 57.90117694104005,
+            "qoe_quality_std": 2.9036641315565532,
+            "mean_quality": 0.6746530375673255,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "cases": [
+          {
+            "trace": "driving_B_2019.12.14_10.16.30.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 14.744841754521282,
+            "qoe": 100.0,
+            "qoe_quality": 55.18594065273781,
+            "mean_quality": 0.6746530375673255,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2019.12.16_07.22.43.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 15.437861467589855,
+            "qoe": 100.0,
+            "qoe_quality": 55.878960365806385,
+            "mean_quality": 0.6746530375673255,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2020.02.27_20.35.57.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 17.479180700454734,
+            "qoe": 100.0,
+            "qoe_quality": 57.920279598671264,
+            "mean_quality": 0.6746530375673255,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "static_B_2020.01.16_10.43.34.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 22.178428248728185,
+            "qoe": 100.0,
+            "qoe_quality": 62.61952714694472,
+            "mean_quality": 0.6746530375673255,
+            "stall_s": 0.0
+          }
+        ]
+      },
+      "fixed_arm_4": {
+        "n_cases": 4,
+        "reward": 5.666318491127858,
+        "reward_std": 2.749992326870162,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": 26.42493999761474,
+        "qoe_quality_std": 2.7499923268701623,
+        "mean_quality": 0.34667153195301137,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0,
+        "per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": {
+            "n_cases": 1,
+            "reward": 3.161231345230945,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 23.919852851717824,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.34667153195301137,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2019.12.16_07.22.43.csv": {
+            "n_cases": 1,
+            "reward": 3.629575541995072,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 24.38819704848195,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.34667153195301137,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2020.02.27_20.35.57.csv": {
+            "n_cases": 1,
+            "reward": 5.7564151789506095,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 26.515036685437487,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.34667153195301137,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "static_B_2020.01.16_10.43.34.csv": {
+            "n_cases": 1,
+            "reward": 10.118051898334805,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 30.876673404821684,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.34667153195301137,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_sequence": {
+          "longdress": {
+            "n_cases": 4,
+            "reward": 5.666318491127858,
+            "reward_std": 2.749992326870162,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 26.42493999761474,
+            "qoe_quality_std": 2.7499923268701623,
+            "mean_quality": 0.34667153195301137,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_seed": {
+          "42": {
+            "n_cases": 4,
+            "reward": 5.666318491127858,
+            "reward_std": 2.749992326870162,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": 26.42493999761474,
+            "qoe_quality_std": 2.7499923268701623,
+            "mean_quality": 0.34667153195301137,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "cases": [
+          {
+            "trace": "driving_B_2019.12.14_10.16.30.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 3.161231345230945,
+            "qoe": 100.0,
+            "qoe_quality": 23.919852851717824,
+            "mean_quality": 0.34667153195301137,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2019.12.16_07.22.43.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 3.629575541995072,
+            "qoe": 100.0,
+            "qoe_quality": 24.38819704848195,
+            "mean_quality": 0.34667153195301137,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2020.02.27_20.35.57.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 5.7564151789506095,
+            "qoe": 100.0,
+            "qoe_quality": 26.515036685437487,
+            "mean_quality": 0.34667153195301137,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "static_B_2020.01.16_10.43.34.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": 10.118051898334805,
+            "qoe": 100.0,
+            "qoe_quality": 30.876673404821684,
+            "mean_quality": 0.34667153195301137,
+            "stall_s": 0.0
+          }
+        ]
+      },
+      "fixed_arm_5": {
+        "n_cases": 4,
+        "reward": -7.34993114454644,
+        "reward_std": 2.7717862036978715,
+        "qoe": 100.0,
+        "qoe_std": 0.0,
+        "qoe_quality": -6.789962247804777,
+        "qoe_quality_std": 2.771786203697871,
+        "mean_quality": 0.010131372087107713,
+        "mean_quality_std": 0.0,
+        "stall_s": 0.0,
+        "stall_s_std": 0.0,
+        "per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": {
+            "n_cases": 1,
+            "reward": -10.026693961246217,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": -9.466725064504553,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.010131372087107713,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2019.12.16_07.22.43.csv": {
+            "n_cases": 1,
+            "reward": -9.408048857594109,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": -8.848079960852445,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.010131372087107713,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "driving_B_2020.02.27_20.35.57.csv": {
+            "n_cases": 1,
+            "reward": -6.997526924377826,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": -6.437558027636164,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.010131372087107713,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          },
+          "static_B_2020.01.16_10.43.34.csv": {
+            "n_cases": 1,
+            "reward": -2.9674548349676084,
+            "reward_std": 0.0,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": -2.4074859382259453,
+            "qoe_quality_std": 0.0,
+            "mean_quality": 0.010131372087107713,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_sequence": {
+          "longdress": {
+            "n_cases": 4,
+            "reward": -7.34993114454644,
+            "reward_std": 2.7717862036978715,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": -6.789962247804777,
+            "qoe_quality_std": 2.771786203697871,
+            "mean_quality": 0.010131372087107713,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "per_seed": {
+          "42": {
+            "n_cases": 4,
+            "reward": -7.34993114454644,
+            "reward_std": 2.7717862036978715,
+            "qoe": 100.0,
+            "qoe_std": 0.0,
+            "qoe_quality": -6.789962247804777,
+            "qoe_quality_std": 2.771786203697871,
+            "mean_quality": 0.010131372087107713,
+            "mean_quality_std": 0.0,
+            "stall_s": 0.0,
+            "stall_s_std": 0.0
+          }
+        },
+        "cases": [
+          {
+            "trace": "driving_B_2019.12.14_10.16.30.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": -10.026693961246217,
+            "qoe": 100.0,
+            "qoe_quality": -9.466725064504553,
+            "mean_quality": 0.010131372087107713,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2019.12.16_07.22.43.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": -9.408048857594109,
+            "qoe": 100.0,
+            "qoe_quality": -8.848079960852445,
+            "mean_quality": 0.010131372087107713,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "driving_B_2020.02.27_20.35.57.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": -6.997526924377826,
+            "qoe": 100.0,
+            "qoe_quality": -6.437558027636164,
+            "mean_quality": 0.010131372087107713,
+            "stall_s": 0.0
+          },
+          {
+            "trace": "static_B_2020.01.16_10.43.34.csv",
+            "sequence": "longdress",
+            "offset": 0,
+            "eval_seed": 42,
+            "reward": -2.9674548349676084,
+            "qoe": 100.0,
+            "qoe_quality": -2.4074859382259453,
+            "mean_quality": 0.010131372087107713,
+            "stall_s": 0.0
+          }
+        ]
+      }
+    },
+    "best_global_fixed": {
+      "arm": "fixed_arm_0",
+      "n_cases": 4,
+      "reward": 19.26432807731333,
+      "reward_std": 8.681682891220325,
+      "qoe": 90.74202159463496,
+      "qoe_std": 9.669276619358751,
+      "qoe_quality": 78.95554933933653,
+      "qoe_quality_std": 8.480089684640202,
+      "mean_quality": 0.9876222720137008,
+      "mean_quality_std": 0.0,
+      "stall_s": 0.8515956810730092,
+      "stall_s_std": 1.0181380316642208,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": 8.014448592736827,
+          "reward_std": 0.0,
+          "qoe": 77.53822358176825,
+          "qoe_std": 0.0,
+          "qoe_quality": 67.11782406500053,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 2.4923552836463507,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": 14.363940723619677,
+          "reward_std": 0.0,
+          "qoe": 85.42986279677157,
+          "qoe_std": 0.0,
+          "qoe_quality": 75.58444391556269,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.9140274406456859,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": 24.138108096132335,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 83.35861128807535,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": 30.540814896764473,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 89.7613180887075,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": 19.26432807731333,
+          "reward_std": 8.681682891220325,
+          "qoe": 90.74202159463496,
+          "qoe_std": 9.669276619358751,
+          "qoe_quality": 78.95554933933653,
+          "qoe_quality_std": 8.480089684640202,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.8515956810730092,
+          "stall_s_std": 1.0181380316642208
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": 19.26432807731333,
+          "reward_std": 8.681682891220325,
+          "qoe": 90.74202159463496,
+          "qoe_std": 9.669276619358751,
+          "qoe_quality": 78.95554933933653,
+          "qoe_quality_std": 8.480089684640202,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.8515956810730092,
+          "stall_s_std": 1.0181380316642208
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 8.014448592736827,
+          "qoe": 77.53822358176825,
+          "qoe_quality": 67.11782406500053,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 2.4923552836463507
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 14.363940723619677,
+          "qoe": 85.42986279677157,
+          "qoe_quality": 75.58444391556269,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.9140274406456859
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 24.138108096132335,
+          "qoe": 100.0,
+          "qoe_quality": 83.35861128807535,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 30.540814896764473,
+          "qoe": 100.0,
+          "qoe_quality": 89.7613180887075,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.0
+        }
+      ],
+      "causal": true,
+      "selection_split": "validation"
+    },
+    "best_test_global_fixed_oracle": {
+      "arm": "fixed_arm_0",
+      "n_cases": 4,
+      "reward": 19.26432807731333,
+      "reward_std": 8.681682891220325,
+      "qoe": 90.74202159463496,
+      "qoe_std": 9.669276619358751,
+      "qoe_quality": 78.95554933933653,
+      "qoe_quality_std": 8.480089684640202,
+      "mean_quality": 0.9876222720137008,
+      "mean_quality_std": 0.0,
+      "stall_s": 0.8515956810730092,
+      "stall_s_std": 1.0181380316642208,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": 8.014448592736827,
+          "reward_std": 0.0,
+          "qoe": 77.53822358176825,
+          "qoe_std": 0.0,
+          "qoe_quality": 67.11782406500053,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 2.4923552836463507,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": 14.363940723619677,
+          "reward_std": 0.0,
+          "qoe": 85.42986279677157,
+          "qoe_std": 0.0,
+          "qoe_quality": 75.58444391556269,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.9140274406456859,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": 24.138108096132335,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 83.35861128807535,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": 30.540814896764473,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 89.7613180887075,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": 19.26432807731333,
+          "reward_std": 8.681682891220325,
+          "qoe": 90.74202159463496,
+          "qoe_std": 9.669276619358751,
+          "qoe_quality": 78.95554933933653,
+          "qoe_quality_std": 8.480089684640202,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.8515956810730092,
+          "stall_s_std": 1.0181380316642208
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": 19.26432807731333,
+          "reward_std": 8.681682891220325,
+          "qoe": 90.74202159463496,
+          "qoe_std": 9.669276619358751,
+          "qoe_quality": 78.95554933933653,
+          "qoe_quality_std": 8.480089684640202,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.8515956810730092,
+          "stall_s_std": 1.0181380316642208
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 8.014448592736827,
+          "qoe": 77.53822358176825,
+          "qoe_quality": 67.11782406500053,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 2.4923552836463507
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 14.363940723619677,
+          "qoe": 85.42986279677157,
+          "qoe_quality": 75.58444391556269,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.9140274406456859
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 24.138108096132335,
+          "qoe": 100.0,
+          "qoe_quality": 83.35861128807535,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 30.540814896764473,
+          "qoe": 100.0,
+          "qoe_quality": 89.7613180887075,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.0
+        }
+      ],
+      "causal": false,
+      "selection_split": "test_hindsight"
+    },
+    "per_trace_fixed_oracle": {
+      "n_cases": 4,
+      "reward": 22.303429270881548,
+      "reward_std": 5.6757860635941775,
+      "qoe": 94.00027046801874,
+      "qoe_std": 6.135570702875968,
+      "qoe_quality": 80.7667160936964,
+      "qoe_quality_std": 6.357252247840863,
+      "mean_quality": 0.9583407364753184,
+      "mean_quality_std": 0.029281535538382475,
+      "stall_s": 0.19994590639625265,
+      "stall_s_std": 0.3254493834793525,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": 15.408044972207295,
+          "reward_std": 0.0,
+          "qoe": 86.18479128751112,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.11411542589401,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9290592009369358,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.7630417424977762,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": 19.126749118422087,
+          "reward_std": 0.0,
+          "qoe": 89.81629058456383,
+          "qoe_std": 0.0,
+          "qoe_quality": 76.8328195721088,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9290592009369358,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.03674188308723436,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": 24.138108096132335,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 83.35861128807535,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": 30.540814896764473,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 89.7613180887075,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.9876222720137008,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": 22.303429270881548,
+          "reward_std": 5.6757860635941775,
+          "qoe": 94.00027046801874,
+          "qoe_std": 6.135570702875968,
+          "qoe_quality": 80.7667160936964,
+          "qoe_quality_std": 6.357252247840863,
+          "mean_quality": 0.9583407364753184,
+          "mean_quality_std": 0.029281535538382475,
+          "stall_s": 0.19994590639625265,
+          "stall_s_std": 0.3254493834793525
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": 22.303429270881548,
+          "reward_std": 5.6757860635941775,
+          "qoe": 94.00027046801874,
+          "qoe_std": 6.135570702875968,
+          "qoe_quality": 80.7667160936964,
+          "qoe_quality_std": 6.357252247840863,
+          "mean_quality": 0.9583407364753184,
+          "mean_quality_std": 0.029281535538382475,
+          "stall_s": 0.19994590639625265,
+          "stall_s_std": 0.3254493834793525
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 15.408044972207295,
+          "qoe": 86.18479128751112,
+          "qoe_quality": 73.11411542589401,
+          "mean_quality": 0.9290592009369358,
+          "stall_s": 0.7630417424977762
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 19.126749118422087,
+          "qoe": 89.81629058456383,
+          "qoe_quality": 76.8328195721088,
+          "mean_quality": 0.9290592009369358,
+          "stall_s": 0.03674188308723436
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 24.138108096132335,
+          "qoe": 100.0,
+          "qoe_quality": 83.35861128807535,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": 30.540814896764473,
+          "qoe": 100.0,
+          "qoe_quality": 89.7613180887075,
+          "mean_quality": 0.9876222720137008,
+          "stall_s": 0.0
+        }
+      ],
+      "selected_arm_per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "arm": "fixed_arm_1",
+          "selection_qoe_quality": 73.11411542589401
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "arm": "fixed_arm_1",
+          "selection_qoe_quality": 76.8328195721088
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "arm": "fixed_arm_0",
+          "selection_qoe_quality": 83.35861128807535
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "arm": "fixed_arm_0",
+          "selection_qoe_quality": 89.7613180887075
+        }
+      },
+      "causal": false
+    },
+    "throughput": {
+      "n_cases": 4,
+      "reward": -7.34993114454644,
+      "reward_std": 2.7717862036978715,
+      "qoe": 100.0,
+      "qoe_std": 0.0,
+      "qoe_quality": -6.789962247804777,
+      "qoe_quality_std": 2.771786203697871,
+      "mean_quality": 0.010131372087107713,
+      "mean_quality_std": 0.0,
+      "stall_s": 0.0,
+      "stall_s_std": 0.0,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": -10.026693961246217,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -9.466725064504553,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": -9.408048857594109,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -8.848079960852445,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": -6.997526924377826,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -6.437558027636164,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": -2.9674548349676084,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -2.4074859382259453,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": -7.34993114454644,
+          "reward_std": 2.7717862036978715,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -6.789962247804777,
+          "qoe_quality_std": 2.771786203697871,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": -7.34993114454644,
+          "reward_std": 2.7717862036978715,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -6.789962247804777,
+          "qoe_quality_std": 2.771786203697871,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -10.026693961246217,
+          "qoe": 100.0,
+          "qoe_quality": -9.466725064504553,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -9.408048857594109,
+          "qoe": 100.0,
+          "qoe_quality": -8.848079960852445,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -6.997526924377826,
+          "qoe": 100.0,
+          "qoe_quality": -6.437558027636164,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -2.9674548349676084,
+          "qoe": 100.0,
+          "qoe_quality": -2.4074859382259453,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        }
+      ],
+      "causal": true
+    },
+    "lstm_rule": {
+      "n_cases": 4,
+      "reward": -7.34993114454644,
+      "reward_std": 2.7717862036978715,
+      "qoe": 100.0,
+      "qoe_std": 0.0,
+      "qoe_quality": -6.789962247804777,
+      "qoe_quality_std": 2.771786203697871,
+      "mean_quality": 0.010131372087107713,
+      "mean_quality_std": 0.0,
+      "stall_s": 0.0,
+      "stall_s_std": 0.0,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": -10.026693961246217,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -9.466725064504553,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": -9.408048857594109,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -8.848079960852445,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": -6.997526924377826,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -6.437558027636164,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": -2.9674548349676084,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -2.4074859382259453,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": -7.34993114454644,
+          "reward_std": 2.7717862036978715,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -6.789962247804777,
+          "qoe_quality_std": 2.771786203697871,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": -7.34993114454644,
+          "reward_std": 2.7717862036978715,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -6.789962247804777,
+          "qoe_quality_std": 2.771786203697871,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -10.026693961246217,
+          "qoe": 100.0,
+          "qoe_quality": -9.466725064504553,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -9.408048857594109,
+          "qoe": 100.0,
+          "qoe_quality": -8.848079960852445,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -6.997526924377826,
+          "qoe": 100.0,
+          "qoe_quality": -6.437558027636164,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -2.9674548349676084,
+          "qoe": 100.0,
+          "qoe_quality": -2.4074859382259453,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        }
+      ],
+      "causal": true
+    },
+    "buffer": {
+      "n_cases": 4,
+      "reward": -4.998231051687435,
+      "reward_std": 2.7717862036978715,
+      "qoe": 100.0,
+      "qoe_std": 0.0,
+      "qoe_quality": -0.40541836600845427,
+      "qoe_quality_std": 2.7717862036978715,
+      "mean_quality": 0.07732280331165071,
+      "mean_quality_std": 0.0,
+      "stall_s": 0.0,
+      "stall_s_std": 0.0,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": -7.6749938683872125,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -3.082181182708231,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": -7.056348764735104,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -2.463536079056123,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": -4.645826831518822,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -0.05301414583984054,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": -0.6157547421086038,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 3.9770579435703777,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": -4.998231051687435,
+          "reward_std": 2.7717862036978715,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -0.40541836600845427,
+          "qoe_quality_std": 2.7717862036978715,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": -4.998231051687435,
+          "reward_std": 2.7717862036978715,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -0.40541836600845427,
+          "qoe_quality_std": 2.7717862036978715,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -7.6749938683872125,
+          "qoe": 100.0,
+          "qoe_quality": -3.082181182708231,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -7.056348764735104,
+          "qoe": 100.0,
+          "qoe_quality": -2.463536079056123,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -4.645826831518822,
+          "qoe": 100.0,
+          "qoe_quality": -0.05301414583984054,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -0.6157547421086038,
+          "qoe": 100.0,
+          "qoe_quality": 3.9770579435703777,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        }
+      ],
+      "causal": true
+    },
+    "mpc": {
+      "n_cases": 4,
+      "reward": -5.586156074902187,
+      "reward_std": 3.3376345015924884,
+      "qoe": 100.0,
+      "qoe_std": 0.0,
+      "qoe_quality": -2.0015543364575348,
+      "qoe_quality_std": 4.679296987146863,
+      "mean_quality": 0.06052494550551496,
+      "mean_quality_std": 0.0290947431785446,
+      "stall_s": 0.0,
+      "stall_s_std": 0.0,
+      "per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": {
+          "n_cases": 1,
+          "reward": -7.6749938683872125,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -3.082181182708231,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2019.12.16_07.22.43.csv": {
+          "n_cases": 1,
+          "reward": -9.408048857594109,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -8.848079960852445,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.010131372087107713,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "driving_B_2020.02.27_20.35.57.csv": {
+          "n_cases": 1,
+          "reward": -4.645826831518822,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -0.05301414583984054,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        },
+        "static_B_2020.01.16_10.43.34.csv": {
+          "n_cases": 1,
+          "reward": -0.6157547421086038,
+          "reward_std": 0.0,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": 3.9770579435703777,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.07732280331165071,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_sequence": {
+        "longdress": {
+          "n_cases": 4,
+          "reward": -5.586156074902187,
+          "reward_std": 3.3376345015924884,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -2.0015543364575348,
+          "qoe_quality_std": 4.679296987146863,
+          "mean_quality": 0.06052494550551496,
+          "mean_quality_std": 0.0290947431785446,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "n_cases": 4,
+          "reward": -5.586156074902187,
+          "reward_std": 3.3376345015924884,
+          "qoe": 100.0,
+          "qoe_std": 0.0,
+          "qoe_quality": -2.0015543364575348,
+          "qoe_quality_std": 4.679296987146863,
+          "mean_quality": 0.06052494550551496,
+          "mean_quality_std": 0.0290947431785446,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0
+        }
+      },
+      "cases": [
+        {
+          "trace": "driving_B_2019.12.14_10.16.30.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -7.6749938683872125,
+          "qoe": 100.0,
+          "qoe_quality": -3.082181182708231,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2019.12.16_07.22.43.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -9.408048857594109,
+          "qoe": 100.0,
+          "qoe_quality": -8.848079960852445,
+          "mean_quality": 0.010131372087107713,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "driving_B_2020.02.27_20.35.57.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -4.645826831518822,
+          "qoe": 100.0,
+          "qoe_quality": -0.05301414583984054,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        },
+        {
+          "trace": "static_B_2020.01.16_10.43.34.csv",
+          "sequence": "longdress",
+          "offset": 0,
+          "eval_seed": 42,
+          "reward": -0.6157547421086038,
+          "qoe": 100.0,
+          "qoe_quality": 3.9770579435703777,
+          "mean_quality": 0.07732280331165071,
+          "stall_s": 0.0
+        }
+      ],
+      "causal": true
+    }
+  }
+}

@@ -1,0 +1,37 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\sweep.py --config configs\training.json --jobs 2 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122736_full\sweep
+sweep: 2 configs x 12 seed(s) = 24 trials | jobs=2 | select-by=qoe_quality
+  dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122736_full\sweep
+  [trial 000 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 45] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 44] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 46] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 47] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 48] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 49] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 50] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 51] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 52] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 000 seed 53] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 001 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 43] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 44] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 45] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 46] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 47] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 48] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 49] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 50] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 51] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 52] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+  [trial 001 seed 53] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+
+================================================================================================
+rank trial   qoe_quality    ±std   mean_q  stall_s  config
+1    0           -845.37  354.79    0.570    179.4  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8} *pareto
+2    1          -1290.52 1043.17    0.637    279.5  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8} *pareto
+
+WINNER trial 0 -> models\abr_dqn.pkl (representative seed 50)
+  qoe_quality = -845.37 ± 354.79 over 12 seeds [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
+  per-seed: {42: -355.42926954475354, 43: -1269.4195296062646, 44: -318.3477803280542, 45: -1088.7388057540293, 46: -1270.9641997976532, 47: -573.2530815198318, 48: -445.1114858280679, 49: -511.0224898682254, 50: -1010.0173925565248, 51: -1065.1096034318916, 52: -1087.4231027415053, 53: -1149.5859203239238}
+results: models\dqn_sweep_results.json

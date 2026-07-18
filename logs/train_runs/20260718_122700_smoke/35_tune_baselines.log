@@ -1,0 +1,12 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\tune_baselines.py --protocol configs/experiment_protocol.json --segment-frames 8 --playback-rate-min 0.9 --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_baseline_config.json --quick --max-frames 40 --offsets 1 --eval-seeds 42 --sequences longdress --overwrite
+fixed {'arm': 0}: qoe_quality=78.956 stall=0.852s
+WINNER fixed: {'arm': 0}
+throughput {'history_window': 3, 'safety_factor': 0.75}: qoe_quality=-6.790 stall=0.000s
+WINNER throughput: {'history_window': 3, 'safety_factor': 0.75}
+lstm_rule {'safety_factor': 0.75}: qoe_quality=-6.790 stall=0.000s
+WINNER lstm_rule: {'safety_factor': 0.75}
+buffer {'reservoir_s': 0.5, 'cushion_s': 2.0}: qoe_quality=-0.405 stall=0.000s
+WINNER buffer: {'reservoir_s': 0.5, 'cushion_s': 2.0}
+mpc {'horizon': 2, 'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-2.002 stall=0.000s
+WINNER mpc: {'horizon': 2, 'history_window': 3, 'safety_factor': 0.85}
+saved frozen baseline parameters: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_baseline_config.json

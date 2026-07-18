@@ -1,0 +1,15 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\sweep.py --config configs\training.json --jobs 1 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep --smoke
+sweep: 2 configs x 1 seed(s) = 2 trials | jobs=1 | select-by=qoe_quality
+  dir: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\sweep
+  [trial 000 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+  [trial 001 seed 42] ok  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8}
+
+================================================================================================
+rank trial   qoe_quality    ±std   mean_q  stall_s  config
+1    1             72.80    0.00    0.866      0.0  {'mu': 4.3, 'no-lstm-pred': True, 'segment-frames': 8} *pareto
+2    0             23.99    0.00    0.347      0.0  {'mu': 4.3, 'no-lstm-pred': False, 'segment-frames': 8}
+
+WINNER trial 1 -> models\abr_dqn.pkl (representative seed 42)
+  qoe_quality = 72.80 ± 0.00 over 1 seeds [42]
+  per-seed: {42: 72.7966379333199}
+results: models\dqn_sweep_results.json

@@ -1,0 +1,17 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\evaluate_experiment.py --protocol configs/experiment_protocol.json --baseline-config C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_baseline_config.json --strategies dqn,fixed,throughput,lstm_rule,buffer,mpc --split validation --max-frames 40 --offsets 1 --eval-seeds 42 --sequences longdress --max-dqn-seeds 1 --overwrite --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_evaluation.json
+================================================================================================
+REGISTERED EVALUATION | split=validation | protocol=73916fc9adae6232
+traces=4 sequences=['longdress'] offsets/trace=1 jitter_seeds=[42] segment_frames=8
+================================================================================================
+DQN seed 42: qoe_quality=74.439 stall=0.000s
+fixed_arm_0: qoe_quality=78.956
+fixed_arm_1: qoe_quality=78.594
+fixed_arm_2: qoe_quality=74.439
+fixed_arm_3: qoe_quality=57.901
+fixed_arm_4: qoe_quality=26.425
+fixed_arm_5: qoe_quality=-6.790
+throughput: qoe_quality=-6.790 stall=0.000s
+lstm_rule: qoe_quality=-6.790 stall=0.000s
+buffer: qoe_quality=-0.405 stall=0.000s
+mpc: qoe_quality=-2.002 stall=0.000s
+saved case-level results: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260718_122700_smoke\smoke_evaluation.json
