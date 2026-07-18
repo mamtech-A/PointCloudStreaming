@@ -11,9 +11,11 @@ the RL phase); it composes an `LSTMABR` so the LSTM prediction can feed the RL s
 """
 
 from dataclasses import dataclass, field
+import itertools
+import math
 from typing import Optional, Sequence
 
-from .manifest import coded_bitrate_bps
+from .manifest import coded_bitrate_bps, density_quality
 
 
 @dataclass(frozen=True)
@@ -31,9 +33,18 @@ class ABRState:
     predicted_bandwidth_bps: Optional[float] = None
     frame_id: Optional[int] = None
 
-    def harmonic_mean_throughput(self):
-        """Harmonic mean of positive observed throughput (legacy fallback estimate)."""
-        positive = [bw for bw in self.observed_throughput_history if bw and bw > 0]
+    def harmonic_mean_throughput(self, window=None):
+        """Harmonic mean of positive achieved-throughput observations.
+
+        ``window`` limits the estimate to the latest completed downloads. A
+        finite window is important for a time-varying 5G baseline: averaging
+        over the whole session lets early attach/fade samples poison every
+        later decision.
+        """
+        history = self.observed_throughput_history
+        if window is not None:
+            history = history[-max(1, int(window)):]
+        positive = [bw for bw in history if bw and bw > 0]
         if not positive:
             return 0
         return len(positive) / sum(1.0 / bw for bw in positive)
@@ -64,14 +75,15 @@ class BandwidthABR(ABRStrategy):
 
     name = 'bandwidth'
 
-    def __init__(self, safety_factor=0.8):
+    def __init__(self, safety_factor=0.8, history_window=5):
         self.safety_factor = safety_factor
+        self.history_window = history_window
 
     def select(self, state: ABRState):
         reps = state.reps
         if not reps:
             return None
-        bandwidth_bps = state.harmonic_mean_throughput()
+        bandwidth_bps = state.harmonic_mean_throughput(self.history_window)
         # Rank/threshold by the bitrate of what is ACTUALLY streamed: the real
         # manifest bandwidth when present, else the coded-size-derived rate.
         # (The legacy rep.get('bandwidth', fallback) never fell back — the key
@@ -81,6 +93,96 @@ class BandwidthABR(ABRStrategy):
             if coded_bitrate_bps(rep) <= bandwidth_bps * self.safety_factor:
                 return rep['id']
         return reps_sorted[-1]['id']
+
+
+class BufferBasedABR(ABRStrategy):
+    """Observable-only buffer baseline with reservoir/cushion mapping.
+
+    Below the reservoir it selects the lowest-rate representation; above the
+    reservoir plus cushion it selects the highest. Between them, buffer
+    occupancy maps linearly across the ladder. This is intentionally reported
+    as a buffer-based baseline, not as an exact implementation of BOLA.
+    """
+
+    name = 'buffer_based'
+
+    def __init__(self, reservoir_s=1.0, cushion_s=3.0):
+        self.reservoir_s = float(reservoir_s)
+        self.cushion_s = max(1e-6, float(cushion_s))
+
+    def select(self, state: ABRState):
+        reps = sorted(state.reps, key=coded_bitrate_bps)  # low -> high
+        if not reps:
+            return None
+        level = float(state.buffer_level_s)
+        if level <= self.reservoir_s:
+            return reps[0]['id']
+        if level >= self.reservoir_s + self.cushion_s:
+            return reps[-1]['id']
+        fraction = (level - self.reservoir_s) / self.cushion_s
+        index = int(math.floor(fraction * len(reps)))
+        return reps[min(len(reps) - 1, max(0, index))]['id']
+
+
+class MPCABR(ABRStrategy):
+    """Small-horizon MPC baseline driven only by recent achieved throughput.
+
+    The controller enumerates representation sequences over a short horizon,
+    predicts download time with a recent-window harmonic throughput estimate,
+    and maximizes normalized density utility minus stall and switch penalties.
+    It never reads the underlying link-capacity trace.
+    """
+
+    name = 'mpc'
+
+    def __init__(self, horizon=3, history_window=5, safety_factor=0.9,
+                 segment_frames=8, fps=30.0, buffer_capacity_s=5.0,
+                 mu=4.3, lam=1.0):
+        self.horizon = max(1, int(horizon))
+        self.history_window = max(1, int(history_window))
+        self.safety_factor = float(safety_factor)
+        self.segment_duration_s = float(segment_frames) / float(fps)
+        self.buffer_capacity_s = float(buffer_capacity_s)
+        self.mu = float(mu)
+        self.lam = float(lam)
+
+    def select(self, state: ABRState):
+        reps = sorted(state.reps, key=lambda rep: rep['id'])
+        if not reps:
+            return None
+        estimate = state.harmonic_mean_throughput(self.history_window)
+        if estimate <= 0:
+            return min(reps, key=coded_bitrate_bps)['id']
+        estimate *= self.safety_factor
+
+        densities = [max(1.0, float(rep.get('density') or 1.0)) for rep in reps]
+        low, high = min(densities), max(densities)
+        qualities = [density_quality(d, low, high) for d in densities]
+        bitrates = [max(1.0, coded_bitrate_bps(rep)) for rep in reps]
+        id_to_index = {rep['id']: i for i, rep in enumerate(reps)}
+        previous = id_to_index.get(state.last_rep_id)
+
+        best_score = float('-inf')
+        best_first = min(range(len(reps)), key=lambda i: bitrates[i])
+        for actions in itertools.product(range(len(reps)), repeat=self.horizon):
+            buffer_s = max(0.0, float(state.buffer_level_s))
+            prev = previous
+            score = 0.0
+            for action in actions:
+                download_s = bitrates[action] * self.segment_duration_s / estimate
+                stall_s = max(0.0, download_s - buffer_s)
+                buffer_s = min(
+                    self.buffer_capacity_s,
+                    max(0.0, buffer_s - download_s) + self.segment_duration_s,
+                )
+                score += qualities[action] - self.mu * stall_s
+                if prev is not None:
+                    score -= self.lam * abs(qualities[action] - qualities[prev])
+                prev = action
+            if score > best_score:
+                best_score = score
+                best_first = actions[0]
+        return reps[best_first]['id']
 
 
 class LSTMABR(ABRStrategy):

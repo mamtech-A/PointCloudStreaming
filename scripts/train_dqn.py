@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Train the DQN ABR agent against the streaming environment.
 
-Trains on the SAME file-level train/test split as the LSTM (so results are
-comparable and leak-free), keeping the LSTM as a feature provider (drop it with
---no-lstm-pred for the ablation). Saves the best agent (by held-out
-quality-aware QoE by default) to models/abr_dqn.pkl.
+Trains on the registered training traces and uses only registered validation
+traces for checkpoint selection. The final test split is never evaluated here.
+The LSTM remains an optional feature provider (drop it with --no-lstm-pred for
+the preregistered ablation).
 
 Content: every manifest matching --mpd (default manifests/mpd_gpcc*.xml) forms the
-training pool; each episode draws a (sequence, trace, offset) triple. Held-out
-eval always runs --eval-sequence (default longdress) at offset 0 so the metric
-stays comparable across runs.
+training pool; each episode draws a (sequence, trace, offset) triple. Validation
+uses deterministic offsets registered in configs/experiment_protocol.json.
 
 Coverage: each epoch TILES every training trace end-to-end with windows every
 --coverage-stride samples (episode count per file proportional to its length),
@@ -21,7 +20,7 @@ below for a real run. The script prints exactly how much it covers.
 
 Usage:
     python train_dqn.py                          # default modest run
-    python train_dqn.py --epochs 40              # longer, better policy
+    python train_dqn.py --epochs 8               # registered training cap
     python train_dqn.py --epochs 1 --max-train-files 1 --max-frames 40 --eval-every 2 --coverage-stride 1500   # smoke
 """
 
@@ -46,7 +45,11 @@ except Exception:
 from src.network_model import DEFAULT_TCP_PARAMS
 from src.network_model.manifest import parse_mpd_xml
 from src.network_model.trace import BandwidthTrace
-from src.lstm_model import split_bandwidth_files, LSTMPredictor
+from src.lstm_model import LSTMPredictor
+from src.experiment_protocol import (
+    evaluation_settings, load_protocol, protocol_digest, split_paths,
+)
+from src.evaluation import evaluate_agent
 from src.rl.env import StreamingEnv
 from src.rl.dqn import DQNAgent
 from src.rl.features import DEFAULT_FEATURE_SPEC
@@ -97,68 +100,38 @@ def build_epoch_episodes(train_paths, traces, stride, rng, random_phase):
     return episodes
 
 
-def evaluate(agent, env, trace_paths, eval_seeds, sequence):
-    """Greedy eval on `sequence`, averaged over EVERY (jitter seed x trace).
-
-    Multi-seed averaging de-noises checkpoint selection: round 1 showed a
-    single-seed max-eval latching onto a one-off jitter spike (+11.96 vs a
-    -29..-36 plateau). Saves/restores the global RNG state so mid-training
-    evals don't reset the exploration/jitter randomness of training.
-    """
-    rng_state = random.getstate()
-    np_state = np.random.get_state()
-    out = {'reward': [], 'qoe': [], 'qoe_quality': [], 'mean_quality': [], 'stall_s': []}
-    by_trace = {}   # trace basename -> same metric lists (per-trace chart data)
-    try:
-        for eval_seed in eval_seeds:
-            for path in trace_paths:
-                random.seed(eval_seed)
-                np.random.seed(eval_seed)
-                s = env.reset(BandwidthTrace.from_file(path), sequence=sequence)
-                done = False
-                total = 0.0
-                while not done:
-                    a = agent.act(s, epsilon=0.0)
-                    s, r, done, _ = env.step(a)
-                    total += r
-                vals = {'reward': total, 'qoe': env.qoe(),
-                        'qoe_quality': env.qoe_quality(),
-                        'mean_quality': env.mean_quality(),
-                        'stall_s': env.total_stall_s()}
-                tkey = os.path.basename(path)
-                tb = by_trace.setdefault(tkey, {k: [] for k in out})
-                for k, v in vals.items():
-                    out[k].append(v)
-                    tb[k].append(v)
-    finally:
-        random.setstate(rng_state)
-        np.random.set_state(np_state)
-    agg = {k: float(np.mean(v)) for k, v in out.items()}
-    # Per-trace means (averaged over eval seeds): the held-out set is
-    # heterogeneous (driving traces incl. a 137 s blackout + one static), so
-    # the aggregate alone hides WHERE a policy wins/loses — charts need this.
-    agg['per_trace'] = {t: {k: float(np.mean(v)) for k, v in m.items()}
-                        for t, m in by_trace.items()}
-    return agg
+def evaluate(agent, env, trace_paths, eval_seeds, sequences, offsets_per_trace=1):
+    """Greedy case-level evaluation on validation traces only."""
+    if isinstance(sequences, str):
+        sequences = [sequences]
+    return evaluate_agent(
+        agent, env, trace_paths, eval_seeds, sequences,
+        offsets_per_trace=offsets_per_trace,
+        min_tail_samples=MIN_TAIL_SAMPLES,
+    )
 
 
 def main():
     p = argparse.ArgumentParser(description="Train DQN ABR agent")
-    p.add_argument('--epochs', type=int, default=10,
-                   help='full passes over the coverage-tiled training set; no cap — '
-                        'more epochs are fine if held-out metrics keep improving')
+    p.add_argument('--protocol', default=os.path.join('configs', 'experiment_protocol.json'),
+                   help='registered explicit train/validation/test protocol')
+    p.add_argument('--epochs', type=int, default=8,
+                   help='maximum passes over the coverage-tiled training set')
     p.add_argument('--mpd', type=str, default=os.path.join('manifests', 'mpd_gpcc*.xml'),
                    help='manifest path or glob; every match is one content sequence')
-    p.add_argument('--eval-sequence', type=str, default='longdress',
-                   help='sequence used for held-out eval (kept fixed for comparability)')
+    p.add_argument('--eval-sequences', type=str, default='',
+                   help='comma-separated validation contents; default comes from protocol')
+    p.add_argument('--eval-offsets', type=int, default=0,
+                   help='deterministic offsets per validation trace; 0 = protocol value')
     p.add_argument('--max-train-files', type=int, default=0, help='0 = all train files')
-    p.add_argument('--max-test-files', type=int, default=0, help='0 = all test files')
+    p.add_argument('--max-validation-files', type=int, default=0,
+                   help='0 = all validation files (smoke-test convenience only)')
     p.add_argument('--coverage-stride', type=int, default=60,
                    help='samples between episode start offsets when tiling each '
                         'training trace (episodes per file ~= file length / stride)')
     p.add_argument('--random-offset', action=argparse.BooleanOptionalAction, default=True,
-                   help='randomize the per-epoch tiling phase (--no-random-offset for '
-                        'deterministic window boundaries); eval always starts at offset 0')
+                   help='randomize the per-epoch training tiling phase; validation '
+                        'offsets remain deterministic')
     p.add_argument('--reward-scale', type=float, default=1.0,
                    help='LEGACY fixed learner-side reward scale (argmax-invariant). '
                         'Superseded by --reward-norm; kept for reproducing old runs')
@@ -180,17 +153,13 @@ def main():
                    help='comma list of jitter seeds averaged per eval (default: just '
                         '--seed); e.g. 42,43,44 de-noises checkpoint selection')
     p.add_argument('--max-frames', type=int, default=0, help='0 = all manifest frames')
-    p.add_argument('--eval-every', type=int, default=50, help='episodes between evals')
+    p.add_argument('--eval-every', type=int, default=100, help='episodes between validations')
+    p.add_argument('--early-stop-patience', type=int, default=0,
+                   help='validation checks without improvement before stopping; 0 = disabled')
     p.add_argument('--select-by', choices=['qoe_quality', 'reward'], default='qoe_quality',
-                   help='held-out metric that picks the best checkpoint (qoe_quality is '
+                   help='validation metric that picks the best checkpoint (qoe_quality is '
                         'comparable across reward specs; reward is not)')
     p.add_argument('--seed', type=int, default=42)
-    p.add_argument('--split-seed', type=int, default=42,
-                   help='seed for the file-level train/test split. FIXED across RL '
-                        'seeds on purpose: every training seed must share the same '
-                        'held-out set, or mean±std conflates policy variance with '
-                        'which traces landed in held-out (critical on the mixed '
-                        'static+driving pool where traces are heterogeneous).')
     p.add_argument('--lr', type=float, default=5e-4)
     p.add_argument('--gamma', type=float, default=0.99)
     p.add_argument('--mu', type=float, default=4.3, help='rebuffer penalty weight')
@@ -218,27 +187,35 @@ def main():
     bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
     lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
 
-    # File-level split shared with the LSTM. On the 21-trace mixed pool
-    # (5 static + 16 driving), test_size=0.2 => 17 train / 4 held-out.
-    # random_state is --split-seed (default 42), DECOUPLED from --seed, so every
-    # RL seed evaluates on the SAME held-out traces.
-    train_files, test_files = split_bandwidth_files(bandwidth_dir, test_size=0.2, random_state=args.split_seed)
+    protocol_path = (args.protocol if os.path.isabs(args.protocol)
+                     else os.path.join(project_root, args.protocol))
+    protocol = load_protocol(protocol_path, bandwidth_dir)
+    protocol_id = protocol_digest(protocol)
+    train_files = list(protocol['trace_split']['train'])
+    validation_files = list(protocol['trace_split']['validation'])
+    registered_test_files = list(protocol['trace_split']['test'])
     if args.max_train_files:
         train_files = train_files[:args.max_train_files]
-    if args.max_test_files:
-        test_files = test_files[:args.max_test_files]
+    if args.max_validation_files:
+        validation_files = validation_files[:args.max_validation_files]
     train_paths = [os.path.join(bandwidth_dir, f) for f in train_files]
-    test_paths = [os.path.join(bandwidth_dir, f) for f in test_files]
+    validation_paths = [os.path.join(bandwidth_dir, f) for f in validation_files]
+
+    validation_cfg = evaluation_settings(protocol, 'validation')
+    eval_sequences = ([s.strip() for s in args.eval_sequences.split(',') if s.strip()]
+                      if args.eval_sequences else list(validation_cfg['sequences']))
+    eval_offsets = args.eval_offsets or int(validation_cfg['offsets_per_trace'])
 
     manifest_pool = load_manifest_pool(
         args.mpd if os.path.isabs(args.mpd) else os.path.join(project_root, args.mpd),
         args.max_frames)
     seq_names = sorted(manifest_pool)
-    eval_sequence = args.eval_sequence
-    if eval_sequence not in manifest_pool:
-        eval_sequence = seq_names[0]
-        print(f"WARNING: --eval-sequence '{args.eval_sequence}' not in pool "
-              f"{seq_names}; evaluating on '{eval_sequence}' instead")
+    missing_eval_sequences = sorted(set(eval_sequences) - set(seq_names))
+    if missing_eval_sequences:
+        raise ValueError(
+            f"validation sequences absent from manifest pool: {missing_eval_sequences}; "
+            f"available={seq_names}"
+        )
     mean_frames = int(np.mean([len(f) for f in manifest_pool.values()]))
 
     feature_spec = [f for f in DEFAULT_FEATURE_SPEC
@@ -252,7 +229,7 @@ def main():
         reward_spec.update(json.loads(args.reward_spec))
 
     eval_seeds = ([int(s) for s in args.eval_seeds.split(',') if s.strip()]
-                  if args.eval_seeds else [args.seed])
+                  if args.eval_seeds else list(validation_cfg['jitter_seeds']))
 
     env = StreamingEnv(manifest_pool, lstm_predictor=predictor, tcp_params=TCP_PARAMS,
                        feature_spec=feature_spec, reward_spec=reward_spec,
@@ -264,7 +241,8 @@ def main():
                      mu=env.mu, lam=env.lam, reward_norm=args.reward_norm,
                      target_update_freq=args.target_update,
                      lstm_model_path=(lstm_path if predictor is not None else None),
-                     sequence_length=getattr(predictor, 'sequence_length', 10))
+                     sequence_length=getattr(predictor, 'sequence_length', 10),
+                     reward_spec=env.reward_fn.spec)
 
     # Cache traces once (timestamp axis preserved by slice_from per episode).
     traces = {path: BandwidthTrace.from_file(path) for path in train_paths}
@@ -277,15 +255,18 @@ def main():
 
     print("=" * 90)
     print("🤖 DQN ABR training")
-    print(f"   sequences: {seq_names} | eval sequence: {eval_sequence}")
-    print(f"   train files: {len(train_files)} | test files: {len(test_files)} "
+    print(f"   sequences: {seq_names} | validation sequences: {eval_sequences}")
+    print(f"   protocol: {protocol_id} | train files: {len(train_files)} "
+          f"| validation files: {len(validation_files)} | registered test files: "
+          f"{len(registered_test_files)} (NOT evaluated) "
           f"| frames/episode: {mean_frames}")
     print(f"   coverage stride: {args.coverage_stride} samples -> "
           f"{episodes_per_epoch} episodes/epoch x {args.epochs} epochs = {total_episodes} episodes "
           f"(~{total_steps_est} env steps)")
     print(f"   segment: {args.segment_frames} frames/request "
           f"({steps_per_episode} decisions/episode) | playback-rate-min: "
-          f"{args.playback_rate_min} | eval seeds: {eval_seeds}")
+          f"{args.playback_rate_min} | validation offsets/trace: {eval_offsets} "
+          f"| validation seeds: {eval_seeds}")
     print(f"   state_dim: {env.state_dim} | actions: {env.num_actions} | feature_spec: {feature_spec}")
     print(f"   reward: {env.reward_fn.describe()}  (gamma={args.gamma}, lr={args.lr}, "
           f"reward_norm={args.reward_norm}, reward_scale={args.reward_scale})")
@@ -295,7 +276,7 @@ def main():
     step_count = 0
     best_metric = float('-inf')
     best_entry = None
-    history = {'episode_reward': [], 'eval': []}
+    history = {'episode_reward': [], 'validation': []}
     episode = 0
     ep_rng = random.Random(args.seed + 1)
 
@@ -307,28 +288,40 @@ def main():
         frac = min(1.0, step_count / decay_steps)
         return args.eps_start + frac * (args.eps_end - args.eps_start)
 
+    validations_without_improvement = 0
+
     def run_eval(tag):
-        nonlocal best_metric, best_entry
-        ev = evaluate(agent, env, test_paths, eval_seeds, eval_sequence)
+        nonlocal best_metric, best_entry, validations_without_improvement
+        ev = evaluate(
+            agent, env, validation_paths, eval_seeds, eval_sequences,
+            offsets_per_trace=eval_offsets,
+        )
         entry = {'episode': episode, **ev}
-        history['eval'].append(entry)
+        history['validation'].append(entry)
         marker = ""
         if ev[args.select_by] > best_metric:
             best_metric = ev[args.select_by]
             best_entry = entry
+            validations_without_improvement = 0
             agent.save(args.out)
             agent.save(args.out.replace('.pkl', '_best.pkl'))
             marker = "  <-- best (saved)"
+        else:
+            validations_without_improvement += 1
         print(f"    [eval @ {tag}] reward={ev['reward']:.2f} qoe={ev['qoe']:.1f} "
               f"qoe_q={ev['qoe_quality']:.1f} mean_q={ev['mean_quality']:.3f} "
               f"stall={ev['stall_s']:.1f}s{marker}")
         return ev
 
-    # Baseline eval (untrained policy) for reference.
-    base = evaluate(agent, env, test_paths, eval_seeds, eval_sequence)
-    print(f"[eval @ ep 0] untrained: reward={base['reward']:.2f} qoe={base['qoe']:.1f} "
+    # Untrained validation is a diagnostic, never a test-set observation.
+    base = evaluate(
+        agent, env, validation_paths, eval_seeds, eval_sequences,
+        offsets_per_trace=eval_offsets,
+    )
+    print(f"[validation @ ep 0] untrained: reward={base['reward']:.2f} qoe={base['qoe']:.1f} "
           f"qoe_q={base['qoe_quality']:.1f}")
 
+    stopped_early = False
     for epoch in range(args.epochs):
         epoch_eps = build_epoch_episodes(train_paths, traces, args.coverage_stride,
                                          ep_rng, args.random_offset)
@@ -365,9 +358,24 @@ def main():
 
             if args.eval_every and episode % args.eval_every == 0:
                 run_eval(f"ep {episode}")
+                if (args.early_stop_patience and
+                        validations_without_improvement >= args.early_stop_patience):
+                    print(
+                        f"    [early stop] no validation improvement for "
+                        f"{validations_without_improvement} checks"
+                    )
+                    stopped_early = True
+                    break
+        if stopped_early:
+            break
 
-    # Final eval + ensure a model is saved.
-    final = run_eval("final")
+    # Save the unstable last iterate separately; args.out remains validation-best.
+    last_out = args.out.replace('.pkl', '_last.pkl')
+    agent.save(last_out)
+    if history['validation'] and history['validation'][-1]['episode'] == episode:
+        final = history['validation'][-1]
+    else:
+        final = run_eval("final")
     if not os.path.exists(args.out):
         agent.save(args.out)
     ep_csv.close()
@@ -386,17 +394,24 @@ def main():
         'reward_spec': env.reward_fn.spec,
         'feature_spec': feature_spec,
         'sequences': seq_names,
-        'eval_sequence': eval_sequence,
+        'validation_sequences': eval_sequences,
+        'validation_offsets_per_trace': eval_offsets,
+        'validation_seeds': eval_seeds,
+        'protocol': os.path.relpath(protocol_path, project_root),
+        'protocol_digest': protocol_id,
         'train_files': train_files,
-        'test_files': test_files,
+        'validation_files': validation_files,
+        'registered_test_files_not_evaluated': registered_test_files,
         'episodes_per_epoch': episodes_per_epoch,
         'episodes_run': episode,
+        'stopped_early': stopped_early,
         'untrained': base,
         'final': final,
         'best': best_entry,
         'best_metric': best_metric,
         'select_by': args.select_by,
         'out': os.path.abspath(args.out),
+        'last_out': os.path.abspath(last_out),
         'history': os.path.abspath(hist_path),
         'episodes_csv': os.path.abspath(ep_csv_path),
     }

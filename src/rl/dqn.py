@@ -53,7 +53,7 @@ class DQNAgent:
                  hidden=128, lr=5e-4, gamma=0.99, batch_size=64, buffer_capacity=100_000,
                  target_update_freq=500, double_dqn=True, device=None,
                  mu=4.3, lam=1.0, lstm_model_path=None, sequence_length=10,
-                 reward_norm=False):
+                 reward_norm=False, reward_spec=None):
         self.state_dim = state_dim
         self.num_actions = num_actions
         self.feature_spec = list(feature_spec)
@@ -65,6 +65,7 @@ class DQNAgent:
         self.target_update_freq = target_update_freq
         self.mu = mu
         self.lam = lam
+        self.reward_spec = dict(reward_spec or {'mu': mu, 'lam': lam})
         self.lstm_model_path = lstm_model_path
         self.sequence_length = sequence_length
         # Learner-side reward normalization (argmax-invariant): rewards are
@@ -165,6 +166,7 @@ class DQNAgent:
             'double_dqn': self.double_dqn,
             'mu': self.mu,
             'lam': self.lam,
+            'reward_spec': self.reward_spec,
             'lstm_model_path': self.lstm_model_path,
             'sequence_length': self.sequence_length,
             'training_history': self.training_history,
@@ -186,6 +188,7 @@ class DQNAgent:
             save['state_dim'], save['num_actions'], feature_spec, save['norm_constants'],
             hidden=save['hidden'], gamma=save['gamma'], double_dqn=save['double_dqn'],
             mu=save.get('mu', 4.3), lam=save.get('lam', 1.0),
+            reward_spec=save.get('reward_spec'),
             lstm_model_path=save.get('lstm_model_path'),
             sequence_length=save.get('sequence_length', 10), device=device,
         )

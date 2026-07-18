@@ -3,7 +3,7 @@
 
 Each trial is one `train_dqn.py` subprocess with its own --out/--run-dir; its
 stdout goes to <trial>/train.log and its result is <trial>/train_summary.json.
-Trials are ranked by the held-out selection metric (default qoe_quality — the
+Trials are ranked by the validation selection metric (default qoe_quality — the
 only metric comparable ACROSS reward specs; raw reward is not), averaged over
 --seeds. The winner's checkpoint is copied to models/abr_dqn.pkl and the full
 ranking + the quality-vs-stall Pareto front go to models/dqn_sweep_results.json.
@@ -51,7 +51,11 @@ except Exception:
 # Flags that are plain store_true on train_dqn.py (False => omit).
 STORE_TRUE_FLAGS = {'no-lstm-pred'}
 
-SMOKE_BASE = {'epochs': 1, 'max-frames': 30, 'coverage-stride': 2000, 'eval-every': 3}
+SMOKE_BASE = {
+    'epochs': 1, 'max-frames': 30, 'coverage-stride': 2000, 'eval-every': 3,
+    'max-validation-files': 1, 'eval-offsets': 1, 'eval-seeds': '42',
+    'eval-sequences': 'longdress',
+}
 
 
 def expand_trials(cfg, smoke=False):
@@ -140,6 +144,8 @@ def main():
     if args.smoke:
         base_args.update(SMOKE_BASE)
     seeds = cfg.get('seeds', [42])
+    if args.smoke:
+        seeds = seeds[:1]
     select_by = base_args.get('select-by', 'qoe_quality')
 
     sweep_dir = args.sweep_dir or os.path.join(
@@ -186,7 +192,7 @@ def main():
                                             results[idx][s]['final'])[select_by]
                                         for s in sorted(per_seed)}
         # Per-TRACE mean of the selection metric across seeds (train_dqn's
-        # evaluate() stores per_trace in each best entry). The held-out set is
+        # evaluate() stores per_trace in each best entry). The validation set is
         # heterogeneous (3 driving incl. a 137s blackout + 1 static), so charts
         # need WHERE a config wins/loses, not just the aggregate. Missing key =
         # pre-round-4 summary (skipped quietly).
@@ -210,11 +216,18 @@ def main():
     front = [table[i]['trial'] for i in pareto_front(pts)]
 
     winner = table[0]
-    # Copy the winner's best-seed checkpoint to the canonical path.
-    best_seed = max(winner['seeds'],
-                    key=lambda s: (results[winner['trial']][s]['best'] or
-                                   results[winner['trial']][s]['final'])[select_by])
-    src = results[winner['trial']][best_seed]['out']
+    # Install the representative (closest-to-mean) seed, not the lucky best
+    # seed. All winner-config seeds are evaluated once on final test later.
+    winner_mean = winner['metrics'][select_by]
+    representative_seed = min(
+        winner['seeds'],
+        key=lambda s: (
+            abs((results[winner['trial']][s]['best'] or
+                 results[winner['trial']][s]['final'])[select_by] - winner_mean),
+            int(s),
+        ),
+    )
+    src = results[winner['trial']][representative_seed]['out']
     os.makedirs(os.path.dirname(os.path.join(project_root, args.out)), exist_ok=True)
     shutil.copyfile(src, os.path.join(project_root, args.out))
     best_src = src.replace('.pkl', '_best.pkl')
@@ -223,12 +236,14 @@ def main():
                         os.path.join(project_root, args.out.replace('.pkl', '_best.pkl')))
 
     payload = {
-        'select_by': select_by, 'seeds': seeds, 'base_args': base_args,
+        'select_by': select_by, 'selection_split': 'validation',
+        'seeds': seeds, 'base_args': base_args,
         'sweep_dir': sweep_dir, 'n_configs': len(combos),
         'ranking': table,
         'pareto_front_trials': front,
         'winner': {'trial': winner['trial'], 'config': winner['config'],
-                   'seed': best_seed, 'seeds': winner['seeds'],
+                   'seed': representative_seed, 'seed_role': 'closest_to_validation_mean',
+                   'seeds': winner['seeds'],
                    'metrics': winner['metrics'], 'checkpoint': args.out},
     }
     with open(os.path.join(project_root, args.results), 'w', encoding='utf-8') as f:
@@ -243,7 +258,8 @@ def main():
         print(f"{rank:<5}{t['trial']:<7}{m[select_by]:>12.2f}{m.get(std_key, 0.0):>8.2f}"
               f"{m['mean_quality']:>9.3f}{m['stall_s']:>9.1f}  {t['config']}{star}")
     wm = winner['metrics']
-    print(f"\nWINNER trial {winner['trial']} -> {args.out}")
+    print(f"\nWINNER trial {winner['trial']} -> {args.out} "
+          f"(representative seed {representative_seed})")
     print(f"  {select_by} = {wm[select_by]:.2f} ± {wm.get(std_key, 0.0):.2f} "
           f"over {len(winner['seeds'])} seeds {winner['seeds']}")
     print(f"  per-seed: {wm.get(f'{select_by}_per_seed', {})}")

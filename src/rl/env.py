@@ -165,6 +165,20 @@ class StreamingEnv:
         pred = self.lstm_provider.predict(st) if self.lstm_provider else None
         return build_state(self.feature_spec, st, predicted_bandwidth_bps=pred, norm=self.norm)
 
+    def current_abr_state(self):
+        """Return the policy-visible state for the next segment.
+
+        This exposes no oracle capacity: it is the same ``ABRState`` assembled
+        for online strategies from completed-download history, buffer state,
+        the previous representation, and the current representation ladder.
+        It lets rule-based baselines run through this exact environment rather
+        than through a separate simulator path.
+        """
+        if self.session is None or self.frame_idx >= len(self.frames):
+            raise RuntimeError("no active decision state")
+        frame = self.frames[self.frame_idx]
+        return self.session._build_state(frame["representations"], frame["id"])
+
     def step(self, action):
         """One env step = one SEGMENT (segment_frames frames, one decision, one
         transfer). Reward: per-frame qualities summed, one (bounded) stall

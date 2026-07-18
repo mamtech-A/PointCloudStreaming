@@ -1,108 +1,143 @@
-# TRAINING.md — second-PC overnight training runbook
+# Clean IST-2026 experiment: second-PC runbook
 
-> **Round 2 (2026-07-11):** the pipeline now sweeps **segment-based fetching**
-> (`--segment-frames`: S frames per request, amortizing the 72 ms RTT — S=1 is
-> the round-1 control) with **adaptive playback** (`--playback-rate-min 0.9`,
-> research-backed imperceptible slowdown instead of stalling) and **multi-seed
-> evals** (`--eval-seeds 42,43,44` + 2 training seeds per config — fixes the
-> round-1 one-off-spike checkpoint problem). Same commands as before; the
-> config drives everything.
+This branch implements the final, leakage-free experiment. The complete run is
+defined by two tracked files:
 
-The full retraining pipeline (LSTM → DQN sweep → eval → report) is one command
-and fully described by repo state (`configs/training.json`). Prep happens on
-the dev PC, training on the fast PC, review back on the dev PC — all via git.
+- `configs/training.json`: frozen training/model/baseline settings.
+- `configs/experiment_protocol.json`: explicit train/validation/test traces and
+  registered evaluation cases.
 
-## 0. One-time on the fast PC
+The four traces used during earlier Round-4 development are now **validation**.
+Four different traces are reserved for the final test. Training and checkpoint
+selection never execute the final-test split.
 
-```
-git clone <repo> && cd PointCloudStreaming
-python -m venv .venv && .venv\Scripts\activate     # (or your env)
-python -m pip install -r requirements.txt          # torch/numpy/pandas/scikit-learn (CPU is fine)
-python -c "import torch, numpy, sklearn, pandas; print('deps ok', torch.__version__)"
-python tests/test_time_varying.py                  # must print "9 tests passed"
-python scripts/run_training.py --smoke                     # ~minutes; validates the whole pipeline
-```
+## 1. Pull the experiment branch
 
-Note: use `python -m pip` (not bare `pip`) so the packages land in the SAME
-interpreter that runs `run_training.py`. If `run_training.py` fails instantly
-with `ModuleNotFoundError: No module named 'torch'`, the install went to a
-different Python — rerun the `python -m pip install` line above with the exact
-`python` you launch training with.
+On the fast PC:
 
-## 1. Start the overnight run
-
-```
-git pull
-python scripts/run_training.py --jobs 2        # --jobs ~= physical cores / 4 (each trial uses torch threads)
+```powershell
+git fetch origin
+git switch exp/clean-eval-retrain
+git pull --ff-only origin exp/clean-eval-retrain
+git status --short --branch
 ```
 
-Then sleep. Everything is logged under `logs/train_runs/<UTC-timestamp>_full/`:
-`RUN.log` (stage narration), `10_gen…/20_lstm…/30_sweep/40_eval…` stage logs,
-and per-trial dirs `sweep/trial_*/` with `train.log`, `train_summary.json`,
-`episodes.csv`.
+The status should show `exp/clean-eval-retrain` with no local code changes.
 
-Interrupted? Rerun and skip finished stages — the sweep also resumes per trial:
+## 2. Verify the environment
 
-```
-python scripts/run_training.py --skip-stages gen,lstm --jobs 2
-```
-
-What the stages do:
-
-1. **gen** — `gen_lstm_dataset.py`: achieved-throughput series (the signal the
-   LSTM is FED at inference) under the current transport model → `data/lstm_achieved/`.
-2. **lstm** — `train_model.py` per transform candidate (`none`, `log1p`),
-   winner picked by low-bandwidth-regime MAE → `models/bandwidth_lstm.pkl`.
-3. **sweep** — `sweep.py`: grid over reward spec (μ, λ, bounded-stall shape) ×
-   DQN hyperparameters × the `lstm_pred` ablation, ranked by held-out
-   quality-aware QoE on longdress; winner → `models/abr_dqn.pkl`, full ranking +
-   quality-vs-stall Pareto front → `models/dqn_sweep_results.json`.
-4. **eval** — `eval_fixed.py` (fixed-arm bars) + `compare.py` (baseline/LSTM/DQN)
-   on the held-out static trace.
-5. **report** — `models/TRAINING_SUMMARY.md`.
-
-## 2. Push the results back
-
-```
-git add models logs/train_runs data/lstm_achieved
-git commit -m "overnight training run: <one-line result>"
-git push
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python tests/test_experiment_protocol.py
+python tests/test_abr_baselines.py
+python tests/test_qoe_reward.py
+python tests/test_time_varying.py
 ```
 
-Committed artifacts: winning checkpoints (`models/*.pkl`), all JSON results,
-`TRAINING_SUMMARY.md`, stage logs and per-trial `train_summary.json`/`train.log`
-(the bulky per-trial checkpoints under `logs/train_runs/*/sweep/trial_*/` are
-gitignored — only the installed winners in `models/` travel).
+The protocol test checks that all 21 traces occur in exactly one partition and
+that validation/test are disjoint and stratified.
 
-## 3. Review on the dev PC
+## 3. Optional smoke test
 
-```
-git pull
+```powershell
+python scripts/run_training.py --smoke --jobs 1
 ```
 
-Read `models/TRAINING_SUMMARY.md` first, then `logs/train_runs/<ts>/RUN.log`
-for the narrative, `models/dqn_sweep_results.json` for the full ranking /
-Pareto front, and any trial's `train.log` for its episode-by-episode history.
+The smoke run uses validation, never final test. It is only a pipeline check and
+must not be reported as a paper result.
 
-## Content sequences (multi-sequence training)
+## 4. Run the frozen experiment
 
-Encode a new 8i sequence on the fast PC with the SAME 6-tier ladder, then push
-the manifest + coded json (bitstreams stay out of git):
+Use a clean clone/worktree without an old `models/final_test_results.json`, then:
 
-```
-python gpcc/encode_frames.py --dir "F:/path/to/loot/Ply" --name loot --jobs 8
-git add config/mpd_gpcc_loot.xml gpcc/coded_frames_loot.json && git commit && git push
+```powershell
+python scripts/run_training.py --jobs 2
 ```
 
-`train_dqn.py` picks up every `config/mpd_gpcc*.xml` automatically; held-out
-eval stays longdress-only for comparability.
+Use approximately one job per four physical CPU cores. The pipeline performs:
 
-## Scaling the search
+1. Generate achieved-throughput LSTM series from training and validation trace
+   sources. Final-test sources are excluded.
+2. Select/train the LSTM using validation only.
+3. Train two preregistered DQN configurations (with and without the LSTM
+   prediction feature), each with 12 seeds.
+4. Select the configuration by mean validation QoE and install the seed closest
+   to that validation mean—not the luckiest seed.
+5. Select the global fixed tier and recent-throughput, LSTM-rule, buffer-based,
+   and MPC parameters using validation.
+6. Run the locked clean-run test once across four traces, all four 8i sequences, three
+   offsets per trace, and three paired jitter seeds.
+7. Evaluate DQN, six fixed tiers, recent-throughput, LSTM-rule, buffer-based,
+   MPC, and the non-causal per-trace fixed oracle.
 
-Edit `configs/training.json` (commit it — the run is then reproducible):
+The final-test script refuses to overwrite an existing result. Do not add
+`--overwrite` after examining the result unless it is a documented exact rerun
+of the unchanged commit and configuration.
 
-- more/other reward shapes → `dqn_sweep.axes.reward-spec` (see `src/rl/reward.py`)
-- longer training → `dqn_sweep.base_args.epochs` (no cap; more is fine while
-  held-out metrics improve)
-- multiple seeds → `dqn_sweep.seeds: [42, 43, 44]` (results average over seeds)
-- random subsample of a huge grid → `"mode": "random", "budget": N`
+## 5. Resume an interrupted run
+
+The first line of `RUN.log` contains the run directory. Reuse that exact path so
+completed seed/configuration trials are discovered:
+
+```powershell
+python scripts/run_training.py `
+  --run-dir logs/train_runs/<timestamp>_full `
+  --skip-stages gen,lstm `
+  --jobs 2
+```
+
+If baseline tuning already completed, add `baselines` to `--skip-stages`. If the
+registered final test also completed and only report generation was interrupted,
+add `test` as well.
+
+## 6. Inspect before committing results
+
+Read these in order:
+
+1. `models/TRAINING_SUMMARY.md`
+2. `models/final_test_results.json`
+3. `models/dqn_sweep_results.json`
+4. `logs/train_runs/<timestamp>_full/RUN.log`
+
+Confirm that `models/final_test_results.json` says:
+
+- `split: "test"`
+- four trace files
+- four sequences
+- three offsets per trace
+- three jitter seeds
+- the same protocol digest printed in the training logs
+
+## 7. Commit and push the training artifacts
+
+After checking that the full run succeeded:
+
+```powershell
+git status --short
+git add models/abr_dqn.pkl models/abr_dqn_best.pkl `
+  models/bandwidth_lstm.pkl models/bandwidth_lstm_best.pkl `
+  models/bandwidth_lstm_split.json models/bandwidth_lstm_tuning_results.json `
+  models/dqn_sweep_results.json models/baseline_config.json `
+  models/final_test_results.json `
+  models/TRAINING_SUMMARY.md data/lstm_achieved logs/train_runs
+git commit -m "results: clean registered IST-2026 experiment"
+git push origin exp/clean-eval-retrain
+```
+
+Per-trial checkpoints remain ignored because they are large; their case-level
+metrics and logs are retained. The installed representative DQN checkpoint is
+tracked.
+
+## Scientific interpretation rules
+
+- Validation numbers explain model/checkpoint selection; they are not final
+  performance claims.
+- Report the locked-test result and uncertainty across cases/training seeds.
+- Call quality a normalized log-density utility or proxy, not a validated
+  perceptual metric.
+- “Best global fixed” and “per-trace fixed oracle” are different. The oracle is
+  hindsight-only and non-causal.
+- Do not claim stochastic dominance from four traces.
+- Do not use a running maximum as evidence of convergence.

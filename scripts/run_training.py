@@ -11,8 +11,9 @@ logs/train_runs/<UTC-timestamp>/, narrated in RUN.log):
               models/bandwidth_lstm.pkl (+ _best/_split/_tuning companions)
   3. sweep  — DQN reward/hyperparameter sweep (sweep.py); winner ->
               models/abr_dqn.pkl, ranking -> models/dqn_sweep_results.json
-  4. eval   — eval_fixed.py + compare.py on the held-out static trace
-  5. report — models/TRAINING_SUMMARY.md tying it all together
+  4. baselines — validation-only tuning for causal comparison policies
+  5. test      — locked final evaluation across traces, contents, and offsets
+  6. report    — models/TRAINING_SUMMARY.md tying it all together
 
 Everything is resumable: rerun with --skip-stages gen,lstm to continue after a
 crash (the sweep also resumes internally per trial).
@@ -91,8 +92,10 @@ def main():
     p.add_argument('--jobs', type=int, default=2, help='parallel sweep trials')
     p.add_argument('--smoke', action='store_true',
                    help='tiny end-to-end run (~minutes) to validate the pipeline')
+    p.add_argument('--run-dir', default=None,
+                   help='reuse an existing run directory to resume its sweep trials')
     p.add_argument('--skip-stages', default='',
-                   help='comma list from {gen,lstm,sweep,eval} to skip (resume)')
+                   help='comma list from {gen,lstm,sweep,baselines,test} to skip')
     args = p.parse_args()
     skip = {s.strip() for s in args.skip_stages.split(',') if s.strip()}
 
@@ -100,13 +103,20 @@ def main():
         cfg = json.load(f)
     lstm_cfg = cfg.get('lstm', {})
     ts = time.strftime('%Y%m%d_%H%M%S', time.gmtime())
-    run_dir = os.path.join(project_root, 'logs', 'train_runs',
-                           f"{ts}_{'smoke' if args.smoke else 'full'}")
+    if args.run_dir:
+        run_dir = (args.run_dir if os.path.isabs(args.run_dir)
+                   else os.path.join(project_root, args.run_dir))
+    else:
+        run_dir = os.path.join(project_root, 'logs', 'train_runs',
+                               f"{ts}_{'smoke' if args.smoke else 'full'}")
     R = Runner(run_dir)
     R.note(f"pipeline start | config={args.config} smoke={args.smoke} "
            f"jobs={args.jobs} skip={sorted(skip) or 'none'}")
     shutil.copyfile(os.path.join(project_root, args.config),
                     os.path.join(run_dir, 'training.config.json'))
+    protocol_rel = cfg.get('protocol', os.path.join('configs', 'experiment_protocol.json'))
+    shutil.copyfile(os.path.join(project_root, protocol_rel),
+                    os.path.join(run_dir, 'experiment_protocol.json'))
 
     ok = True
 
@@ -169,33 +179,57 @@ def main():
         if not R.stage('sweep', cmd, '30_sweep.log'):
             sys.exit(1)
 
-    # --- Stage 4: final eval ---------------------------------------------------
-    if 'eval' not in skip:
-        fe = cfg.get('final_eval', {})
-        # Evaluate at the WINNING segment size (installed model was trained at it),
-        # so the final tables are apples-to-apples with models/abr_dqn.pkl. Fall
-        # back to the config value only when no sweep result exists.
-        eval_seg = fe.get('segment_frames', 10)
-        sweep_json = os.path.join(MODELS, 'dqn_sweep_results.json')
-        if os.path.exists(sweep_json):
-            with open(sweep_json, encoding='utf-8') as f:
-                w = json.load(f).get('winner', {}).get('config', {})
-            if 'segment-frames' in w:
-                eval_seg = w['segment-frames']
-                R.note(f"final eval at winner S={eval_seg} (from dqn_sweep_results.json)")
-        else:
-            R.note(f"final eval at S={eval_seg} (config fallback; no sweep result)")
-        fe_flags = ['--segment-frames', str(eval_seg),
-                    '--playback-rate-min', str(fe.get('playback_rate_min', 1.0))]
-        mf = ['--max-frames', '60'] if args.smoke else []
-        if not R.stage('eval_fixed', py(os.path.join('scripts', 'eval_fixed.py'), *(fe_flags + mf)),
-                       '40_eval_fixed.log'):
-            ok = False
-        mf = ['--max-frames', '40'] if args.smoke else []
-        if not R.stage('compare', py(os.path.join('scripts', 'compare.py'), *(fe_flags + mf)), '41_compare.log'):
-            ok = False
+    # --- Stage 4: validation-only baseline tuning ----------------------------
+    baseline_config = (os.path.join(run_dir, 'smoke_baseline_config.json')
+                       if args.smoke else os.path.join(MODELS, 'baseline_config.json'))
+    if 'baselines' not in skip:
+        cmd = py(
+            os.path.join('scripts', 'tune_baselines.py'),
+            '--protocol', protocol_rel,
+            '--segment-frames', '8',
+            '--playback-rate-min', '0.9',
+            '--out', baseline_config,
+        )
+        if args.smoke:
+            cmd += [
+                '--quick', '--max-frames', '40', '--offsets', '1',
+                '--eval-seeds', '42', '--sequences', 'longdress', '--overwrite',
+            ]
+        if not R.stage('baseline_tuning', cmd, '35_tune_baselines.log'):
+            sys.exit(1)
 
-    # --- Stage 5: TRAINING_SUMMARY.md -----------------------------------------
+    # --- Stage 5: registered final evaluation --------------------------------
+    # A smoke run evaluates validation only and writes inside its run directory.
+    # A full run evaluates the locked test split once and refuses to overwrite
+    # an existing final-test artifact.
+    if 'eval' not in skip and 'test' not in skip:
+        fe = cfg.get('final_eval', {})
+        cmd = py(
+            os.path.join('scripts', 'evaluate_experiment.py'),
+            '--protocol', protocol_rel,
+            '--baseline-config', baseline_config,
+            '--strategies', fe.get(
+                'strategies', 'dqn,fixed,throughput,lstm_rule,buffer,mpc'),
+        )
+        if args.smoke:
+            cmd += [
+                '--split', 'validation', '--max-frames', '40', '--offsets', '1',
+                '--eval-seeds', '42', '--sequences', 'longdress',
+                '--max-dqn-seeds', '1', '--overwrite',
+                '--out', os.path.join(run_dir, 'smoke_evaluation.json'),
+            ]
+            stage_name = 'smoke_validation'
+        else:
+            cmd += [
+                '--split', fe.get('split', 'test'),
+                '--max-frames', str(fe.get('max_frames', 0)),
+                '--out', os.path.join('models', 'final_test_results.json'),
+            ]
+            stage_name = 'final_test'
+        if not R.stage(stage_name, cmd, '40_registered_evaluation.log'):
+            sys.exit(1)
+
+    # --- Stage 6: TRAINING_SUMMARY.md -----------------------------------------
     summary_lines = [
         "# TRAINING SUMMARY", "",
         f"- run dir: `{os.path.relpath(run_dir, project_root)}`",
@@ -216,7 +250,8 @@ def main():
             f"{m.get('low_bw_mae', float('nan')):.3f} "
             f"(pers. {m.get('persistence_low_bw_mae', float('nan')):.3f}) | "
             f"directional accuracy {m.get('directional_accuracy', float('nan')):.3f}",
-            f"- split: {sj['train_file_count']} train / {sj['test_file_count']} test files", "",
+            f"- split: {sj['train_file_count']} train / "
+            f"{sj['test_file_count']} validation files (final test excluded)", "",
         ]
     sweep_json = os.path.join(MODELS, 'dqn_sweep_results.json')
     if os.path.exists(sweep_json):
@@ -231,7 +266,8 @@ def main():
                                    if isinstance(v, (int, float)))
         summary_lines += [
             "## DQN sweep (models/abr_dqn.pkl)", "",
-            f"- {sw['n_configs']} configs x seeds {sw['seeds']} | select-by **{sel}**",
+            f"- {sw['n_configs']} configs x seeds {sw['seeds']} | "
+            f"select-by validation **{sel}**",
             f"- winner: trial {w['trial']} — config `{json.dumps(w['config'])}`",
             f"- **{sel} = {wm[sel]:.2f} ± {std:.2f}** over {len(w.get('seeds', sw['seeds']))} "
             f"seeds (per-seed: {per_seed})",
@@ -246,8 +282,37 @@ def main():
                 f"| {rank} | {t['trial']} | {m[sel]:.2f} | {m.get(f'{sel}_std', 0.0):.2f} | "
                 f"{m['mean_quality']:.3f} | {m['stall_s']:.1f} | `{json.dumps(t['config'])}` |")
         summary_lines.append("")
+    final_json = os.path.join(MODELS, 'final_test_results.json')
+    if not args.smoke and os.path.exists(final_json):
+        with open(final_json, encoding='utf-8') as f:
+            final_result = json.load(f)
+        result_rows = final_result.get('results', {})
+        summary_lines += [
+            "## Untouched final test", "",
+            f"- protocol digest: `{final_result.get('protocol_digest')}` | "
+            f"{len(final_result.get('trace_files', []))} traces x "
+            f"{len(final_result.get('sequences', []))} contents x "
+            f"{final_result.get('offsets_per_trace')} offsets",
+            "",
+            "| policy | QoE quality | case std | mean quality | stall (s) |",
+            "|---|---:|---:|---:|---:|",
+        ]
+        for key, label in (
+            ('dqn', 'DQN'), ('best_global_fixed', 'Best global fixed'),
+            ('throughput', 'Recent-throughput'), ('lstm_rule', 'LSTM rule'),
+            ('buffer', 'Buffer-based'),
+            ('mpc', 'MPC'), ('per_trace_fixed_oracle', 'Per-trace fixed oracle*'),
+        ):
+            row = result_rows.get(key)
+            if row:
+                summary_lines.append(
+                    f"| {label} | {row['qoe_quality']:.3f} | "
+                    f"{row.get('qoe_quality_std', 0.0):.3f} | "
+                    f"{row['mean_quality']:.3f} | {row['stall_s']:.3f} |"
+                )
+        summary_lines += ["", "* Non-causal hindsight reference; not a deployable baseline.", ""]
     fixed_json = os.path.join(MODELS, 'fixed_arm_baseline.json')
-    if os.path.exists(fixed_json):
+    if os.path.exists(fixed_json) and not os.path.exists(final_json):
         with open(fixed_json, encoding='utf-8') as f:
             fx = json.load(f)
         summary_lines += [

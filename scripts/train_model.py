@@ -87,9 +87,11 @@ def main():
         with open(args.split_from, encoding='utf-8') as f:
             explicit = json.load(f)
         train_files = explicit['train_files']
-        test_files = explicit['test_files']
+        test_files = explicit.get('validation_files', explicit.get('test_files'))
+        if test_files is None:
+            raise ValueError(f"{args.split_from} has no validation_files/test_files")
         print(f"📋 Explicit split from {args.split_from}: "
-              f"{len(train_files)} train / {len(test_files)} test files")
+              f"{len(train_files)} train / {len(test_files)} validation files")
 
     # Check if bandwidth directory exists
     if not os.path.exists(bandwidth_dir):

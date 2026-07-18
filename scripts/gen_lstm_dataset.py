@@ -11,8 +11,8 @@ that matches what it will see at inference.
 
 Outputs (default data/lstm_achieved/):
   <source-trace-stem>__<policy>__off<N>.csv   State,DL_bitrate (kbps) rows
-  split.json                                  train/test file lists derived from
-                                              the canonical bandwidth_5g split
+  split.json                                  train/validation file lists from
+                                              the registered experiment protocol
                                               (all series from one source trace
                                               stay on one side — leak-free)
 
@@ -43,7 +43,7 @@ from src.network_model import (
 from src.network_model.abr import ABRStrategy
 from src.network_model.manifest import parse_mpd_xml
 from src.network_model.trace import BandwidthTrace
-from src.lstm_model import split_bandwidth_files
+from src.experiment_protocol import load_protocol, protocol_digest
 
 
 class FixedABR(ABRStrategy):
@@ -93,6 +93,9 @@ def run_series(frames, trace, abr_factory, segment_frames=1):
 def main():
     p = argparse.ArgumentParser(description="Generate achieved-throughput LSTM dataset")
     p.add_argument('--trace-dir', default=os.path.join(project_root, 'bandwidth_5g'))
+    p.add_argument('--protocol', default=os.path.join(project_root, 'configs',
+                                                       'experiment_protocol.json'),
+                   help='registered trace split; final-test traces are never generated')
     p.add_argument('--mpd', default=os.path.join(project_root, 'manifests', 'mpd_gpcc_longdress.xml'))
     p.add_argument('--out-dir', default=os.path.join(project_root, 'data', 'lstm_achieved'))
     p.add_argument('--policies', nargs='*', default=list(POLICIES),
@@ -103,16 +106,18 @@ def main():
                    help='frames per fetched segment; MUST match the DQN eval/'
                         'inference setting so the LSTM trains on the same signal')
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
-    p.add_argument('--seed', type=int, default=42,
-                   help='canonical split seed (must match LSTM/DQN training)')
     args = p.parse_args()
 
     frames = parse_mpd_xml(args.mpd)
     if args.max_frames:
         frames = frames[:args.max_frames]
 
-    train_src, test_src = split_bandwidth_files(args.trace_dir, test_size=0.2,
-                                                random_state=args.seed)
+    protocol_path = (args.protocol if os.path.isabs(args.protocol)
+                     else os.path.join(project_root, args.protocol))
+    protocol = load_protocol(protocol_path, args.trace_dir)
+    train_src = list(protocol['trace_split']['train'])
+    validation_src = list(protocol['trace_split']['validation'])
+    final_test_src = list(protocol['trace_split']['test'])
     os.makedirs(args.out_dir, exist_ok=True)
     # Derived dataset: wipe stale series so split.json and the dir never disagree
     # (e.g. leftovers generated under a different segment size).
@@ -120,10 +125,10 @@ def main():
         if old.endswith('.csv'):
             os.remove(os.path.join(args.out_dir, old))
 
-    split = {'train_files': [], 'test_files': []}
+    split = {'train_files': [], 'validation_files': []}
     n_series = 0
-    for src in train_src + test_src:
-        side = 'train_files' if src in train_src else 'test_files'
+    for src in train_src + validation_src:
+        side = 'train_files' if src in train_src else 'validation_files'
         stem = os.path.splitext(src)[0]
         full = BandwidthTrace.from_file(os.path.join(args.trace_dir, src))
         n = len(full)
@@ -144,14 +149,25 @@ def main():
                 print(f"  {name}: {len(series)} samples "
                       f"(mean {sum(series)/max(1,len(series))/1e6:.2f} Mbps)")
 
-    split['source_split'] = {'train': train_src, 'test': test_src, 'seed': args.seed}
+    # ``test_files`` is retained as an API alias for the existing LSTM trainer;
+    # scientifically these are validation files used for early stopping/model
+    # selection. Registered final-test traces are deliberately absent here.
+    split['test_files'] = list(split['validation_files'])
+    split['source_split'] = {
+        'train': train_src,
+        'validation': validation_src,
+        'registered_test_not_generated': final_test_src,
+    }
+    split['protocol'] = os.path.relpath(protocol_path, project_root)
+    split['protocol_digest'] = protocol_digest(protocol)
     split['policies'] = args.policies
     split['mpd'] = os.path.basename(args.mpd)
     split['segment_frames'] = args.segment_frames
     with open(os.path.join(args.out_dir, 'split.json'), 'w', encoding='utf-8') as f:
         json.dump(split, f, indent=2)
     print(f"\n{n_series} series -> {args.out_dir} "
-          f"({len(split['train_files'])} train / {len(split['test_files'])} test files)")
+          f"({len(split['train_files'])} train / "
+          f"{len(split['validation_files'])} validation files; final test excluded)")
     print(f"split: {os.path.join(args.out_dir, 'split.json')}")
     print("Train with: python train_model.py --bandwidth-dir data/lstm_achieved "
           "--split-from data/lstm_achieved/split.json")

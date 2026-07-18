@@ -1,5 +1,11 @@
 # DQN ABR Agent — Complete Technical Report
 
+> **Development-history report, not the final IST-2026 evaluation.** Round-4
+> checkpoints were selected and reported on the same four held-out traces.
+> Those traces are validation in the clean protocol. Use
+> `configs/experiment_protocol.json`, `docs/CLEAN_EXPERIMENT_PLAN.md`, and the
+> future `models/final_test_results.json` for submission claims.
+
 *Point-cloud streaming simulator, branch `feat/oo-topology-dqn-gpcc`. All numbers in this report were measured
 in this repository on the real MPEG G-PCC (TMC13) encoded longdress sequence (300 frames @ 30 fps, 10 s).*
 
