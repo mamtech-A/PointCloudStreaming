@@ -30,6 +30,7 @@ import glob
 import json
 import argparse
 import random
+import math
 
 import numpy as np
 import torch
@@ -53,6 +54,7 @@ from src.evaluation import evaluate_agent
 from src.rl.env import StreamingEnv
 from src.rl.dqn import DQNAgent
 from src.rl.features import DEFAULT_FEATURE_SPEC
+from src.rl.reward import OBJECTIVE_VERSION
 
 TCP_PARAMS = dict(DEFAULT_TCP_PARAMS)
 
@@ -111,6 +113,44 @@ def evaluate(agent, env, trace_paths, eval_seeds, sequences, offsets_per_trace=1
     )
 
 
+def resolve_lstm_path(requested, segment_frames):
+    """Resolve the predictor for this decision cadence.
+
+    New experiments install one predictor per segment size.  There is no
+    canonical fallback: silently pairing another cadence is invalid.
+    """
+    if requested:
+        return requested if os.path.isabs(requested) else os.path.join(project_root, requested)
+    specific = os.path.join(
+        project_root, 'models', f'bandwidth_lstm_s{int(segment_frames)}.pkl')
+    return specific
+
+
+def validate_lstm_provenance(lstm_path, segment_frames, protocol_id):
+    """Reject a predictor known to have incompatible sampling/protocol data."""
+    stem, _ = os.path.splitext(lstm_path)
+    if stem.endswith('_best'):
+        stem = stem[:-5]
+    metadata_path = stem + '_split.json'
+    if not os.path.exists(metadata_path):
+        raise FileNotFoundError(
+            f"LSTM provenance metadata is required: {metadata_path}"
+        )
+    with open(metadata_path, encoding='utf-8') as f:
+        metadata = json.load(f)
+    trained_segment = metadata.get('segment_frames')
+    if trained_segment is not None and int(trained_segment) != int(segment_frames):
+        raise ValueError(
+            f"LSTM segment mismatch: {lstm_path} was generated for "
+            f"{trained_segment} frames, DQN requested {segment_frames}"
+        )
+    trained_protocol = metadata.get('protocol_digest')
+    if trained_protocol and trained_protocol != protocol_id:
+        raise ValueError(
+            f"LSTM/protocol digest mismatch: {trained_protocol} != {protocol_id}"
+        )
+
+
 def main():
     p = argparse.ArgumentParser(description="Train DQN ABR agent")
     p.add_argument('--protocol', default=os.path.join('configs', 'experiment_protocol.json'),
@@ -132,23 +172,17 @@ def main():
     p.add_argument('--random-offset', action=argparse.BooleanOptionalAction, default=True,
                    help='randomize the per-epoch training tiling phase; validation '
                         'offsets remain deterministic')
-    p.add_argument('--reward-scale', type=float, default=1.0,
-                   help='LEGACY fixed learner-side reward scale (argmax-invariant). '
-                        'Superseded by --reward-norm; kept for reproducing old runs')
-    p.add_argument('--reward-norm', action=argparse.BooleanOptionalAction, default=True,
-                   help='normalize learner-side rewards by a running std '
-                        '(argmax-invariant; replaces the hand-tuned --reward-scale 0.1)')
     p.add_argument('--reward-spec', type=str, default=None,
                    help='JSON dict overriding the reward spec (see src/rl/reward.py), '
-                        'e.g. \'{"stall_mode":"bounded","stall_cap_s":2.0,"mu":6}\'')
+                        'e.g. \'{"mu":4.3,"rebuffer_weight":2.0}\'')
     p.add_argument('--no-lstm-pred', action='store_true',
                    help='ABLATION: drop the lstm_pred feature from the state')
+    p.add_argument('--lstm', type=str, default='',
+                   help='LSTM checkpoint. Empty selects '
+                        'models/bandwidth_lstm_s<segment-frames>.pkl')
     p.add_argument('--segment-frames', type=int, default=10,
                    help='frames per DASH-style segment (one decision + one transfer); '
                         '1 = legacy per-frame fetching')
-    p.add_argument('--playback-rate-min', type=float, default=1.0,
-                   help='adaptive-playback floor (1.0 = off; 0.9 = research-backed '
-                        'imperceptible slowdown instead of stalling)')
     p.add_argument('--eval-seeds', type=str, default='',
                    help='comma list of jitter seeds averaged per eval (default: just '
                         '--seed); e.g. 42,43,44 de-noises checkpoint selection')
@@ -157,11 +191,15 @@ def main():
     p.add_argument('--early-stop-patience', type=int, default=0,
                    help='validation checks without improvement before stopping; 0 = disabled')
     p.add_argument('--select-by', choices=['qoe_quality', 'reward'], default='qoe_quality',
-                   help='validation metric that picks the best checkpoint (qoe_quality is '
-                        'comparable across reward specs; reward is not)')
+                   help='validation metric that picks the best checkpoint; both names '
+                        'are identical under the canonical objective')
     p.add_argument('--seed', type=int, default=42)
+    p.add_argument('--torch-threads', type=int, default=1,
+                   help='intra-op CPU threads for this trial; use 2 with four '
+                        'parallel trials on an i5-13400')
     p.add_argument('--lr', type=float, default=5e-4)
-    p.add_argument('--gamma', type=float, default=0.99)
+    p.add_argument('--gamma', type=float, default=1.0,
+                   help='discount factor; 1.0 makes the optimized return equal QoE')
     p.add_argument('--mu', type=float, default=4.3, help='rebuffer penalty weight')
     p.add_argument('--lam', type=float, default=1.0, help='quality-switch penalty weight')
     p.add_argument('--hidden', type=int, default=128)
@@ -177,20 +215,28 @@ def main():
                         '(default: the --out directory)')
     args = p.parse_args()
 
+    if abs(args.gamma - 1.0) > 1e-12:
+        p.error("--gamma must be 1.0 so the DQN return equals the reported QoE")
+
     random.seed(args.seed)
     np.random.seed(args.seed)
+    torch.set_num_threads(max(1, args.torch_threads))
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass
     torch.manual_seed(args.seed)
 
     run_dir = args.run_dir or (os.path.dirname(args.out) or '.')
     os.makedirs(run_dir, exist_ok=True)
 
     bandwidth_dir = os.path.join(project_root, 'bandwidth_5g')
-    lstm_path = os.path.join(project_root, 'models', 'bandwidth_lstm.pkl')
 
     protocol_path = (args.protocol if os.path.isabs(args.protocol)
                      else os.path.join(project_root, args.protocol))
     protocol = load_protocol(protocol_path, bandwidth_dir)
     protocol_id = protocol_digest(protocol)
+    lstm_path = resolve_lstm_path(args.lstm, args.segment_frames)
     train_files = list(protocol['trace_split']['train'])
     validation_files = list(protocol['trace_split']['validation'])
     registered_test_files = list(protocol['trace_split']['test'])
@@ -222,6 +268,12 @@ def main():
                     if not (args.no_lstm_pred and f == 'lstm_pred')]
     predictor = None
     if 'lstm_pred' in feature_spec:
+        if not os.path.exists(lstm_path):
+            raise FileNotFoundError(
+                f"LSTM predictor not found for segment_frames={args.segment_frames}: "
+                f"{lstm_path}. Run scripts/run_training.py through its LSTM stage first."
+            )
+        validate_lstm_provenance(lstm_path, args.segment_frames, protocol_id)
         predictor = LSTMPredictor().load(lstm_path)
 
     reward_spec = {'mu': args.mu, 'lam': args.lam}
@@ -233,12 +285,11 @@ def main():
 
     env = StreamingEnv(manifest_pool, lstm_predictor=predictor, tcp_params=TCP_PARAMS,
                        feature_spec=feature_spec, reward_spec=reward_spec,
-                       segment_frames=args.segment_frames,
-                       playback_rate_min=args.playback_rate_min)
+                       segment_frames=args.segment_frames)
     agent = DQNAgent(env.state_dim, env.num_actions, env.feature_spec, env.norm,
                      hidden=args.hidden, lr=args.lr, gamma=args.gamma,
                      batch_size=args.batch_size,
-                     mu=env.mu, lam=env.lam, reward_norm=args.reward_norm,
+                     mu=env.mu, lam=env.lam,
                      target_update_freq=args.target_update,
                      lstm_model_path=(lstm_path if predictor is not None else None),
                      sequence_length=getattr(predictor, 'sequence_length', 10),
@@ -264,12 +315,14 @@ def main():
           f"{episodes_per_epoch} episodes/epoch x {args.epochs} epochs = {total_episodes} episodes "
           f"(~{total_steps_est} env steps)")
     print(f"   segment: {args.segment_frames} frames/request "
-          f"({steps_per_episode} decisions/episode) | playback-rate-min: "
-          f"{args.playback_rate_min} | validation offsets/trace: {eval_offsets} "
+          f"({steps_per_episode} decisions/episode) | validation offsets/trace: {eval_offsets} "
           f"| validation seeds: {eval_seeds}")
     print(f"   state_dim: {env.state_dim} | actions: {env.num_actions} | feature_spec: {feature_spec}")
-    print(f"   reward: {env.reward_fn.describe()}  (gamma={args.gamma}, lr={args.lr}, "
-          f"reward_norm={args.reward_norm}, reward_scale={args.reward_scale})")
+    print(f"   PyTorch CPU threads/trial: {torch.get_num_threads()}")
+    if predictor is not None:
+        print(f"   LSTM: {os.path.relpath(lstm_path, project_root)}")
+    print(f"   reward = QoE: {env.reward_fn.describe()}  "
+          f"(gamma={args.gamma}, lr={args.lr}, no learner-side scaling)")
     print(f"   select-by: {args.select_by} | out: {args.out} | run-dir: {run_dir}")
     print("=" * 90)
 
@@ -308,8 +361,8 @@ def main():
             marker = "  <-- best (saved)"
         else:
             validations_without_improvement += 1
-        print(f"    [eval @ {tag}] reward={ev['reward']:.2f} qoe={ev['qoe']:.1f} "
-              f"qoe_q={ev['qoe_quality']:.1f} mean_q={ev['mean_quality']:.3f} "
+        print(f"    [eval @ {tag}] reward=QoE={ev['qoe']:.2f} "
+              f"mean_q={ev['mean_quality']:.3f} "
               f"stall={ev['stall_s']:.1f}s{marker}")
         return ev
 
@@ -318,8 +371,7 @@ def main():
         agent, env, validation_paths, eval_seeds, eval_sequences,
         offsets_per_trace=eval_offsets,
     )
-    print(f"[validation @ ep 0] untrained: reward={base['reward']:.2f} qoe={base['qoe']:.1f} "
-          f"qoe_q={base['qoe_quality']:.1f}")
+    print(f"[validation @ ep 0] untrained: reward=QoE={base['qoe']:.2f}")
 
     stopped_early = False
     for epoch in range(args.epochs):
@@ -338,9 +390,14 @@ def main():
                 eps = epsilon()
                 a = agent.act(s, eps)
                 s2, r, done, _ = env.step(a)
-                agent.push(s, a, r * args.reward_scale, s2, done)
+                agent.push(s, a, r, s2, done)
                 loss = agent.learn()
                 if loss is not None:
+                    if not math.isfinite(loss):
+                        raise FloatingPointError(
+                            f"non-finite DQN loss at episode={episode + 1}, "
+                            f"step={step_count}: {loss}"
+                        )
                     losses.append(loss)
                 s = s2
                 ep_reward += r
@@ -348,11 +405,16 @@ def main():
             episode += 1
             history['episode_reward'].append(ep_reward)
             mean_loss = (sum(losses) / len(losses)) if losses else 0.0
+            episode_qoe = env.qoe()
+            if abs(ep_reward - episode_qoe) > 1e-8:
+                raise AssertionError(
+                    f"reward/QoE mismatch: return={ep_reward} qoe={episode_qoe}"
+                )
             print(f"[ep {episode:4d}] {seq:<12s} {os.path.basename(path):>32s}@{off:<5d} "
-                  f"reward={ep_reward:8.2f} qoe={env.qoe():6.1f} qoe_q={env.qoe_quality():7.1f} "
+                  f"reward=QoE={ep_reward:8.2f} "
                   f"eps={eps:.3f} loss={mean_loss:.4f}")
             ep_csv.write(f"{episode},{seq},{os.path.basename(path)},{off},"
-                         f"{ep_reward:.4f},{env.qoe():.2f},{env.qoe_quality():.2f},"
+                         f"{ep_reward:.4f},{episode_qoe:.2f},{episode_qoe:.2f},"
                          f"{eps:.4f},{mean_loss:.6f}\n")
             ep_csv.flush()
 
@@ -389,10 +451,12 @@ def main():
         json.dump(history, f, indent=2)
 
     summary = {
+        'objective_version': OBJECTIVE_VERSION,
         'args': {k: v for k, v in vars(args).items()},
         'reward': env.reward_fn.describe(),
         'reward_spec': env.reward_fn.spec,
         'feature_spec': feature_spec,
+        'lstm_model': (os.path.abspath(lstm_path) if predictor is not None else None),
         'sequences': seq_names,
         'validation_sequences': eval_sequences,
         'validation_offsets_per_trace': eval_offsets,
@@ -404,6 +468,7 @@ def main():
         'registered_test_files_not_evaluated': registered_test_files,
         'episodes_per_epoch': episodes_per_epoch,
         'episodes_run': episode,
+        'steps_run': step_count,
         'stopped_early': stopped_early,
         'untrained': base,
         'final': final,

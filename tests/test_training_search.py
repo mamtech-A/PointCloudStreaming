@@ -1,0 +1,163 @@
+"""Guards for the registered wide DQN/segment search."""
+
+import json
+import os
+import random
+import sys
+from collections import Counter
+
+import numpy as np
+
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPTS = os.path.join(ROOT, "scripts")
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
+
+import run_training
+import sweep
+from src.evaluation import _evaluate
+
+
+def load(name):
+    with open(os.path.join(ROOT, name), encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def test_wide_search_is_deterministic_and_balanced_by_segment_size():
+    config = load(os.path.join("configs", "training.json"))
+    search = config["dqn_sweep"]
+    first = sweep.expand_trials(search)
+    second = sweep.expand_trials(search)
+
+    assert first == second
+    assert len(first) == 20
+    assert len({json.dumps(row, sort_keys=True) for row in first}) == 20
+    assert Counter(row["segment-frames"] for row in first) == {
+        5: 5, 8: 5, 10: 5, 15: 5,
+    }
+    paired = {}
+    for row in first:
+        segment = row["segment-frames"]
+        paired[segment] = {
+            json.dumps({k: v for k, v in config.items() if k != "segment-frames"},
+                       sort_keys=True)
+            for config in first if config["segment-frames"] == segment
+        }
+    assert paired[5] == paired[8] == paired[10] == paired[15]
+    for axis, values in search["axes"].items():
+        if axis != "segment-frames":
+            assert {row[axis] for row in first[:5]} == set(values)
+
+
+def test_confirmation_keeps_one_validation_finalist_per_segment_size():
+    config = load(os.path.join("configs", "training.json"))
+    search = config["dqn_sweep"]
+    combos = sweep.expand_trials(search)
+    # Rows are already in descending validation rank within each segment group.
+    ranking = [
+        {"trial": index, "config": combo, "metrics": {"qoe_quality": 100 - index}}
+        for index, combo in enumerate(combos)
+    ]
+    selected = sweep.confirmation_trials(ranking, search)
+
+    assert len(selected) == 4
+    assert Counter(combos[index]["segment-frames"] for index in selected) == {
+        5: 1, 8: 1, 10: 1, 15: 1,
+    }
+
+
+def test_lstm_and_dqn_search_use_the_same_requested_segment_values():
+    config = load(os.path.join("configs", "training.json"))
+    assert run_training.validate_search_config(config) == [5, 8, 10, 15]
+    expected_contents = "longdress,loot,redandblack,soldier"
+    assert config["dqn_sweep"]["base_args"]["eval-sequences"] == expected_contents
+    assert config["final_eval"]["split"] == "test"
+    assert config["final_eval"]["strategies"] == "dqn,fixed,buffer,mpc"
+    search = config["dqn_sweep"]
+    assert search["screen_overrides"]["epochs"] == 3
+    assert search["base_args"]["epochs"] == 8
+    assert search["confirmation_selection_seeds"] == list(range(45, 54))
+
+
+def test_registered_test_files_are_unchanged():
+    protocol = load(os.path.join("configs", "experiment_protocol.json"))
+    assert protocol["evaluation"]["validation"]["sequences"] == [
+        "longdress", "loot", "redandblack", "soldier",
+    ]
+    assert protocol["trace_split"]["test"] == [
+        "driving_B_2019.12.16_11.49.59.csv",
+        "driving_B_2019.12.16_14.23.32.csv",
+        "driving_B_2020.02.14_07.29.00.csv",
+        "static_B_2020.02.13_13.57.29.csv",
+    ]
+    train = set(protocol["trace_split"]["train"])
+    validation = set(protocol["trace_split"]["validation"])
+    test = set(protocol["trace_split"]["test"])
+    assert train.isdisjoint(validation)
+    assert train.isdisjoint(test)
+    assert validation.isdisjoint(test)
+
+
+def test_validation_restores_training_rng_state():
+    class Buffer:
+        @staticmethod
+        def get_buffer_stats():
+            return {
+                "rebuffer_count": 0, "frames_dropped": 0,
+                "startup_delay_s": 0.0,
+            }
+
+    class Env:
+        user = Buffer()
+
+        def reset(self, _trace, sequence=None):
+            return 0
+
+        def step(self, _action):
+            # Evaluation is allowed to consume RNG internally; it must restore
+            # the surrounding training streams on return.
+            random.random()
+            np.random.random()
+            return 0, 0.0, True, {}
+
+        @staticmethod
+        def qoe(): return 0.0
+        @staticmethod
+        def mean_quality(): return 0.0
+        @staticmethod
+        def total_stall_s(): return 0.0
+        @staticmethod
+        def quality_change_sum(): return 0.0
+        @staticmethod
+        def qoe_terms(): return {"total": 0.0}
+
+    trace = os.path.join(
+        ROOT, "bandwidth_5g", "driving_B_2019.12.16_12.27.05.csv"
+    )
+    random.seed(9876)
+    np.random.seed(9876)
+    expected = (random.random(), float(np.random.random()))
+    random.seed(9876)
+    np.random.seed(9876)
+    _evaluate(
+        Env(), [trace], [42], ["longdress"], 1,
+        choose_action=lambda _observation, _env: 0,
+    )
+    actual = (random.random(), float(np.random.random()))
+    assert actual == expected
+
+
+def _run_all():
+    functions = [value for key, value in sorted(globals().items())
+                 if key.startswith("test_")]
+    for function in functions:
+        function()
+        print(f"  PASS {function.__name__}")
+    print(f"{len(functions)} tests passed.")
+
+
+if __name__ == "__main__":
+    _run_all()

@@ -9,17 +9,15 @@ from .buffer import ClientBuffer
 
 class User:
     def __init__(self, user_id="User", target_fps=30.0, buffer_capacity_s=5.0,
-                 min_buffer_s=1.0, playback_rate_min=1.0):
+                 min_buffer_s=1.0):
         self.user_id = user_id
         self.target_fps = target_fps
         self.buffer_capacity_s = buffer_capacity_s
         self.min_buffer_s = min_buffer_s
-        self.playback_rate_min = playback_rate_min
         self.buffer = ClientBuffer(
             target_fps=target_fps,
             buffer_capacity_s=buffer_capacity_s,
             min_buffer_s=min_buffer_s,
-            playback_rate_min=playback_rate_min,
         )
         self.session = None  # back-ref, set on connect
 

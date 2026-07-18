@@ -1,59 +1,101 @@
 {
-  "_comment": "IST-2026 clean final experiment. The explicit split lives in configs/experiment_protocol.json. Checkpoints/configs are selected only on validation; the final test is run once after the method is frozen. Reward, segment size, optimizer, and network architecture are fixed from Round 4. The only preregistered ablation is whether the LSTM prediction feature is present.",
+  "_comment": "IST-2026 wide search under the six-term objective. The existing trace split is retained unchanged by author decision. The test files were inspected in an earlier experiment, so they are fixed evaluation files rather than a new untouched test set. Training and every model/segment/baseline choice use train+validation only; test evaluation requires an explicit frozen second stage.",
   "protocol": "configs/experiment_protocol.json",
+
+  "artifacts": {
+    "tag": "qoe_v2_wide",
+    "lstm_model_template": "models/bandwidth_lstm_s{segment_frames}.pkl",
+    "dqn_model": "models/abr_dqn_qoe_v2_wide.pkl",
+    "sweep_results": "models/dqn_sweep_results_qoe_v2_wide.json",
+    "baseline_config": "models/baseline_config_qoe_v2_wide.json",
+    "final_results": "models/final_test_results_qoe_v2_wide.json",
+    "training_summary": "models/TRAINING_SUMMARY_qoe_v2_wide.md"
+  },
 
   "lstm": {
     "signal": "achieved",
+    "segment_frames": [5, 8, 10, 15],
     "gen_args": {
       "offsets": 8,
-      "segment-frames": 8,
       "protocol": "configs/experiment_protocol.json"
     },
-    "transforms": ["none", "log1p"],
-    "tune": true,
+    "transforms": ["log1p"],
+    "tune": false,
+    "fixed_hyperparameters": {
+      "hidden": 128,
+      "layers": 2,
+      "dropout": 0.1,
+      "lr": 0.0005
+    },
     "sequence_length": 8,
-    "epochs": 100,
+    "epochs": 50,
     "select_metric": "low_bw_mae",
-    "_selection_note": "LSTM transform/hyperparameters are selected on the registered validation sources. Final-test trace sources are not generated into the achieved-throughput training data."
+    "_selection_note": "The previously validation-selected log1p transform and 128x2 architecture are frozen. We retrain weights on all four content sequences separately for each segment size because the achieved-throughput observation cadence changes. Final-test traces are never generated."
   },
 
   "dqn_sweep": {
-    "mode": "grid",
-    "seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "mode": "stratified_random",
+    "sample_seed": 20260719,
+    "stratify_by": "segment-frames",
+    "budget_per_value": 5,
+    "require_axis_coverage": true,
+    "screen_seeds": [42, 43, 44],
+    "confirm_seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "confirmation_selection_seeds": [45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "confirm_top_per_value": 1,
+    "required_configs": [
+      {
+        "batch-size": 64,
+        "eps-decay-frac": 0.6,
+        "hidden": 128,
+        "lr": 0.0001,
+        "target-update": 3000
+      }
+    ],
+    "screen_overrides": {
+      "epochs": 3,
+      "early-stop-patience": 0
+    },
     "base_args": {
       "protocol": "configs/experiment_protocol.json",
       "epochs": 8,
       "coverage-stride": 60,
-      "eval-every": 200,
-      "early-stop-patience": 8,
-      "target-update": 3000,
-      "lr": 0.0001,
+      "eval-every": 400,
+      "early-stop-patience": 3,
+      "gamma": 1.0,
+      "torch-threads": 2,
+      "mu": 4.3,
       "lam": 1.0,
       "select-by": "qoe_quality",
       "eval-seeds": "42,43,44",
       "eval-offsets": 3,
-      "eval-sequences": "longdress",
-      "playback-rate-min": 0.9,
+      "eval-sequences": "longdress,loot,redandblack,soldier",
       "reward-spec": {
-        "stall_mode": "bounded",
-        "stall_cap_s": 2.0,
-        "event_penalty": 2.0,
+        "rebuffer_weight": 2.0,
         "startup_weight": 1.0,
-        "drop_weight": 1.0
+        "drop_weight": null
       }
     },
     "axes": {
-      "segment-frames": [8],
-      "mu": [4.3],
-      "no-lstm-pred": [false, true]
+      "segment-frames": [5, 8, 10, 15],
+      "lr": [0.00005, 0.0001, 0.0003],
+      "hidden": [128, 256],
+      "batch-size": [64, 128],
+      "target-update": [1500, 3000, 6000],
+      "eps-decay-frac": [0.5, 0.6, 0.7]
     },
-    "_selection_note": "Two fixed configurations x 12 seeds. Rank configurations by mean validation qoe_quality and install the seed closest to that configuration mean, not the lucky best seed."
+    "_selection_note": "Screen the prior stable optimizer setting plus the same four deterministic random configurations at each requested segment size for three epochs with seeds 42-44 (paired, low-fidelity comparison). Retrain the best configuration per segment size from scratch for eight epochs on all 12 seeds. Rank the four finalists only by the disjoint training seeds 45-53; checkpoints from all 12 seeds remain for final aggregate testing."
+  },
+
+  "baselines": {
+    "families": "fixed,buffer,mpc",
+    "_selection_note": "BufferBased and MPC are the primary adaptive non-learning baselines. Their parameters are reselected on validation after the DQN winner fixes the segment size; fixed tiers remain reference policies."
   },
 
   "final_eval": {
     "split": "test",
     "max_frames": 0,
-    "strategies": "dqn,fixed,throughput,lstm_rule,buffer,mpc",
-    "_note": "Uses every registered test trace, all four content sequences, three deterministic offsets per trace, and three paired jitter seeds. The output retains case-level rows."
+    "strategies": "dqn,fixed,buffer,mpc",
+    "_note": "Uses the unchanged, previously inspected test files only after DQN, segment size, LSTM, and baseline parameters are frozen on validation. The output retains all case-level rows; no choices may be changed after viewing it."
   }
 }

@@ -37,7 +37,7 @@
   },
   "evaluation": {
     "validation": {
-      "sequences": ["longdress"],
+      "sequences": ["longdress", "loot", "redandblack", "soldier"],
       "offsets_per_trace": 3,
       "jitter_seeds": [42, 43, 44]
     },

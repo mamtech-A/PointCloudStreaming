@@ -12,7 +12,7 @@ import math
 import numpy as np
 
 from ..network_model.manifest import (
-    coded_bitrate_bps, density_quality, manifest_quality_endpoints,
+    coded_bitrate_bps, manifest_quality_endpoints, tier_quality,
 )
 
 DEFAULT_FEATURE_SPEC = [
@@ -34,10 +34,8 @@ DEFAULT_NORM = {
     'hist_len': 5,
 }
 
-# Quality utility: the log-density normalization lives in
-# network_model.manifest (density_quality / manifest_quality_endpoints) so the
-# quality-aware QoE and the RL reward share ONE definition. These wrappers keep
-# the historical rl.features API.
+# Reward/QoE quality uses the fixed tier table in network_model.manifest.  The
+# endpoint wrapper remains only for compatibility with the historical API.
 
 
 def quality_endpoints(manifest_frames):
@@ -46,8 +44,8 @@ def quality_endpoints(manifest_frames):
 
 
 def quality(rep, low_density=None, high_density=None):
-    """Normalized quality utility in [0, 1] from a representation's density."""
-    return density_quality(rep.get('density'), low_density, high_density)
+    """Fixed normalized log-bitrate utility for a representation's tier."""
+    return tier_quality(rep)
 
 
 _DIMS = {

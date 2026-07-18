@@ -23,6 +23,9 @@ The trained model can then be used with run_lstm.py for bandwidth prediction.
 import os
 import sys
 import argparse
+import random
+import numpy as np
+import torch
 
 # Make emoji-rich status prints safe under non-UTF-8 consoles (e.g. cp1256 on redirect).
 try:
@@ -71,6 +74,10 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=0.001)
     args = parser.parse_args()
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
     
     print("="*80)
     print("🤖 LSTM Bandwidth Prediction Model Training")
@@ -82,12 +89,14 @@ def main():
     output_path = args.out or os.path.join(model_dir, 'bandwidth_lstm.pkl')
 
     train_files = test_files = None
+    explicit_split = None
     if args.split_from:
         import json
         with open(args.split_from, encoding='utf-8') as f:
-            explicit = json.load(f)
-        train_files = explicit['train_files']
-        test_files = explicit.get('validation_files', explicit.get('test_files'))
+            explicit_split = json.load(f)
+        train_files = explicit_split['train_files']
+        test_files = explicit_split.get(
+            'validation_files', explicit_split.get('test_files'))
         if test_files is None:
             raise ValueError(f"{args.split_from} has no validation_files/test_files")
         print(f"📋 Explicit split from {args.split_from}: "
@@ -145,6 +154,27 @@ def main():
         train_files=train_files,
         test_files=test_files
     )
+
+    # Preserve the provenance of a derived achieved-throughput dataset.  The
+    # DQN pipeline uses these fields to reject a predictor generated with a
+    # different segment cadence or experiment protocol.
+    if explicit_split is not None:
+        import json
+        split_metadata_path = output_path.replace('.pkl', '_split.json')
+        with open(split_metadata_path, encoding='utf-8') as f:
+            split_metadata = json.load(f)
+        for key in (
+            'segment_frames', 'protocol', 'protocol_digest', 'source_split',
+            'policies', 'mpd', 'content_sequences',
+        ):
+            if key in explicit_split:
+                split_metadata[key] = explicit_split[key]
+        split_metadata['source_split_file'] = os.path.relpath(
+            os.path.abspath(args.split_from), project_root)
+        split_metadata['validation_files'] = list(test_files)
+        split_metadata['final_test_excluded'] = True
+        with open(split_metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(split_metadata, f, indent=2)
     
     print("\n" + "="*80)
     print("✅ Training complete!")

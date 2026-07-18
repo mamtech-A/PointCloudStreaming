@@ -24,6 +24,7 @@ from src.network_model.abr import ABRStrategy
 from src.network_model.manifest import parse_mpd_xml
 from src.rl.env import StreamingEnv
 from src.rl.features import DEFAULT_FEATURE_SPEC
+from src.rl.reward import DEFAULT_REWARD_SPEC, OBJECTIVE_VERSION
 
 
 class FixedABR(ABRStrategy):
@@ -68,12 +69,16 @@ def main():
     parser.add_argument("--out", default=os.path.join("models", "baseline_config.json"))
     parser.add_argument("--lstm", default=os.path.join("models", "bandwidth_lstm.pkl"))
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--experiment-config-digest", default="")
     parser.add_argument("--max-frames", type=int, default=0)
     parser.add_argument("--offsets", type=int, default=0)
     parser.add_argument("--eval-seeds", default="")
     parser.add_argument("--sequences", default="")
     parser.add_argument("--segment-frames", type=int, default=8)
-    parser.add_argument("--playback-rate-min", type=float, default=0.9)
+    parser.add_argument(
+        "--families", default="fixed,buffer,mpc",
+        help="comma-separated validation-tuned families",
+    )
     parser.add_argument("--quick", action="store_true",
                         help="one candidate per family for pipeline smoke tests")
     args = parser.parse_args()
@@ -96,17 +101,12 @@ def main():
     offsets = args.offsets or int(settings["offsets_per_trace"])
     pool = load_pool(absolute(args.mpd), args.max_frames)
 
-    reward_spec = {
-        "mu": 4.3, "lam": 1.0, "stall_mode": "bounded",
-        "stall_cap_s": 2.0, "event_penalty": 2.0,
-        "startup_weight": 1.0, "drop_weight": 1.0,
-    }
+    reward_spec = dict(DEFAULT_REWARD_SPEC)
     env = StreamingEnv(
         pool, lstm_predictor=None,
         tcp_params={**DEFAULT_TCP_PARAMS, "log_packets": False},
         feature_spec=DEFAULT_FEATURE_SPEC, reward_spec=reward_spec,
         segment_frames=args.segment_frames,
-        playback_rate_min=args.playback_rate_min,
     )
 
     grids = {
@@ -120,13 +120,22 @@ def main():
         ],
         "buffer": [
             {"reservoir_s": r, "cushion_s": c}
-            for r, c in itertools.product([0.5, 1.0, 1.5], [2.0, 3.0, 4.0])
+            for r, c in itertools.product(
+                [0.25, 0.5, 1.0, 1.5, 2.0], [1.5, 2.0, 3.0, 4.0]
+            )
         ],
         "mpc": [
             {"horizon": h, "history_window": w, "safety_factor": sf}
-            for h, w, sf in itertools.product([2, 3], [3, 5], [0.85, 0.95])
+            for h, w, sf in itertools.product(
+                [2, 3, 4], [3, 5, 8], [0.75, 0.85, 0.95]
+            )
         ],
     }
+    requested = [name.strip() for name in args.families.split(",") if name.strip()]
+    unknown = sorted(set(requested) - set(grids))
+    if unknown:
+        raise ValueError(f"unknown baseline families {unknown}; expected {sorted(grids)}")
+    grids = {name: grids[name] for name in requested}
     if args.quick:
         grids = {name: values[:1] for name, values in grids.items()}
 
@@ -144,7 +153,11 @@ def main():
         if name == "mpc":
             return lambda: MPCABR(
                 **params, segment_frames=args.segment_frames,
-                mu=reward_spec["mu"], lam=reward_spec["lam"],
+                episode_frames=int(sum(map(len, pool.values())) / len(pool)),
+                mu=reward_spec["mu"],
+                rebuffer_weight=reward_spec["rebuffer_weight"],
+                lam=reward_spec["lam"],
+                startup_weight=reward_spec["startup_weight"],
             )
         raise KeyError(name)
 
@@ -164,6 +177,9 @@ def main():
 
     payload = {
         "schema_version": 1,
+        "experiment_config_digest": args.experiment_config_digest or None,
+        "objective_version": OBJECTIVE_VERSION,
+        "reward_spec": reward_spec,
         "selection_split": "validation",
         "selection_metric": "qoe_quality",
         "protocol": os.path.relpath(absolute(args.protocol), project_root),
@@ -173,7 +189,6 @@ def main():
         "offsets_per_trace": offsets,
         "jitter_seeds": seeds,
         "segment_frames": args.segment_frames,
-        "playback_rate_min": args.playback_rate_min,
         "families": families,
     }
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)

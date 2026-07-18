@@ -9,7 +9,7 @@ buffer -> return a record for logging.
 """
 
 from .abr import ABRState
-from .manifest import coded_size_bytes, density_quality, DEFAULT_BITS_PER_POINT
+from .manifest import coded_size_bytes, tier_quality, DEFAULT_BITS_PER_POINT
 
 
 class StreamingSession:
@@ -28,12 +28,11 @@ class StreamingSession:
         self.quality_history = []
         self.last_rep_id = None
         self.cumulative_time_s = 0.0
-        # Quality-aware QoE bookkeeping: chosen density per frame + the running
-        # ladder endpoints over every rep this session has SEEN (equals the
-        # manifest-wide endpoints once the full clip has streamed).
+        # QoE bookkeeping. Densities stay available for compatibility and state
+        # analysis; reward/QoE use only the fixed utility of each tier.
         self.chosen_densities = []
-        self._density_lo = None
-        self._density_hi = None
+        self.chosen_qualities = []
+        self.chosen_quality_segments = []
 
     def start(self):
         self.abr.reset()
@@ -42,8 +41,8 @@ class StreamingSession:
         self.last_rep_id = None
         self.cumulative_time_s = 0.0
         self.chosen_densities = []
-        self._density_lo = None
-        self._density_hi = None
+        self.chosen_qualities = []
+        self.chosen_quality_segments = []
         self.access_link.establish()
         return self
 
@@ -105,22 +104,20 @@ class StreamingSession:
         # time; the buffer's elapsed-time consumption runs once on the first add
         # (the rest of the batch sees elapsed = 0), so stall accounting is exact.
         frame_records = []
+        segment_qualities = []
         for fr, rep_f, size_f in zip(segment, seg_reps, seg_sizes):
             buffer_result = self.user.receive_frame(fr['id'], rep_id, size_f,
                                                     segment_time, arrival_s)
             self.quality_history.append(rep_id)
-            # Quality-aware QoE bookkeeping (per frame).
-            for r in fr['representations']:
-                d = r.get('density')
-                if d:
-                    if self._density_lo is None or d < self._density_lo:
-                        self._density_lo = d
-                    if self._density_hi is None or d > self._density_hi:
-                        self._density_hi = d
             if rep_f is not None:
                 self.chosen_densities.append(rep_f.get('density'))
+                q = tier_quality(rep_f)
+                self.chosen_qualities.append(q)
+                segment_qualities.append(q)
             frame_records.append({'frame_id': fr['id'], 'rep': rep_f,
                                   'buffer_result': buffer_result})
+
+        self.chosen_quality_segments.append(segment_qualities)
 
         self.last_rep_id = rep_id
         return {
@@ -153,69 +150,58 @@ class StreamingSession:
         }
 
     def qoe(self):
-        """LEGACY stall-only QoE (kept for continuity). Counts only stalls/drops,
-        so a policy hiding at the lowest tier trivially maximizes it — always
-        read it alongside qoe_quality()."""
-        s = self.user.get_buffer_stats()
-        return max(0, 100 - s['rebuffer_count'] * 10
-                   - s['total_stall_time_s'] * 5 - s['frames_dropped'] * 2)
+        """The one canonical raw QoE (compatibility entry point)."""
+        return self.qoe_quality()
 
     def mean_quality(self):
-        """Mean [0,1] log-density quality utility of the CHOSEN reps."""
-        if not self.chosen_densities:
+        """Mean fixed [0,1] log-bitrate utility of the chosen tiers."""
+        if not self.chosen_qualities:
             return 0.0
-        lo, hi = self._density_lo, self._density_hi
-        qs = [density_quality(d, lo, hi) for d in self.chosen_densities]
-        return sum(qs) / len(qs)
+        return sum(self.chosen_qualities) / len(self.chosen_qualities)
 
-    def qoe_quality_terms(self, w_stall=4.3, w_switch=1.0, w_slow=10.0,
+    def qoe_quality_terms(self, w_stall=4.3, w_rebuffer=2.0, w_switch=1.0,
                           w_startup=1.0, w_drop=None):
-        """Per-term breakdown of the quality-aware QoE″ (v2, round 4):
+        """Canonical six-term QoE breakdown for direct simulator sessions:
 
             QoE″ = 100·mean_q − w_stall·total_stall_s − w_switch·Σ|dq|
-                   − w_slow·slowdown_integral
-                   − w_startup·startup_delay_s − w_drop·frames_dropped
+                   − w_rebuffer·rebuffer_count − w_drop·frames_dropped
+                   − w_startup·startup_delay_s
 
-        v2 adds the two network-caused perceptual costs that were tracked but
-        free in v1 (v1 = v2 without the last two terms — recoverable from this
-        breakdown):
-        - startup: seconds until playback first starts. w_startup=1.0/s ≈ ¼ of
-          the stall weight — startup waiting annoys less than mid-stream
-          freezing (Krishnan & Sitaraman). Stalls only accrue AFTER playback
-          starts, so there is no double-count.
-        - drops: buffer-overflow frames are never played; each is charged the
-          full quality it could have delivered: w_drop default = 100/N ("a
-          dropped frame delivers zero quality").
-        Raw network parameters (bandwidth, RTT) stay OUT by design: QoE is what
-        the user perceives; the network enters only via these outcomes.
+        Startup is the wait before playback first begins. Stall duration and
+        rebuffer events accrue only after playback has begun, so the terms are
+        disjoint. Quality change is measured between ABR segment means, matching
+        the DQN reward. The default frame-drop weight is 100/N.
 
         Returns a dict of the SIGNED terms plus 'total' (raw, unclipped).
         """
-        if not self.chosen_densities:
-            return {'quality': 0.0, 'stall': 0.0, 'switch': 0.0, 'slowdown': 0.0,
-                    'startup': 0.0, 'drops': 0.0, 'total': 0.0}
-        lo, hi = self._density_lo, self._density_hi
-        qs = [density_quality(d, lo, hi) for d in self.chosen_densities]
+        if not self.chosen_qualities:
+            return {'quality': 0.0, 'stall_duration': 0.0, 'rebuffering': 0.0,
+                    'quality_change': 0.0, 'frame_drops': 0.0,
+                    'startup_delay': 0.0, 'total': 0.0}
+        qs = self.chosen_qualities
         mean_q = sum(qs) / len(qs)
-        switch_sum = sum(abs(qs[i] - qs[i - 1]) for i in range(1, len(qs)))
+        segment_qs = []
+        for values in self.chosen_quality_segments:
+            if values:
+                segment_qs.append(sum(values) / len(values))
+        switch_sum = sum(abs(segment_qs[i] - segment_qs[i - 1])
+                         for i in range(1, len(segment_qs)))
         s = self.user.get_buffer_stats()
         if w_drop is None:
             w_drop = 100.0 / len(qs)
         terms = {
             'quality': 100.0 * mean_q,
-            'stall': -w_stall * s['total_stall_time_s'],
-            'switch': -w_switch * switch_sum,
-            'slowdown': -w_slow * s.get('slowdown_integral', 0.0),
-            'startup': -w_startup * s.get('startup_delay_s', 0.0),
-            'drops': -w_drop * s.get('frames_dropped', 0),
+            'stall_duration': -w_stall * s['total_stall_time_s'],
+            'rebuffering': -w_rebuffer * s.get('rebuffer_count', 0),
+            'quality_change': -w_switch * switch_sum,
+            'frame_drops': -w_drop * s.get('frames_dropped', 0),
+            'startup_delay': -w_startup * s.get('startup_delay_s', 0.0),
         }
         terms['total'] = sum(terms.values())
         return terms
 
-    def qoe_quality(self, w_stall=4.3, w_switch=1.0, w_slow=10.0,
+    def qoe_quality(self, w_stall=4.3, w_rebuffer=2.0, w_switch=1.0,
                     w_startup=1.0, w_drop=None):
-        """Quality-aware QoE″ (v2) total — see qoe_quality_terms() for the
-        formula and rationale. RAW (unclipped); callers wanting a 0-100 scale
-        should clamp with max(0, ...) — report both."""
-        return self.qoe_quality_terms(w_stall, w_switch, w_slow,
+        """Canonical raw QoE total; ``qoe_quality`` is a compatibility name."""
+        return self.qoe_quality_terms(w_stall, w_rebuffer, w_switch,
                                       w_startup, w_drop)['total']

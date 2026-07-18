@@ -129,19 +129,20 @@ def test_tcp_scalar_none_capacity_unconstrained():
 
 
 # ---------------------------------------------------------------------------
-# Round 2: segment-based fetching + adaptive playback rate
+# Round 2: segment-based fetching + fixed-rate playback
 # ---------------------------------------------------------------------------
 
 from src.network_model.buffer import ClientBuffer
 
 
-def _mk_session(trace, segment_frames_hint=None, playback_rate_min=1.0, n_frames=20):
+def _mk_session(trace, segment_frames_hint=None, n_frames=20):
     """Tiny session over synthetic 6-tier frames (1460 B per rep for exact math)."""
     from src.network_model import Server, EdgeNode, User, Topology
     from src.network_model.manifest import PointCloud
+    tiers = ('high', 'medhigh', 'med', 'medlow', 'low', 'vlow')
     frames = [{'id': i, 'representations': [
         {'id': r, 'density': 1000 * (6 - r), 'size': '1460', 'coded_bytes': 1460,
-         'bandwidth': 1460 * 8 * 30}
+         'bandwidth': 1460 * 8 * 30, 'quality': tiers[r]}
         for r in range(6)]} for i in range(n_frames)]
     server = Server("t://origin")
     server.manifest.frames = frames
@@ -153,7 +154,7 @@ def _mk_session(trace, segment_frames_hint=None, playback_rate_min=1.0, n_frames
                     tcp_params=dict(rtt_ms=72.0, rtt_jitter_ms=0.0, loss_prob=0.0,
                                     cwnd_packets=10, mss_bytes=1460, log_packets=False))
     topo.add_edge(edge)
-    user = User("u", playback_rate_min=playback_rate_min)
+    user = User("u")
     session = topo.add_user(user, edge, trace=trace)
     session.start()
     return session, frames
@@ -205,40 +206,20 @@ def test_step_is_one_frame_segment():
     assert r1['buffer_result'] == r2['frames'][0]['buffer_result']
 
 
-def test_amp_rate_floors_and_tracks_slowdown():
-    b = ClientBuffer(target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
-                     playback_rate_min=0.9)
-    # healthy buffer -> full rate
-    b.buffer_level_s = 2.0
-    assert b._playback_rate() == 1.0
-    # low buffer -> floored at 0.9 (0.3/1.0 = 0.3 would be below the floor)
-    b.buffer_level_s = 0.3
-    assert abs(b._playback_rate() - 0.9) < 1e-12
-    # near-full min buffer -> linear ramp region
-    b.buffer_level_s = 0.95
-    assert abs(b._playback_rate() - 0.95) < 1e-12
-    # consumption at the floor: 1 wall second drains 0.9 content-seconds
-    b.buffer_level_s = 0.5
-    b.is_playing = True
-    b.frames_in_buffer = [{'frame_id': i} for i in range(15)]
-    played_wall = b._consume_buffer(0.2)
-    assert abs(played_wall - 0.2) < 1e-12
-    assert abs(b.buffer_level_s - (0.5 - 0.2 * 0.9)) < 1e-12
-    assert abs(b.slowdown_time_s - 0.2) < 1e-12
-    assert abs(b.slowdown_integral - 0.1 * 0.2) < 1e-12
-
-
-def test_amp_off_is_legacy_exact():
-    """playback_rate_min=1.0 must reproduce the legacy consumption exactly."""
+def test_playback_consumes_content_at_fixed_rate():
+    """One wall second consumes one content second; shortages cause stalls."""
     for level, elapsed in [(2.0, 0.5), (0.4, 0.5), (0.0, 0.3)]:
-        legacy = ClientBuffer(playback_rate_min=1.0)
-        legacy.buffer_level_s = level
-        legacy.is_playing = True
-        legacy.frames_in_buffer = [{'frame_id': i} for i in range(int(level * 30))]
-        got = legacy._consume_buffer(elapsed)
-        expect = elapsed if level >= elapsed else level  # old semantics
+        buffer = ClientBuffer()
+        buffer.buffer_level_s = level
+        buffer.is_playing = True
+        buffer.frames_in_buffer = [{'frame_id': i} for i in range(int(level * 30))]
+        got = buffer._consume_buffer(elapsed)
+        expect = elapsed if level >= elapsed else level
         assert abs(got - expect) < 1e-12, (level, elapsed, got)
-        assert legacy.slowdown_time_s == 0.0
+        stats = buffer.get_statistics()
+        assert 'playback_rate_min' not in stats
+        assert 'slowdown_time_s' not in stats
+        assert 'slowdown_integral' not in stats
 
 
 # ---------------------------------------------------------------------------

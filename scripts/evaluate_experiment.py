@@ -31,6 +31,7 @@ from src.network_model.manifest import parse_mpd_xml
 from src.rl.dqn import DQNAgent
 from src.rl.env import StreamingEnv
 from src.rl.features import DEFAULT_FEATURE_SPEC
+from src.rl.reward import DEFAULT_REWARD_SPEC, OBJECTIVE_VERSION
 
 
 class FixedABR(ABRStrategy):
@@ -75,6 +76,26 @@ def resolve_checkpoint(path):
         f"winner checkpoint not found: {path}; final evaluation must run on the "
         "training PC before per-trial checkpoints are cleaned"
     )
+
+
+def validate_lstm_provenance(path, segment_frames, expected_protocol):
+    stem, _ = os.path.splitext(path)
+    if stem.endswith("_best"):
+        stem = stem[:-5]
+    metadata_path = stem + "_split.json"
+    if not os.path.exists(metadata_path):
+        raise FileNotFoundError(
+            f"matching LSTM provenance metadata is required: {metadata_path}"
+        )
+    with open(metadata_path, encoding="utf-8") as f:
+        metadata = json.load(f)
+    if int(metadata.get("segment_frames", -1)) != int(segment_frames):
+        raise ValueError(
+            f"LSTM segment mismatch: metadata={metadata.get('segment_frames')} "
+            f"evaluation={segment_frames}"
+        )
+    if metadata.get("protocol_digest") != expected_protocol:
+        raise ValueError("LSTM/protocol digest mismatch")
 
 
 def git_commit():
@@ -137,6 +158,7 @@ def main():
     parser.add_argument("--mpd", default=os.path.join("manifests", "mpd_gpcc*.xml"))
     parser.add_argument("--out", default=os.path.join("models", "final_test_results.json"))
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--experiment-config-digest", default="")
     parser.add_argument("--max-frames", type=int, default=0)
     parser.add_argument("--offsets", type=int, default=0,
                         help="0 = registered value")
@@ -177,13 +199,21 @@ def main():
 
     with open(absolute(args.sweep_results), encoding="utf-8") as f:
         sweep = json.load(f)
+    if sweep.get("objective_version") != OBJECTIVE_VERSION:
+        raise ValueError(
+            f"sweep objective {sweep.get('objective_version')!r} does not match "
+            f"current {OBJECTIVE_VERSION!r}"
+        )
+    if (args.experiment_config_digest and
+            sweep.get("experiment_config_digest") != args.experiment_config_digest):
+        raise ValueError("sweep/current experiment config digest mismatch")
     winner_entry = find_winner_entry(sweep)
     winner_config = dict(winner_entry["config"])
     base_args = dict(sweep.get("base_args", {}))
     segment_frames = int(winner_config.get(
         "segment-frames", base_args.get("segment-frames", 8)))
-    playback_rate_min = float(base_args.get("playback-rate-min", 1.0))
-    reward_spec = dict(base_args.get("reward-spec", {}))
+    reward_spec = dict(DEFAULT_REWARD_SPEC)
+    reward_spec.update(base_args.get("reward-spec", {}))
     reward_spec.update(winner_config.get("reward-spec", {}))
     reward_spec.setdefault("mu", float(winner_config.get(
         "mu", base_args.get("mu", 4.3))))
@@ -205,10 +235,18 @@ def main():
             raise ValueError("baseline parameters were not selected on validation")
         if baseline_config.get("protocol_digest") != protocol_digest(protocol):
             raise ValueError("baseline config/protocol digest mismatch")
-        for name in baseline_params:
-            baseline_params[name] = dict(
-                baseline_config["families"][name]["winner"]["params"]
-            )
+        if int(baseline_config.get("segment_frames", -1)) != segment_frames:
+            raise ValueError("baseline config/DQN segment_frames mismatch")
+        if baseline_config.get("objective_version") != OBJECTIVE_VERSION:
+            raise ValueError("baseline config/current objective mismatch")
+        if baseline_config.get("reward_spec") != reward_spec:
+            raise ValueError("baseline config/DQN reward specification mismatch")
+        if (args.experiment_config_digest and
+                baseline_config.get("experiment_config_digest") !=
+                args.experiment_config_digest):
+            raise ValueError("baseline/current experiment config digest mismatch")
+        for name, family in baseline_config.get("families", {}).items():
+            baseline_params[name] = dict(family["winner"]["params"])
         baseline_config_rel = os.path.relpath(baseline_config_path, project_root)
     else:
         print(f"WARNING: {baseline_config_path} absent; using documented defaults")
@@ -218,6 +256,17 @@ def main():
     unknown = sorted(requested - allowed)
     if unknown:
         raise ValueError(f"unknown strategies: {unknown}; expected {sorted(allowed)}")
+    tuned_required = sorted(
+        (requested & {"fixed", "throughput", "lstm_rule", "buffer", "mpc"})
+        - set(baseline_config.get("families", {}) if baseline_config_rel else {})
+    )
+    if baseline_config_rel and tuned_required:
+        raise ValueError(f"requested baselines were not validation-tuned: {tuned_required}")
+
+    lstm_path = absolute(args.lstm)
+    if "dqn" in requested or "lstm_rule" in requested:
+        validate_lstm_provenance(
+            lstm_path, segment_frames, protocol_digest(protocol))
 
     print("=" * 96)
     print(f"REGISTERED EVALUATION | split={args.split} | protocol={protocol_digest(protocol)}")
@@ -227,6 +276,7 @@ def main():
 
     payload = {
         "schema_version": 1,
+        "experiment_config_digest": args.experiment_config_digest or None,
         "split": args.split,
         "protocol": os.path.relpath(absolute(args.protocol), project_root),
         "protocol_digest": protocol_digest(protocol),
@@ -239,7 +289,6 @@ def main():
         "winner_trial": sweep["winner"]["trial"],
         "winner_config": winner_config,
         "segment_frames": segment_frames,
-        "playback_rate_min": playback_rate_min,
         "reward_spec": reward_spec,
         "baseline_config": baseline_config_rel,
         "baseline_selection_split": "validation" if baseline_config_rel else None,
@@ -255,12 +304,15 @@ def main():
         )
         if args.max_dqn_seeds:
             checkpoint_items = checkpoint_items[:args.max_dqn_seeds]
-        lstm_path = absolute(args.lstm)
         per_training_seed = {}
         all_cases = []
         for seed, checkpoint in checkpoint_items:
             checkpoint = resolve_checkpoint(checkpoint)
             agent = DQNAgent.load(checkpoint, device="cpu")
+            if agent.reward_spec != reward_spec:
+                raise ValueError(
+                    f"checkpoint {checkpoint} reward spec does not match the frozen sweep"
+                )
             predictor = None
             if "lstm_pred" in agent.feature_spec:
                 predictor = LSTMPredictor().load(lstm_path)
@@ -270,7 +322,6 @@ def main():
                 feature_spec=agent.feature_spec, norm=agent.norm_constants,
                 reward_spec=agent.reward_spec or reward_spec,
                 segment_frames=segment_frames,
-                playback_rate_min=playback_rate_min,
             )
             result = evaluate_agent(
                 agent, env, trace_paths, eval_seeds, sequences,
@@ -294,7 +345,6 @@ def main():
         feature_spec=DEFAULT_FEATURE_SPEC,
         reward_spec=reward_spec,
         segment_frames=segment_frames,
-        playback_rate_min=playback_rate_min,
     )
 
     fixed_results = {}
@@ -328,8 +378,14 @@ def main():
         "buffer": lambda: BufferBasedABR(**baseline_params["buffer"]),
         "mpc": lambda: MPCABR(
             **baseline_params["mpc"],
-            segment_frames=segment_frames, mu=reward_spec["mu"],
+            segment_frames=segment_frames,
+            episode_frames=int(
+                sum(map(len, manifest_pool.values())) / len(manifest_pool)
+            ),
+            mu=reward_spec["mu"],
+            rebuffer_weight=reward_spec["rebuffer_weight"],
             lam=reward_spec["lam"],
+            startup_weight=reward_spec["startup_weight"],
         ),
     }
     for name, factory in strategy_factories.items():

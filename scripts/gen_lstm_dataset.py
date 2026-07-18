@@ -28,6 +28,7 @@ import os
 import sys
 import json
 import argparse
+import glob
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -58,10 +59,28 @@ class FixedABR(ABRStrategy):
         return reps[max(0, min(self.arm, len(reps) - 1))]['id']
 
 
+class CyclingABR(ABRStrategy):
+    """Deterministic exploratory policy that exposes every tier payload size."""
+    name = 'cycle'
+
+    def __init__(self):
+        self.index = 0
+
+    def reset(self):
+        self.index = 0
+
+    def select(self, state):
+        reps = sorted(state.reps, key=lambda rep: rep['id'])
+        selected = reps[self.index % len(reps)]['id']
+        self.index += 1
+        return selected
+
+
 POLICIES = {
     'fixed1': lambda: FixedABR(1),      # medhigh: long downloads, fade-sensitive
     'fixed3': lambda: FixedABR(3),      # medlow: the mid regime
     'fixed5': lambda: FixedABR(5),      # vlow: RTT-bound tiny frames
+    'cycle': lambda: CyclingABR(),      # exploratory coverage of all six tiers
     'bandwidth': lambda: BandwidthABR(),  # the adaptive rule baseline
 }
 
@@ -90,13 +109,30 @@ def run_series(frames, trace, abr_factory, segment_frames=1):
     return list(session.observed_throughput_history)
 
 
+def sequence_name(path):
+    stem = os.path.splitext(os.path.basename(path))[0]
+    return stem[len('mpd_gpcc_'):] if stem.startswith('mpd_gpcc_') else stem
+
+
+def load_content_pool(pattern, max_frames=0):
+    paths = sorted(glob.glob(pattern)) if any(ch in pattern for ch in '*?[') else [pattern]
+    if not paths:
+        raise FileNotFoundError(f"no manifest matches {pattern}")
+    pool = {}
+    for path in paths:
+        frames = parse_mpd_xml(path)
+        pool[sequence_name(path)] = frames[:max_frames] if max_frames else frames
+    return pool, paths
+
+
 def main():
     p = argparse.ArgumentParser(description="Generate achieved-throughput LSTM dataset")
     p.add_argument('--trace-dir', default=os.path.join(project_root, 'bandwidth_5g'))
     p.add_argument('--protocol', default=os.path.join(project_root, 'configs',
                                                        'experiment_protocol.json'),
                    help='registered trace split; final-test traces are never generated')
-    p.add_argument('--mpd', default=os.path.join(project_root, 'manifests', 'mpd_gpcc_longdress.xml'))
+    p.add_argument('--mpd', default=os.path.join(project_root, 'manifests', 'mpd_gpcc*.xml'),
+                   help='manifest path or glob; default includes all four 8i sequences')
     p.add_argument('--out-dir', default=os.path.join(project_root, 'data', 'lstm_achieved'))
     p.add_argument('--policies', nargs='*', default=list(POLICIES),
                    choices=list(POLICIES), help='which policies generate series')
@@ -108,9 +144,7 @@ def main():
     p.add_argument('--max-frames', type=int, default=0, help='0 = full manifest')
     args = p.parse_args()
 
-    frames = parse_mpd_xml(args.mpd)
-    if args.max_frames:
-        frames = frames[:args.max_frames]
+    content_pool, manifest_paths = load_content_pool(args.mpd, args.max_frames)
 
     protocol_path = (args.protocol if os.path.isabs(args.protocol)
                      else os.path.join(project_root, args.protocol))
@@ -127,27 +161,33 @@ def main():
 
     split = {'train_files': [], 'validation_files': []}
     n_series = 0
-    for src in train_src + validation_src:
-        side = 'train_files' if src in train_src else 'validation_files'
-        stem = os.path.splitext(src)[0]
-        full = BandwidthTrace.from_file(os.path.join(args.trace_dir, src))
-        n = len(full)
-        offs = [int(round(i * n / float(args.offsets))) for i in range(args.offsets)]
-        offs = sorted({min(o, max(0, n - 120)) for o in offs})
-        for off in offs:
-            trace = full.slice_from(off) if off else full
-            for pol in args.policies:
-                series = run_series(frames, trace, POLICIES[pol], args.segment_frames)
-                name = f"{stem}__{pol}__off{off}.csv"
-                with open(os.path.join(args.out_dir, name), 'w', encoding='utf-8',
-                          newline='') as f:
-                    f.write('State,DL_bitrate\n')
-                    for bps in series:
-                        f.write(f"D,{bps / 1000.0:.3f}\n")
-                split[side].append(name)
-                n_series += 1
-                print(f"  {name}: {len(series)} samples "
-                      f"(mean {sum(series)/max(1,len(series))/1e6:.2f} Mbps)")
+    traces = {
+        src: BandwidthTrace.from_file(os.path.join(args.trace_dir, src))
+        for src in train_src + validation_src
+    }
+    for sequence, frames in sorted(content_pool.items()):
+        for src in train_src + validation_src:
+            side = 'train_files' if src in train_src else 'validation_files'
+            stem = os.path.splitext(src)[0]
+            full = traces[src]
+            n = len(full)
+            offs = [int(round(i * n / float(args.offsets))) for i in range(args.offsets)]
+            offs = sorted({min(o, max(0, n - 120)) for o in offs})
+            for off in offs:
+                trace = full.slice_from(off) if off else full
+                for pol in args.policies:
+                    series = run_series(
+                        frames, trace, POLICIES[pol], args.segment_frames)
+                    name = f"{sequence}__{stem}__{pol}__off{off}.csv"
+                    with open(os.path.join(args.out_dir, name), 'w', encoding='utf-8',
+                              newline='') as f:
+                        f.write('State,DL_bitrate\n')
+                        for bps in series:
+                            f.write(f"D,{bps / 1000.0:.3f}\n")
+                    split[side].append(name)
+                    n_series += 1
+                    print(f"  {name}: {len(series)} samples "
+                          f"(mean {sum(series)/max(1,len(series))/1e6:.2f} Mbps)")
 
     # ``test_files`` is retained as an API alias for the existing LSTM trainer;
     # scientifically these are validation files used for early stopping/model
@@ -161,7 +201,8 @@ def main():
     split['protocol'] = os.path.relpath(protocol_path, project_root)
     split['protocol_digest'] = protocol_digest(protocol)
     split['policies'] = args.policies
-    split['mpd'] = os.path.basename(args.mpd)
+    split['mpd'] = [os.path.basename(path) for path in manifest_paths]
+    split['content_sequences'] = sorted(content_pool)
     split['segment_frames'] = args.segment_frames
     with open(os.path.join(args.out_dir, 'split.json'), 'w', encoding='utf-8') as f:
         json.dump(split, f, indent=2)

@@ -8,20 +8,18 @@ The LSTM is used here only as a feature provider (its prediction is one input
 to the state vector).
 
 Multi-sequence: pass `manifest_frames` as a dict {sequence_name: frames} and
-pick the content per episode via `reset(trace, sequence=...)`. Reward quality
-endpoints are recomputed per episode from that sequence's ladder, so any
-manifest maps its lowest rep to ~0.0 and highest to ~1.0.
+pick the content per episode via `reset(trace, sequence=...)`. Each of the six
+G-PCC tiers has one fixed quality utility shared by every sequence.
 
-Reward: pluggable via `reward_spec` (src/rl/reward.py). The default spec is the
-legacy Pensieve form quality - mu*stall_seconds - lam*|quality change|.
+Reward and QoE use one canonical six-term objective (src/rl/reward.py). The
+undiscounted sum of segment rewards equals the reported episode QoE.
 """
 
 import numpy as np
 
 from ..network_model import Server, EdgeNode, User, Topology, LSTMABR, PointCloud
 from ..network_model.abr import ABRStrategy
-from .features import (build_state, state_dim, quality_endpoints,
-                       DEFAULT_FEATURE_SPEC, DEFAULT_NORM)
+from .features import build_state, state_dim, DEFAULT_FEATURE_SPEC, DEFAULT_NORM
 from .reward import RewardFunction
 
 
@@ -43,7 +41,7 @@ class StreamingEnv:
                  feature_spec=None, mu=4.3, lam=1.0, hist_len=5,
                  target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
                  num_reps=None, norm=None, bits_per_point=None, reward_spec=None,
-                 segment_frames=1, playback_rate_min=1.0):
+                 segment_frames=1):
         # Normalize content to a pool {sequence_name: frames}; a plain frame list
         # (the historical single-manifest API) becomes {'default': frames}.
         if isinstance(manifest_frames, dict):
@@ -68,9 +66,6 @@ class StreamingEnv:
         # DASH-style segments: one env step = one segment of S frames
         # (one ABR decision + one TCP transfer). S=1 = legacy per-frame.
         self.segment_frames = max(1, int(segment_frames))
-        # Adaptive playback floor (1.0 = off; 0.9 = research-backed imperceptible).
-        self.playback_rate_min = float(playback_rate_min)
-
         # Every sequence in the pool must share one ladder size (= action space).
         sizes = {name: len(fr[0]['representations']) if fr else 0
                  for name, fr in self.manifest_pool.items()}
@@ -84,17 +79,13 @@ class StreamingEnv:
             raise ValueError(f"Manifest has {n_reps_manifest} representations per frame "
                              f"but the env/agent is configured for num_reps={num_reps}")
 
-        # Pluggable reward. Back-compat: bare mu/lam args seed the spec unless a
-        # full reward_spec overrides them.
+        # Canonical reward/QoE specification. Bare mu/lam args remain convenient
+        # aliases for the stall-duration and quality-change weights.
         spec = {'mu': mu, 'lam': lam}
         spec.update(reward_spec or {})
         self.reward_fn = RewardFunction(spec)
         self.mu = self.reward_fn.spec['mu']
         self.lam = self.reward_fn.spec['lam']
-        # Reward quality endpoints for the CURRENT sequence (reset per episode).
-        self.q_low_density, self.q_high_density = quality_endpoints(self.frames)
-        self.reward_fn.set_endpoints(self.q_low_density, self.q_high_density)
-
         self.norm = {**DEFAULT_NORM, **(norm or {})}
         self.norm['num_reps'] = self.num_reps
         self.norm['hist_len'] = hist_len
@@ -129,9 +120,6 @@ class StreamingEnv:
             self.sequence = sequence
             self.frames = self.manifest_pool[sequence]
         self.server.manifest.frames = self.frames
-        self.q_low_density, self.q_high_density = quality_endpoints(self.frames)
-        self.reward_fn.set_endpoints(self.q_low_density, self.q_high_density)
-
         # The Server is shared across episodes; drop the previous episode's
         # backhaul registration so backhaul_links doesn't grow unboundedly.
         self.server.backhaul_links.clear()
@@ -140,7 +128,7 @@ class StreamingEnv:
         self.topo = Topology(self.server)
         self.topo.add_edge(self.edge)
         self.user = User("rl-user", self.target_fps, self.buffer_capacity_s,
-                         self.min_buffer_s, playback_rate_min=self.playback_rate_min)
+                         self.min_buffer_s)
         self.session = self.topo.add_user(self.user, self.edge, trace=trace)
         self.session.start()
         self.manual = self.session.abr
@@ -150,9 +138,13 @@ class StreamingEnv:
             self.lstm_provider.reset()
         self.frame_idx = 0
         self.prev_quality = None
-        # Deltas for the optional startup/drop reward terms (see reward.py):
-        # startup_delay_s grows until playback starts then freezes, so the
-        # per-step delta is nonzero only during the cold start.
+        self._episode_quality_sum = 0.0
+        self._quality_change_sum = 0.0
+        self._episode_reward = 0.0
+        # Every temporal/count cost is derived from cumulative-statistic deltas.
+        # These deltas telescope exactly to the independently reported QoE.
+        self._prev_stall_s = 0.0
+        self._prev_rebuffer_count = 0
         self._prev_startup_s = 0.0
         self._prev_dropped = 0
         return self._observe()
@@ -181,9 +173,8 @@ class StreamingEnv:
 
     def step(self, action):
         """One env step = one SEGMENT (segment_frames frames, one decision, one
-        transfer). Reward: per-frame qualities summed, one (bounded) stall
-        penalty, one switch penalty on mean quality vs the previous segment —
-        with segment_frames=1 this is exactly the legacy per-frame step."""
+        transfer). Its reward is one additive slice of the canonical episode
+        QoE; summing all returned rewards reproduces :meth:`qoe` exactly."""
         segment = self.frames[self.frame_idx:self.frame_idx + self.segment_frames]
         self.manual.next_action = int(action)
         record = self.session.step_segment(segment, self.frame_idx)
@@ -191,18 +182,29 @@ class StreamingEnv:
               for f in record['frames']]
         q_sum = sum(qs)
         q_mean = q_sum / len(qs)
-        stall = sum((f['buffer_result'].get('stall_time_s', 0.0) or 0.0)
-                    for f in record['frames'])
-        new_event = any(f['buffer_result'].get('event') == 'rebuffering_start'
-                        for f in record['frames'])
         stats = self.user.get_buffer_stats()
+        stall = max(0.0, (float(stats.get('total_stall_time_s', 0.0))
+                          - self._prev_stall_s))
+        rebuffer_events = max(0, (int(stats.get('rebuffer_count', 0))
+                                  - self._prev_rebuffer_count))
         startup_s = max(0.0, stats.get('startup_delay_s', 0.0) - self._prev_startup_s)
         dropped = max(0, stats.get('frames_dropped', 0) - self._prev_dropped)
+        quality_change = (0.0 if self.prev_quality is None
+                          else abs(q_mean - self.prev_quality))
+        self._prev_stall_s = float(stats.get('total_stall_time_s', 0.0))
+        self._prev_rebuffer_count = int(stats.get('rebuffer_count', 0))
         self._prev_startup_s = stats.get('startup_delay_s', 0.0)
         self._prev_dropped = stats.get('frames_dropped', 0)
-        reward = self.reward_fn.step_segment(q_sum, q_mean, self.prev_quality,
-                                             stall, new_event,
-                                             startup_s=startup_s, dropped=dropped)
+        # Use the full episode frame count as the fixed 100/N scale, including
+        # when the last segment is shorter than segment_frames.
+        reward = self.reward_fn.step_segment(
+            q_sum, q_mean, self.prev_quality, stall, rebuffer_events,
+            startup_s=startup_s, dropped=dropped,
+            episode_frames=len(self.frames),
+        )
+        self._episode_quality_sum += q_sum
+        self._quality_change_sum += quality_change
+        self._episode_reward += reward
         self.prev_quality = q_mean
 
         self.frame_idx += len(segment)
@@ -211,20 +213,43 @@ class StreamingEnv:
             'frame_id': record['first_frame_id'], 'rep_id': record['rep_id'],
             'quality': q_mean, 'n_frames': len(segment),
             'stall_s': stall, 'buffer_s': self.user.buffer.buffer_level_s,
+            'rebuffer_events': rebuffer_events,
+            'startup_s': startup_s, 'dropped': dropped,
             'reward': reward, 'sequence': self.sequence,
         }
         return self._observe(), reward, done, info
 
     def qoe(self):
-        """Legacy stall-only QoE of the current episode's session."""
-        return self.session.qoe() if self.session else 0
+        """The one canonical raw QoE; equals the undiscounted reward sum."""
+        return self.qoe_terms()['total'] if self.session else 0.0
 
-    def qoe_quality(self, w_stall=4.3, w_switch=1.0):
-        """Quality-aware QoE' (raw, unclipped) of the current episode's session."""
-        return self.session.qoe_quality(w_stall, w_switch) if self.session else 0.0
+    def qoe_terms(self):
+        """Signed six-term QoE breakdown from cumulative episode outcomes."""
+        if not self.session:
+            return self.reward_fn.episode_terms(0, 0, 0, 0, 0, 0,
+                                                len(self.frames))
+        stats = self.user.get_buffer_stats()
+        return self.reward_fn.episode_terms(
+            self._episode_quality_sum,
+            self._quality_change_sum,
+            stats.get('total_stall_time_s', 0.0),
+            stats.get('rebuffer_count', 0),
+            stats.get('frames_dropped', 0),
+            stats.get('startup_delay_s', 0.0),
+            len(self.frames),
+        )
+
+    def qoe_quality(self):
+        """Compatibility alias for :meth:`qoe`; there is only one QoE formula."""
+        return self.qoe()
 
     def mean_quality(self):
-        return self.session.mean_quality() if self.session else 0.0
+        processed = self.frame_idx if self.session else 0
+        return (self._episode_quality_sum / processed) if processed else 0.0
+
+    def quality_change_sum(self):
+        """Accumulated absolute changes between consecutive segment means."""
+        return self._quality_change_sum if self.session else 0.0
 
     def total_stall_s(self):
         if not self.session:

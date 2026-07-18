@@ -5,7 +5,7 @@ test traces and print/save the per-arm reward table.
 This is the reusable replacement for the throwaway code behind the original
 fixed-policy bars (DQN_REPORT section 4.1). Methodology mirrors
 `train_dqn.evaluate`: fixed jitter seed per trace, greedy constant action,
-sum of Pensieve-style env rewards. The best arm's mean reward is the bar a
+sum of the canonical reward/QoE. The best arm's mean QoE is the bar a
 trained DQN must beat (`models/fixed_arm_baseline.json`).
 
 Usage:
@@ -49,18 +49,21 @@ def run_arm(env, arm, trace_path, seed):
         done = False
         total_reward = 0.0
         total_stall = 0.0
-        qualities = []
         while not done:
             _, r, done, info = env.step(arm)
             total_reward += r
             total_stall += info['stall_s']
-            qualities.append(info['quality'])
+        qoe = env.qoe()
+        if abs(total_reward - qoe) > 1e-8:
+            raise AssertionError(
+                f"reward/QoE mismatch: return={total_reward} qoe={qoe}"
+            )
         return {
             'reward': total_reward,
-            'qoe': env.qoe(),
-            'qoe_quality': env.qoe_quality(),
+            'qoe': qoe,
+            'qoe_quality': qoe,
             'stall_s': total_stall,
-            'mean_quality': float(np.mean(qualities)) if qualities else 0.0,
+            'mean_quality': env.mean_quality(),
         }
     finally:
         random.setstate(rng_state)
@@ -78,8 +81,6 @@ def main():
     p.add_argument('--max-frames', type=int, default=0)
     p.add_argument('--segment-frames', type=int, default=10,
                    help='frames per DASH-style segment (1 = legacy per-frame)')
-    p.add_argument('--playback-rate-min', type=float, default=1.0,
-                   help='adaptive-playback floor (1.0 = off)')
     p.add_argument('--out', default=os.path.join(project_root, 'models', 'fixed_arm_baseline.json'))
     args = p.parse_args()
 
@@ -105,16 +106,15 @@ def main():
 
     env = StreamingEnv(frames, lstm_predictor=None, tcp_params=TCP_PARAMS,
                        mu=args.mu, lam=args.lam,
-                       segment_frames=args.segment_frames,
-                       playback_rate_min=args.playback_rate_min)
+                       segment_frames=args.segment_frames)
 
     # Arm a selects reps_sorted_by_id[a]; report each arm's manifest identity.
     reps0 = sorted(frames[0]['representations'], key=lambda r: r['id'])
 
     print("=" * 100)
     print(f"Fixed-arm baselines | {len(test_paths)} test traces | {len(frames)} frames/episode "
-          f"| segment={args.segment_frames} amp_floor={args.playback_rate_min} "
-          f"| mu={args.mu} lam={args.lam} seed={args.seed}")
+          f"| segment={args.segment_frames} | mu={args.mu} lam={args.lam} "
+          f"seed={args.seed}")
     for t in test_files:
         print(f"   test trace: {t}")
     print("=" * 100)
@@ -132,7 +132,7 @@ def main():
         results[f'arm_{arm}'] = agg
         print(f"arm {arm} (rep {rep['id']}, {agg['bitrate_mbps']:6.1f} Mbps): "
               f"mean_reward={agg['reward']:8.2f}  mean_qoe={agg['qoe']:6.1f}  "
-              f"mean_qoe_q={agg['qoe_quality']:8.1f}  "
+              f"mean_qoe={agg['qoe']:8.1f}  "
               f"mean_stall={agg['stall_s']:7.2f}s  mean_quality={agg['mean_quality']:.3f}")
 
     best = max(results, key=lambda k: results[k]['reward'])
@@ -143,7 +143,6 @@ def main():
     payload = {
         'seed': args.seed, 'mu': args.mu, 'lam': args.lam,
         'segment_frames': args.segment_frames,
-        'playback_rate_min': args.playback_rate_min,
         'frames_per_episode': len(frames), 'test_files': test_files,
         'tcp_params': TCP_PARAMS, 'results': results, 'best_arm': best,
         'best_reward': results[best]['reward'],

@@ -15,7 +15,7 @@ import itertools
 import math
 from typing import Optional, Sequence
 
-from .manifest import coded_bitrate_bps, density_quality
+from .manifest import coded_bitrate_bps, tier_quality
 
 
 @dataclass(frozen=True)
@@ -129,7 +129,9 @@ class MPCABR(ABRStrategy):
 
     The controller enumerates representation sequences over a short horizon,
     predicts download time with a recent-window harmonic throughput estimate,
-    and maximizes normalized density utility minus stall and switch penalties.
+    and maximizes the canonical scaled tier utility minus predictable startup,
+    stall-duration, rebuffer-event, and switch costs. Frame drops are omitted
+    because future decoder/buffer drops are not observable to this controller.
     It never reads the underlying link-capacity trace.
     """
 
@@ -137,14 +139,20 @@ class MPCABR(ABRStrategy):
 
     def __init__(self, horizon=3, history_window=5, safety_factor=0.9,
                  segment_frames=8, fps=30.0, buffer_capacity_s=5.0,
-                 mu=4.3, lam=1.0):
+                 episode_frames=300, mu=4.3, rebuffer_weight=2.0,
+                 lam=1.0, startup_weight=1.0):
         self.horizon = max(1, int(horizon))
         self.history_window = max(1, int(history_window))
         self.safety_factor = float(safety_factor)
         self.segment_duration_s = float(segment_frames) / float(fps)
         self.buffer_capacity_s = float(buffer_capacity_s)
+        self.quality_weight = (
+            100.0 * float(segment_frames) / max(1.0, float(episode_frames))
+        )
         self.mu = float(mu)
+        self.rebuffer_weight = float(rebuffer_weight)
         self.lam = float(lam)
+        self.startup_weight = float(startup_weight)
 
     def select(self, state: ABRState):
         reps = sorted(state.reps, key=lambda rep: rep['id'])
@@ -155,27 +163,38 @@ class MPCABR(ABRStrategy):
             return min(reps, key=coded_bitrate_bps)['id']
         estimate *= self.safety_factor
 
-        densities = [max(1.0, float(rep.get('density') or 1.0)) for rep in reps]
-        low, high = min(densities), max(densities)
-        qualities = [density_quality(d, low, high) for d in densities]
+        qualities = [tier_quality(rep) for rep in reps]
         bitrates = [max(1.0, coded_bitrate_bps(rep)) for rep in reps]
         id_to_index = {rep['id']: i for i, rep in enumerate(reps)}
         previous = id_to_index.get(state.last_rep_id)
 
         best_score = float('-inf')
         best_first = min(range(len(reps)), key=lambda i: bitrates[i])
+        is_startup = (
+            int(state.frame_id or 0) == 0
+            and state.last_rep_id is None
+            and not state.observed_throughput_history
+        )
         for actions in itertools.product(range(len(reps)), repeat=self.horizon):
             buffer_s = max(0.0, float(state.buffer_level_s))
             prev = previous
             score = 0.0
-            for action in actions:
+            for step_index, action in enumerate(actions):
                 download_s = bitrates[action] * self.segment_duration_s / estimate
                 stall_s = max(0.0, download_s - buffer_s)
                 buffer_s = min(
                     self.buffer_capacity_s,
                     max(0.0, buffer_s - download_s) + self.segment_duration_s,
                 )
-                score += qualities[action] - self.mu * stall_s
+                score += self.quality_weight * qualities[action]
+                if is_startup and step_index == 0:
+                    # Pre-playback waiting is a distinct QoE term, never a
+                    # rebuffer duration/event.
+                    score -= self.startup_weight * download_s
+                else:
+                    score -= self.mu * stall_s
+                    if stall_s > 0:
+                        score -= self.rebuffer_weight
                 if prev is not None:
                     score -= self.lam * abs(qualities[action] - qualities[prev])
                 prev = action

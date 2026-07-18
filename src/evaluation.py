@@ -12,7 +12,10 @@ from .experiment_protocol import evenly_spaced_offsets
 from .network_model.trace import BandwidthTrace
 
 
-METRICS = ("reward", "qoe", "qoe_quality", "mean_quality", "stall_s")
+METRICS = (
+    "reward", "qoe", "qoe_quality", "mean_quality", "stall_s",
+    "rebuffer_events", "quality_change", "frames_dropped", "startup_s",
+)
 
 
 def _metric_summary(records):
@@ -76,16 +79,28 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
                             action = int(choose_action(observation, env))
                             observation, reward, done, _ = env.step(action)
                             total_reward += reward
+                        qoe = float(env.qoe())
+                        if abs(total_reward - qoe) > 1e-8:
+                            raise AssertionError(
+                                f"reward/QoE mismatch: return={total_reward} qoe={qoe}"
+                            )
+                        stats = env.user.get_buffer_stats()
                         records.append({
                             "trace": os.path.basename(path),
                             "sequence": sequence,
                             "offset": int(offset),
                             "eval_seed": int(eval_seed),
                             "reward": float(total_reward),
-                            "qoe": float(env.qoe()),
-                            "qoe_quality": float(env.qoe_quality()),
+                            "qoe": qoe,
+                            # Compatibility alias for existing result readers.
+                            "qoe_quality": qoe,
                             "mean_quality": float(env.mean_quality()),
                             "stall_s": float(env.total_stall_s()),
+                            "rebuffer_events": int(stats.get('rebuffer_count', 0)),
+                            "quality_change": float(env.quality_change_sum()),
+                            "frames_dropped": int(stats.get('frames_dropped', 0)),
+                            "startup_s": float(stats.get('startup_delay_s', 0.0)),
+                            "qoe_terms": env.qoe_terms(),
                         })
     finally:
         random.setstate(rng_state)

@@ -13,12 +13,12 @@ from src.network_model.abr import ABRState, BandwidthABR, BufferBasedABR, MPCABR
 def _reps():
     # IDs run high-quality -> low-quality, matching the G-PCC manifests.
     return [
-        {"id": 0, "bandwidth": 90e6, "density": 1_000_000},
-        {"id": 1, "bandwidth": 45e6, "density": 500_000},
-        {"id": 2, "bandwidth": 20e6, "density": 200_000},
-        {"id": 3, "bandwidth": 8e6, "density": 80_000},
-        {"id": 4, "bandwidth": 3e6, "density": 30_000},
-        {"id": 5, "bandwidth": 1e6, "density": 10_000},
+        {"id": 0, "bandwidth": 90e6, "density": 1_000_000, "quality": "high"},
+        {"id": 1, "bandwidth": 45e6, "density": 500_000, "quality": "medhigh"},
+        {"id": 2, "bandwidth": 20e6, "density": 200_000, "quality": "med"},
+        {"id": 3, "bandwidth": 8e6, "density": 80_000, "quality": "medlow"},
+        {"id": 4, "bandwidth": 3e6, "density": 30_000, "quality": "low"},
+        {"id": 5, "bandwidth": 1e6, "density": 10_000, "quality": "vlow"},
     ]
 
 

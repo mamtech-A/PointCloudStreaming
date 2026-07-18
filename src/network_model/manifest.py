@@ -14,14 +14,71 @@ import xml.etree.ElementTree as ET
 DEFAULT_Q_LOW_DENSITY = 30000.0
 DEFAULT_Q_HIGH_DENSITY = 1060000.0
 
+# Fixed six-tier quality utility used by both reward and reported QoE.  Each
+# bitrate is the equal-weight mean of the per-frame G-PCC ``bandwidth`` values
+# in longdress, loot, redandblack, and soldier (300 frames per sequence).  The
+# table is intentionally frozen: content-dependent frame sizes must not change
+# the perceived utility of a tier during an episode.
+TIER_AVERAGE_BITRATE_BPS = {
+    'high': 86_073_976.8,
+    'medhigh': 54_568_315.8,
+    'med': 35_646_582.6,
+    'medlow': 15_186_141.8,
+    'low': 3_818_008.2,
+    'vlow': 974_877.4,
+}
+
+_LOG_BITRATE_RANGE = (
+    math.log(TIER_AVERAGE_BITRATE_BPS['high'])
+    - math.log(TIER_AVERAGE_BITRATE_BPS['vlow'])
+)
+
+TIER_QUALITY_UTILITY = {
+    tier: ((math.log(bitrate) - math.log(TIER_AVERAGE_BITRATE_BPS['vlow']))
+           / _LOG_BITRATE_RANGE)
+    for tier, bitrate in TIER_AVERAGE_BITRATE_BPS.items()
+}
+
+_TIER_ALIASES = {
+    'high': 'high',
+    'medhigh': 'medhigh',
+    'mediumhigh': 'medhigh',
+    'med': 'med',
+    'medium': 'med',
+    'medlow': 'medlow',
+    'mediumlow': 'medlow',
+    'low': 'low',
+    'vlow': 'vlow',
+    'verylow': 'vlow',
+}
+
+
+def canonical_tier_name(value):
+    """Return the manifest's canonical six-tier name, or ``None``."""
+    key = ''.join(ch for ch in str(value or '').lower() if ch.isalnum())
+    return _TIER_ALIASES.get(key)
+
+
+def tier_quality(rep_or_tier):
+    """Fixed normalized log-bitrate utility for one G-PCC tier.
+
+    ``q_high`` is exactly 1 and ``q_vlow`` is exactly 0.  Intermediate values
+    are fixed across frames and content sequences.  A tier label is required so
+    the QoE cannot silently fall back to a different quality definition.
+    """
+    raw = (rep_or_tier.get('quality')
+           if isinstance(rep_or_tier, dict) else rep_or_tier)
+    tier = canonical_tier_name(raw)
+    if tier is None:
+        raise ValueError(
+            f"unknown G-PCC quality tier {raw!r}; expected one of "
+            f"{tuple(TIER_AVERAGE_BITRATE_BPS)}"
+        )
+    return TIER_QUALITY_UTILITY[tier]
+
 
 def density_quality(density, low_density, high_density):
-    """Normalized [0,1] quality utility from a representation's point density.
-
-    Log-density scaling so a large density ratio doesn't dwarf stall/switch
-    penalties. This is THE quality signal shared by the RL reward
-    (src/rl/features.quality delegates here) and the quality-aware QoE.
-    """
+    """Legacy normalized log-density helper (not used by reward or QoE)."""
     lo = math.log10(low_density if low_density else DEFAULT_Q_LOW_DENSITY)
     hi = math.log10(high_density if high_density else DEFAULT_Q_HIGH_DENSITY)
     if hi <= lo:

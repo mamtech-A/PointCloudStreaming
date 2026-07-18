@@ -10,8 +10,7 @@ is polymorphic via `session.abr.report(...)` — no per-algorithm branching.
 import os
 import csv
 
-from .manifest import (parse_mpd_xml, PointCloud, density_quality,
-                       manifest_quality_endpoints)
+from .manifest import parse_mpd_xml, PointCloud, tier_quality
 
 
 _BUFFER_EMOJI = {'critical': '🔴', 'low': '🟡', 'normal': '🟢', 'high': '🔵'}
@@ -42,6 +41,10 @@ class Simulator:
         self._reward_fn = reward_fn
         self._reward_total = {}
         self._reward_prev_qmean = {}
+        self._reward_quality_sum = {}
+        self._reward_quality_change = {}
+        self._prev_stall = {}
+        self._prev_rebuffer = {}
         self._prev_startup = {}
         self._prev_dropped = {}
         self._decision_rows = []
@@ -55,13 +58,9 @@ class Simulator:
         if max_frames:
             frames = frames[:max_frames]
         server.manifest.frames = frames
-        # Human-readable log helpers: manifest quality endpoints (lowest rep -> ~0,
-        # highest -> ~1) and a rep_id -> tier-name map, computed once per run.
-        self._q_lo, self._q_hi = manifest_quality_endpoints(frames)
+        # Human-readable rep_id -> fixed tier-name map, computed once per run.
         self._tier_name = {r['id']: r.get('quality', f"rep{r['id']}")
                            for r in frames[0]['representations']} if frames else {}
-        if self._reward_fn is not None:
-            self._reward_fn.set_endpoints(self._q_lo, self._q_hi)
         for frame in frames:
             for rep in frame['representations']:
                 server.add_pointcloud(
@@ -202,20 +201,32 @@ class Simulator:
             uid = u.user_id
             qs = [rf.quality(f['rep']) if f['rep'] else 0.0 for f in frames]
             q_sum, q_mean = sum(qs), sum(qs) / len(qs)
-            new_event = any(f['buffer_result'].get('event') == 'rebuffering_start'
-                            for f in frames)
+            prev_qmean = self._reward_prev_qmean.get(uid)
+            quality_change = (0.0 if prev_qmean is None
+                              else abs(q_mean - prev_qmean))
             bstats0 = u.get_buffer_stats()
+            stall_d = max(0.0, bstats0.get('total_stall_time_s', 0.0)
+                          - self._prev_stall.get(uid, 0.0))
+            rebuffer_d = max(0, bstats0.get('rebuffer_count', 0)
+                             - self._prev_rebuffer.get(uid, 0))
             startup_s = max(0.0, bstats0.get('startup_delay_s', 0.0)
                             - self._prev_startup.get(uid, 0.0))
             dropped_d = max(0, bstats0.get('frames_dropped', 0)
                             - self._prev_dropped.get(uid, 0))
+            self._prev_stall[uid] = bstats0.get('total_stall_time_s', 0.0)
+            self._prev_rebuffer[uid] = bstats0.get('rebuffer_count', 0)
             self._prev_startup[uid] = bstats0.get('startup_delay_s', 0.0)
             self._prev_dropped[uid] = bstats0.get('frames_dropped', 0)
             seg_reward = rf.step_segment(q_sum, q_mean,
-                                         self._reward_prev_qmean.get(uid), seg_stall,
-                                         new_event, startup_s=startup_s,
-                                         dropped=dropped_d)
+                                         prev_qmean, stall_d,
+                                         rebuffer_d, startup_s=startup_s,
+                                         dropped=dropped_d,
+                                         episode_frames=self._total_frames)
             self._reward_prev_qmean[uid] = q_mean
+            self._reward_quality_sum[uid] = self._reward_quality_sum.get(uid, 0.0) + q_sum
+            self._reward_quality_change[uid] = (
+                self._reward_quality_change.get(uid, 0.0) + quality_change
+            )
             self._reward_total[uid] = self._reward_total.get(uid, 0.0) + seg_reward
             if decision:
                 self._decision_rows.append({
@@ -245,16 +256,13 @@ class Simulator:
         thr_mbps = (data_bytes * 8 / seg_time / 1e6) if seg_time > 0 else 0.0
         rep0 = frames[0]['rep'] or {}
         tier = self._tier_name.get(record['rep_id'], f"rep{record['rep_id']}").upper()
-        q = density_quality(rep0.get('density'), self._q_lo, self._q_hi)
+        q = tier_quality(rep0) if rep0 else 0.0
         first_id, last_id = frames[0]['frame_id'], frames[-1]['frame_id']
 
         events = [f['buffer_result'].get('event', 'buffered') for f in frames]
         last_br = frames[-1]['buffer_result']
         dropped = sum(1 for f in frames if f['buffer_result'].get('status') == 'dropped')
         is_playing = last_br.get('is_playing', False)
-        rate = u.buffer._playback_rate()
-        # Slowdown is only meaningful while actually playing back.
-        rate_note = f" ⏩{rate:.2f}x" if (is_playing and rate < 1.0) else ""
         if 'playback_started' in events:
             state = "▶ PLAYBACK START"
         elif 'playback_resumed' in events:
@@ -273,7 +281,7 @@ class Simulator:
         prog = f"{played}/{total}" if total else f"{played}"
         print(f"[{u.user_id}] [t={cumulative:5.1f}s] seg {segment_id:<3d} f{first_id:03d}-{last_id:03d}: "
               f"{tier:<7} q{q:.2f} — {data_bytes/1e6:.1f}MB in {seg_time:.2f}s @{thr_mbps:.0f}Mbps — "
-              f"buf {emoji}{buf_level:.2f}s · played {prog} · {state}{rate_note}")
+              f"buf {emoji}{buf_level:.2f}s · played {prog} · {state}")
 
         # Per-decision model log: what the DQN saw and thought for this segment.
         if decision:
@@ -297,11 +305,26 @@ class Simulator:
         stats = u.get_buffer_stats()
         total_time = session.cumulative_time_s
         fps_real = total_frames / total_time if total_time > 0 else 0
-        qoe = session.qoe()
-        qterms = session.qoe_quality_terms()
-        qoe_q = qterms['total']
         mean_q = session.mean_quality()
         rl_reward = self._reward_total.get(u.user_id) if getattr(self, '_reward_total', None) else None
+        if rl_reward is None:
+            qterms = session.qoe_quality_terms()
+        else:
+            qterms = self._reward_fn.episode_terms(
+                self._reward_quality_sum.get(u.user_id, 0.0),
+                self._reward_quality_change.get(u.user_id, 0.0),
+                stats.get('total_stall_time_s', 0.0),
+                stats.get('rebuffer_count', 0),
+                stats.get('frames_dropped', 0),
+                stats.get('startup_delay_s', 0.0),
+                total_frames,
+            )
+        qoe_q = qterms['total']
+        qoe = qoe_q
+        if rl_reward is not None and abs(rl_reward - qoe_q) > 1e-8:
+            raise AssertionError(
+                f"reward/QoE mismatch for {u.user_id}: return={rl_reward} qoe={qoe_q}"
+            )
 
         # Tier mix (share of frames streamed at each quality tier) + achieved
         # throughput distribution — the "what did the user actually get" view.
@@ -322,13 +345,13 @@ class Simulator:
             print(f"\n{'='*100}")
             print(f"📊 Session Summary — {u.user_id}")
             print(f"{'-'*100}")
-            print(f"   QoE (quality-aware) : {max(0.0, qoe_q):5.1f} / 100   "
-                  f"(raw {qoe_q:.1f})   ← headline")
+            print(f"   Reward = QoE        : {qoe_q:7.1f}   (raw, unclipped)")
             print(f"     breakdown         : quality {qterms['quality']:+.1f} · "
-                  f"stall {qterms['stall']:+.1f} · switch {qterms['switch']:+.1f} · "
-                  f"slowdown {qterms['slowdown']:+.1f} · startup {qterms['startup']:+.1f} · "
-                  f"drops {qterms['drops']:+.1f}")
-            print(f"   QoE (legacy stall)  : {qoe:5.1f} / 100")
+                  f"stall {qterms['stall_duration']:+.1f} · "
+                  f"rebuffer {qterms['rebuffering']:+.1f} · "
+                  f"change {qterms['quality_change']:+.1f} · "
+                  f"drops {qterms['frame_drops']:+.1f} · "
+                  f"startup {qterms['startup_delay']:+.1f}")
             if rl_reward is not None:
                 print(f"   Reward (RL objective): {rl_reward:.1f}   "
                       f"(comparable to dqn_sweep_results.json)")
@@ -342,9 +365,6 @@ class Simulator:
                    if stats['rebuffer_count'] else "")
             print(f"   Rebuffering         : {stats['rebuffer_count']} event(s) · "
                   f"{stats['total_stall_time_s']:.2f}s total stall{avg}")
-            if stats.get('playback_rate_min', 1.0) < 1.0:
-                print(f"   Adaptive playback   : {stats['slowdown_time_s']:.2f}s slowed "
-                      f"(floor {stats['playback_rate_min']:.2f}x)")
             if thr:
                 print(f"   Throughput (achieved): mean {sum(thr)/len(thr):.0f} · "
                       f"min {min(thr):.0f} · max {max(thr):.0f} Mbps")
@@ -359,7 +379,6 @@ class Simulator:
             'abr': session.abr.name,
             'qoe': qoe,
             'qoe_quality': qoe_q,
-            'qoe_quality_clipped': max(0.0, qoe_q),
             'qoe_terms': qterms,
             'rl_reward': rl_reward,
             'mean_quality': mean_q,
@@ -369,7 +388,6 @@ class Simulator:
             'frames_dropped': stats['frames_dropped'],
             'rebuffer_count': stats['rebuffer_count'],
             'total_stall_time_s': stats['total_stall_time_s'],
-            'slowdown_time_s': stats.get('slowdown_time_s', 0.0),
             'mean_rep_id': (sum(qh) / len(qh)) if qh else 0,
             'quality_switches': switches,
             'tier_mix': tier_mix,

@@ -13,24 +13,16 @@ class ClientBuffer:
     - Buffer health monitoring
     - Playback timing
     """
-    def __init__(self, target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0,
-                 playback_rate_min=1.0):
+    def __init__(self, target_fps=30.0, buffer_capacity_s=5.0, min_buffer_s=1.0):
         """
         target_fps: نرخ پخش هدف (فریم بر ثانیه)
         buffer_capacity_s: حداکثر ظرفیت بافر (ثانیه)
         min_buffer_s: حداقل بافر قبل از شروع پخش (ثانیه)
-        playback_rate_min: ADAPTIVE PLAYBACK RATE floor (dash.js-style AMP).
-            1.0 (default) = fixed-rate playback, exactly the legacy behavior.
-            0.9 = when the buffer dips below min_buffer_s, playback slows toward
-            this floor instead of racing into a stall — subjective studies
-            (Drop-or-Stop QoMEX'24 / ACM TOMM'26) find <=0.9x imperceptible and
-            always preferred over rebuffering.
         """
         self.target_fps = target_fps
         self.frame_duration = 1.0 / target_fps  # مدت زمان هر فریم
         self.buffer_capacity_s = buffer_capacity_s
         self.min_buffer_s = min_buffer_s
-        self.playback_rate_min = float(playback_rate_min)
         
         # Buffer state
         self.buffer_level_s = 0.0  # سطح فعلی بافر (ثانیه)
@@ -54,19 +46,6 @@ class ClientBuffer:
         self.total_frames_received = 0
         self.buffer_history = []  # تاریخچه سطح بافر
         self.rebuffer_count = 0  # تعداد rebuffering events
-        # Adaptive-playback statistics (all zero when playback_rate_min == 1.0)
-        self.slowdown_time_s = 0.0    # wall seconds played at rate < 1.0
-        self.slowdown_integral = 0.0  # integral of (1 - rate) dt over played time
-
-    def _playback_rate(self):
-        """Current playback rate: 1.0 with a healthy buffer, ramping down to
-        playback_rate_min as the buffer drains below min_buffer_s."""
-        if self.playback_rate_min >= 1.0 or self.min_buffer_s <= 0:
-            return 1.0
-        if self.buffer_level_s >= self.min_buffer_s:
-            return 1.0
-        return max(self.playback_rate_min, self.buffer_level_s / self.min_buffer_s)
-        
     def _consume_buffer(self, elapsed_time_s):
         """
         مصرف بافر بر اساس زمان سپری شده (پخش فریم‌ها)
@@ -76,13 +55,10 @@ class ClientBuffer:
         if not self.is_playing:
             return 0.0
 
-        # Adaptive playback: at rate r, E wall-seconds consume E*r CONTENT-seconds
-        # of buffer. r == 1.0 (default) reproduces the legacy fixed-rate behavior
-        # exactly. Return value is WALL seconds actually played (callers compute
-        # stall = elapsed - returned).
-        rate = self._playback_rate()
-        # چقدر بافر باید مصرف شود (بر حسب ثانیه‌ی محتوا)
-        consumption_needed = elapsed_time_s * rate
+        # Fixed-rate playback: one wall second consumes one content second.
+        # The return value is the wall time actually played; callers account for
+        # the unplayed remainder as rebuffering time.
+        consumption_needed = elapsed_time_s
 
         if self.buffer_level_s >= consumption_needed:
             # بافر کافی داریم - مصرف عادی
@@ -98,15 +74,11 @@ class ClientBuffer:
             for _ in range(frames_consumed):
                 if self.frames_in_buffer:
                     self.frames_in_buffer.pop(0)
-            if rate < 1.0:
-                self.slowdown_time_s += elapsed_time_s
-                self.slowdown_integral += (1.0 - rate) * elapsed_time_s
             return elapsed_time_s
         else:
             # بافر کافی نیست - مصرف تا حد ممکن و سپس توقف پخش
             if self.buffer_level_s > 0:
-                consumed_content = self.buffer_level_s
-                consumed_wall = min(elapsed_time_s, consumed_content / rate)
+                consumed_wall = self.buffer_level_s
 
                 # پخش همه فریم‌های موجود در بافر
                 frames_consumed = len(self.frames_in_buffer)
@@ -115,9 +87,6 @@ class ClientBuffer:
                 # خالی کردن بافر
                 self.frames_in_buffer.clear()
                 self.buffer_level_s = 0.0
-                if rate < 1.0:
-                    self.slowdown_time_s += consumed_wall
-                    self.slowdown_integral += (1.0 - rate) * consumed_wall
                 return consumed_wall
             return 0.0
         
@@ -243,7 +212,8 @@ class ClientBuffer:
                 'buffer_level_s': self.buffer_level_s,
                 'event': 'playback_resumed',
                 'frame_id': frame_id,
-                'stall_time_s': rebuffer_duration
+                'stall_time_s': stall_time,
+                'rebuffer_duration_s': rebuffer_duration,
             })
             
             return {
@@ -254,7 +224,10 @@ class ClientBuffer:
                 'playback_started': self.playback_started,
                 'is_playing': self.is_playing,
                 'frame_id': frame_id,
-                'stall_time_s': rebuffer_duration,
+                # Increment accrued since the preceding buffer update. The full
+                # event duration is reported separately and must not be summed
+                # with prior interval deltas.
+                'stall_time_s': stall_time,
                 'rebuffer_duration_s': rebuffer_duration
             }
         
@@ -333,12 +306,8 @@ class ClientBuffer:
             'frames_played': self.frames_played,
             'frames_received': self.total_frames_received,
             'frames_dropped': self.frames_dropped,
-            'stall_count': len(self.stall_events),
             'rebuffer_count': self.rebuffer_count,
             'total_stall_time_s': self.total_stall_time,
-            'playback_rate_min': self.playback_rate_min,
-            'slowdown_time_s': self.slowdown_time_s,
-            'slowdown_integral': self.slowdown_integral,
             'buffer_utilization': self.buffer_level_s / self.buffer_capacity_s if self.buffer_capacity_s > 0 else 0
         }
 
