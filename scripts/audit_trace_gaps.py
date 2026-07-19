@@ -15,6 +15,13 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+GENERATED_AUDIT_OUTPUTS = (
+    os.path.join("reports", "trace_window_audit.json"),
+    os.path.join("reports", "TRACE_WINDOW_AUDIT.md"),
+    os.path.join("reports", "trace_gap_audit.json"),
+    os.path.join("reports", "TRACE_GAP_AUDIT.md"),
+)
+
 from src.experiment_protocol import load_protocol, protocol_digest
 from src.trace_audit import sha256_file
 from src.trace_gaps import (
@@ -51,7 +58,7 @@ def _git_state(ignored_output_paths=()):
         ).splitlines()
         ignored = {
             os.path.relpath(_absolute(path), PROJECT_ROOT).replace("\\", "/")
-            for path in ignored_output_paths
+            for path in (*GENERATED_AUDIT_OUTPUTS, *ignored_output_paths)
         }
         dirty_source_paths = [
             path.strip().replace("\\", "/") for path in tracked_changes
