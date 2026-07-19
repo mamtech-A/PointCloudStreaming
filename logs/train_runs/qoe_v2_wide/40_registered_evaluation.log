@@ -1,0 +1,26 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\evaluate_experiment.py --protocol configs/experiment_protocol.json --sweep-results C:\Users\Nima\PointCloudStreaming\models/dqn_sweep_results_qoe_v2_wide.json --baseline-config C:\Users\Nima\PointCloudStreaming\models/baseline_config_qoe_v2_wide.json --lstm C:\Users\Nima\PointCloudStreaming\models/bandwidth_lstm_s8.pkl --strategies dqn,fixed,buffer,mpc --out C:\Users\Nima\PointCloudStreaming\models/final_test_results_qoe_v2_wide.json --experiment-config-digest 725d4b220174d141 --split test --max-frames 0
+================================================================================================
+REGISTERED EVALUATION | split=test | protocol=4071599372abeb61
+traces=4 sequences=['longdress', 'loot', 'redandblack', 'soldier'] offsets/trace=3 jitter_seeds=[42, 43, 44] segment_frames=8
+================================================================================================
+DQN seed 42: qoe_quality=37.190 stall=1.563s
+DQN seed 43: qoe_quality=35.437 stall=0.804s
+DQN seed 44: qoe_quality=33.959 stall=1.541s
+DQN seed 45: qoe_quality=22.264 stall=3.535s
+DQN seed 46: qoe_quality=35.117 stall=1.172s
+DQN seed 47: qoe_quality=36.653 stall=0.796s
+DQN seed 48: qoe_quality=37.501 stall=0.695s
+DQN seed 49: qoe_quality=25.921 stall=0.471s
+DQN seed 50: qoe_quality=33.691 stall=1.137s
+DQN seed 51: qoe_quality=32.919 stall=0.863s
+DQN seed 52: qoe_quality=31.202 stall=0.940s
+DQN seed 53: qoe_quality=28.987 stall=0.482s
+fixed_arm_0: qoe_quality=-215.716
+fixed_arm_1: qoe_quality=-93.540
+fixed_arm_2: qoe_quality=-46.111
+fixed_arm_3: qoe_quality=12.019
+fixed_arm_4: qoe_quality=11.045
+fixed_arm_5: qoe_quality=-20.033
+buffer: qoe_quality=33.360 stall=0.001s
+mpc: qoe_quality=37.660 stall=0.327s
+saved case-level results: C:\Users\Nima\PointCloudStreaming\models/final_test_results_qoe_v2_wide.json

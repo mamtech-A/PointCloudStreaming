@@ -1,0 +1,126 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\sweep.py --config C:\Users\Nima\PointCloudStreaming\configs\training.json --jobs 4 --sweep-dir C:\Users\Nima\PointCloudStreaming\logs/train_runs/qoe_v2_wide\sweep --out C:\Users\Nima\PointCloudStreaming\models/abr_dqn_qoe_v2_wide.pkl --results C:\Users\Nima\PointCloudStreaming\models/dqn_sweep_results_qoe_v2_wide.json --lstm-template C:\Users\Nima\PointCloudStreaming\models/bandwidth_lstm_s{segment_frames}.pkl
+sweep: 20 screened configs | jobs=4 | select-by=qoe_quality
+  dir: C:\Users\Nima\PointCloudStreaming\logs/train_runs/qoe_v2_wide\sweep
+SCREEN: 20 configs x 3 seeds = 60 trial requests | jobs=4
+  [trial 000 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 5}
+  [trial 000 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 5}
+  [trial 000 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 5}
+  [trial 001 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 002 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 5}
+  [trial 002 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 5}
+  [trial 001 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 002 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 5}
+  [trial 003 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 5}
+  [trial 003 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 5}
+  [trial 003 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 5}
+  [trial 005 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 004 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 5}
+  [trial 004 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 5}
+  [trial 004 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 5}
+  [trial 005 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 006 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 8}
+  [trial 006 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 8}
+  [trial 007 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 8}
+  [trial 006 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 8}
+  [trial 007 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 8}
+  [trial 007 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 8}
+  [trial 008 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 8}
+  [trial 008 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 8}
+  [trial 008 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 8}
+  [trial 009 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 8}
+  [trial 009 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 8}
+  [trial 009 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 8}
+  [trial 010 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 10}
+  [trial 010 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 10}
+  [trial 010 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 10}
+  [trial 011 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 012 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 10}
+  [trial 012 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 10}
+  [trial 012 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 10}
+  [trial 013 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 10}
+  [trial 013 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 10}
+  [trial 013 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 10}
+  [trial 014 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 10}
+  [trial 014 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 10}
+  [trial 015 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 15}
+  [trial 014 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 10}
+  [trial 015 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 15}
+  [trial 015 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 15}
+  [trial 016 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 15}
+  [trial 016 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 15}
+  [trial 016 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 15}
+  [trial 017 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 018 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 15}
+  [trial 018 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 15}
+  [trial 018 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 5e-05, 'target-update': 1500, 'segment-frames': 15}
+  [trial 019 seed 42] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 15}
+  [trial 019 seed 43] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 15}
+  [trial 019 seed 44] ok  {'batch-size': 128, 'eps-decay-frac': 0.5, 'hidden': 128, 'lr': 0.0003, 'target-update': 3000, 'segment-frames': 15}
+CONFIRM selected config trials: [1, 5, 11, 17]
+CONFIRM: 4 configs x 12 seeds = 48 trial requests | jobs=4
+  [trial 001 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 45] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 46] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 49] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 47] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 48] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 50] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 52] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 001 seed 53] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 005 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 001 seed 51] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5}
+  [trial 005 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 45] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 46] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 47] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 48] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 50] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 51] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 49] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 005 seed 52] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 011 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 005 seed 53] ok  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8}
+  [trial 011 seed 45] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 46] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 47] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 48] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 49] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 51] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 52] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 011 seed 50] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 017 seed 42] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 43] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 011 seed 53] ok  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+  [trial 017 seed 44] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 45] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 46] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 48] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 47] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 49] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 50] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 52] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 51] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+  [trial 017 seed 53] ok  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15}
+
+================================================================================================
+rank trial   qoe_quality  +/-std   mean_q  stall_s  config
+1    5           -315.29   80.13    0.417     74.2  {'batch-size': 64, 'eps-decay-frac': 0.6, 'hidden': 128, 'lr': 0.0001, 'target-update': 3000, 'segment-frames': 8} *pareto
+2    1           -497.40  169.07    0.464    123.2  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 5} *pareto
+3    11          -643.62  148.86    0.480    153.9  {'batch-size': 64, 'eps-decay-frac': 0.5, 'hidden': 256, 'lr': 0.0003, 'target-update': 6000, 'segment-frames': 10}
+4    17          -648.00  183.83    0.482    135.8  {'batch-size': 64, 'eps-decay-frac': 0.7, 'hidden': 128, 'lr': 0.0003, 'target-update': 1500, 'segment-frames': 15} *pareto
+
+WINNER trial 5 -> C:\Users\Nima\PointCloudStreaming\models/abr_dqn_qoe_v2_wide.pkl (representative seed 45)
+  qoe_quality = -315.29 +/- 80.13 over 9 seeds [45, 46, 47, 48, 49, 50, 51, 52, 53]
+  per-seed: {45: -294.2764006024417, 46: -241.2547615368298, 47: -273.6961242926093, 48: -450.4458148427609, 49: -395.0510075438886, 50: -241.27561352241023, 51: -231.60645792724452, 52: -284.69877645758095, 53: -425.2673662687105}
+results: C:\Users\Nima\PointCloudStreaming\models/dqn_sweep_results_qoe_v2_wide.json

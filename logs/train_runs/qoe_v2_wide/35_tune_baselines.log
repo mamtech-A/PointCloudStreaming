@@ -1,0 +1,58 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\tune_baselines.py --protocol configs/experiment_protocol.json --segment-frames 8 --families fixed,buffer,mpc --lstm C:\Users\Nima\PointCloudStreaming\models/bandwidth_lstm_s8.pkl --out C:\Users\Nima\PointCloudStreaming\models/baseline_config_qoe_v2_wide.json --experiment-config-digest 725d4b220174d141
+fixed {'arm': 0}: qoe_quality=-26556.189 stall=6040.219s
+fixed {'arm': 1}: qoe_quality=-16689.005 stall=3801.866s
+fixed {'arm': 2}: qoe_quality=-10774.531 stall=2459.127s
+fixed {'arm': 3}: qoe_quality=-4539.757 stall=1042.740s
+fixed {'arm': 4}: qoe_quality=-1115.010 stall=260.269s
+fixed {'arm': 5}: qoe_quality=-249.129 stall=52.605s
+WINNER fixed: {'arm': 5}
+buffer {'reservoir_s': 0.25, 'cushion_s': 1.5}: qoe_quality=-4228.566 stall=986.978s
+buffer {'reservoir_s': 0.25, 'cushion_s': 2.0}: qoe_quality=-1543.503 stall=366.067s
+buffer {'reservoir_s': 0.25, 'cushion_s': 3.0}: qoe_quality=-641.379 stall=156.244s
+buffer {'reservoir_s': 0.25, 'cushion_s': 4.0}: qoe_quality=-423.372 stall=104.937s
+buffer {'reservoir_s': 0.5, 'cushion_s': 1.5}: qoe_quality=-1543.838 stall=365.915s
+buffer {'reservoir_s': 0.5, 'cushion_s': 2.0}: qoe_quality=-422.145 stall=105.109s
+buffer {'reservoir_s': 0.5, 'cushion_s': 3.0}: qoe_quality=-422.819 stall=104.953s
+buffer {'reservoir_s': 0.5, 'cushion_s': 4.0}: qoe_quality=-200.819 stall=52.837s
+buffer {'reservoir_s': 1.0, 'cushion_s': 1.5}: qoe_quality=-199.770 stall=52.857s
+buffer {'reservoir_s': 1.0, 'cushion_s': 2.0}: qoe_quality=-200.197 stall=52.807s
+buffer {'reservoir_s': 1.0, 'cushion_s': 3.0}: qoe_quality=-201.403 stall=52.709s
+buffer {'reservoir_s': 1.0, 'cushion_s': 4.0}: qoe_quality=-203.350 stall=52.675s
+buffer {'reservoir_s': 1.5, 'cushion_s': 1.5}: qoe_quality=-202.220 stall=52.670s
+buffer {'reservoir_s': 1.5, 'cushion_s': 2.0}: qoe_quality=-202.322 stall=52.640s
+buffer {'reservoir_s': 1.5, 'cushion_s': 3.0}: qoe_quality=-203.994 stall=52.630s
+buffer {'reservoir_s': 1.5, 'cushion_s': 4.0}: qoe_quality=-206.273 stall=52.605s
+buffer {'reservoir_s': 2.0, 'cushion_s': 1.5}: qoe_quality=-205.365 stall=52.615s
+buffer {'reservoir_s': 2.0, 'cushion_s': 2.0}: qoe_quality=-205.652 stall=52.611s
+buffer {'reservoir_s': 2.0, 'cushion_s': 3.0}: qoe_quality=-207.381 stall=52.605s
+buffer {'reservoir_s': 2.0, 'cushion_s': 4.0}: qoe_quality=-211.501 stall=52.605s
+WINNER buffer: {'reservoir_s': 1.0, 'cushion_s': 1.5}
+mpc {'horizon': 2, 'history_window': 3, 'safety_factor': 0.75}: qoe_quality=-194.489 stall=52.970s
+mpc {'horizon': 2, 'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-194.616 stall=53.069s
+mpc {'horizon': 2, 'history_window': 3, 'safety_factor': 0.95}: qoe_quality=-194.749 stall=53.197s
+mpc {'horizon': 2, 'history_window': 5, 'safety_factor': 0.75}: qoe_quality=-196.454 stall=53.038s
+mpc {'horizon': 2, 'history_window': 5, 'safety_factor': 0.85}: qoe_quality=-196.159 stall=53.115s
+mpc {'horizon': 2, 'history_window': 5, 'safety_factor': 0.95}: qoe_quality=-196.305 stall=53.302s
+mpc {'horizon': 2, 'history_window': 8, 'safety_factor': 0.75}: qoe_quality=-198.267 stall=52.975s
+mpc {'horizon': 2, 'history_window': 8, 'safety_factor': 0.85}: qoe_quality=-198.028 stall=53.059s
+mpc {'horizon': 2, 'history_window': 8, 'safety_factor': 0.95}: qoe_quality=-198.203 stall=53.235s
+mpc {'horizon': 3, 'history_window': 3, 'safety_factor': 0.75}: qoe_quality=-194.971 stall=52.924s
+mpc {'horizon': 3, 'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-195.221 stall=53.076s
+mpc {'horizon': 3, 'history_window': 3, 'safety_factor': 0.95}: qoe_quality=-194.928 stall=53.103s
+mpc {'horizon': 3, 'history_window': 5, 'safety_factor': 0.75}: qoe_quality=-196.777 stall=52.847s
+mpc {'horizon': 3, 'history_window': 5, 'safety_factor': 0.85}: qoe_quality=-196.421 stall=52.932s
+mpc {'horizon': 3, 'history_window': 5, 'safety_factor': 0.95}: qoe_quality=-196.637 stall=53.104s
+mpc {'horizon': 3, 'history_window': 8, 'safety_factor': 0.75}: qoe_quality=-199.505 stall=52.899s
+mpc {'horizon': 3, 'history_window': 8, 'safety_factor': 0.85}: qoe_quality=-198.915 stall=52.944s
+mpc {'horizon': 3, 'history_window': 8, 'safety_factor': 0.95}: qoe_quality=-198.722 stall=53.049s
+mpc {'horizon': 4, 'history_window': 3, 'safety_factor': 0.75}: qoe_quality=-195.915 stall=52.864s
+mpc {'horizon': 4, 'history_window': 3, 'safety_factor': 0.85}: qoe_quality=-195.138 stall=52.913s
+mpc {'horizon': 4, 'history_window': 3, 'safety_factor': 0.95}: qoe_quality=-195.457 stall=53.061s
+mpc {'horizon': 4, 'history_window': 5, 'safety_factor': 0.75}: qoe_quality=-198.470 stall=52.879s
+mpc {'horizon': 4, 'history_window': 5, 'safety_factor': 0.85}: qoe_quality=-197.748 stall=52.900s
+mpc {'horizon': 4, 'history_window': 5, 'safety_factor': 0.95}: qoe_quality=-196.899 stall=52.996s
+mpc {'horizon': 4, 'history_window': 8, 'safety_factor': 0.75}: qoe_quality=-200.877 stall=52.902s
+mpc {'horizon': 4, 'history_window': 8, 'safety_factor': 0.85}: qoe_quality=-200.582 stall=52.970s
+mpc {'horizon': 4, 'history_window': 8, 'safety_factor': 0.95}: qoe_quality=-199.282 stall=52.988s
+WINNER mpc: {'horizon': 2, 'history_window': 3, 'safety_factor': 0.75}
+saved frozen baseline parameters: C:\Users\Nima\PointCloudStreaming\models/baseline_config_qoe_v2_wide.json
