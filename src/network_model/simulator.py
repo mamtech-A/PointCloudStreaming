@@ -46,7 +46,6 @@ class Simulator:
         self._prev_stall = {}
         self._prev_rebuffer = {}
         self._prev_startup = {}
-        self._prev_dropped = {}
         self._decision_rows = []
         if verbose:
             print("--- DASH-PC Point Cloud Streaming Simulation ---")
@@ -69,9 +68,11 @@ class Simulator:
                 )
         total_frames = len(frames)
         self._total_frames = total_frames
+        seg = max(1, int(segment_frames or 1))
 
         sessions = self.topology.all_sessions()
         for session in sessions:
+            session.user.buffer.validate_atomic_segment(seg)
             session.start()
 
         # --- Output files (opened once; one row per (frame, session)) ---
@@ -90,7 +91,8 @@ class Simulator:
         # segment transfer time on the segment's FIRST frame, 0.0 on the rest;
         # `segment_id` groups the rows).
         csv_writer.writerow([
-            'user_id', 'frame_id', 'rep_id', 'density', 'size', 'bandwidth_mbps', 'send_time_s',
+            'user_id', 'frame_id', 'rep_id', 'density', 'size', 'bandwidth_mbps',
+            'request_pacing_s', 'request_start_s', 'send_time_s',
             'retransmissions', 'cwnd_start', 'cwnd_end', 'srtt_s', 'rto_s',
             'buffer_level_s', 'buffer_health', 'stall', 'stall_duration_s', 'cumulative_time_s',
             'segment_id'
@@ -108,7 +110,6 @@ class Simulator:
             print("=" * 100)
 
         # --- Segment-outer / session-inner main loop (S=1 == per-frame) ---
-        seg = max(1, int(segment_frames or 1))
         for seg_idx in range(0, len(frames), seg):
             segment = frames[seg_idx:seg_idx + seg]
             for session in sessions:
@@ -177,7 +178,12 @@ class Simulator:
             csv_writer.writerow([
                 u.user_id, fr['frame_id'], record['rep_id'], rep.get('density', ''),
                 rep.get('size', ''),
-                f"{capacity/1e6:.3f}", f"{seg_time:.6f}" if i == 0 else "0.000000",
+                f"{capacity/1e6:.3f}",
+                (f"{record.get('request_pacing_s', 0.0):.6f}"
+                 if i == 0 else "0.000000"),
+                (f"{record.get('request_start_s', 0.0):.6f}"
+                 if i == 0 else ""),
+                f"{seg_time:.6f}" if i == 0 else "0.000000",
                 m.get('retransmissions', 0), m.get('cwnd_start', ''), m.get('cwnd_end', ''),
                 m.get('srtt_s', ''), m.get('rto_s', ''),
                 f"{buffer_level:.4f}", buffer_health,
@@ -211,16 +217,12 @@ class Simulator:
                              - self._prev_rebuffer.get(uid, 0))
             startup_s = max(0.0, bstats0.get('startup_delay_s', 0.0)
                             - self._prev_startup.get(uid, 0.0))
-            dropped_d = max(0, bstats0.get('frames_dropped', 0)
-                            - self._prev_dropped.get(uid, 0))
             self._prev_stall[uid] = bstats0.get('total_stall_time_s', 0.0)
             self._prev_rebuffer[uid] = bstats0.get('rebuffer_count', 0)
             self._prev_startup[uid] = bstats0.get('startup_delay_s', 0.0)
-            self._prev_dropped[uid] = bstats0.get('frames_dropped', 0)
             seg_reward = rf.step_segment(q_sum, q_mean,
                                          prev_qmean, stall_d,
                                          rebuffer_d, startup_s=startup_s,
-                                         dropped=dropped_d,
                                          episode_frames=self._total_frames)
             self._reward_prev_qmean[uid] = q_mean
             self._reward_quality_sum[uid] = self._reward_quality_sum.get(uid, 0.0) + q_sum
@@ -232,6 +234,9 @@ class Simulator:
                 self._decision_rows.append({
                     'user_id': uid, 'segment_id': segment_id,
                     'first_frame_id': frames[0]['frame_id'],
+                    'request_pacing_s': round(
+                        float(record.get('request_pacing_s', 0.0)), 4
+                    ),
                     'buffer_s': round(decision['buffer_s'], 3),
                     'tput_last_mbps': round(decision['tput_last_mbps'], 2),
                     'tput_mean_mbps': round(decision['tput_mean_mbps'], 2),
@@ -261,7 +266,6 @@ class Simulator:
 
         events = [f['buffer_result'].get('event', 'buffered') for f in frames]
         last_br = frames[-1]['buffer_result']
-        dropped = sum(1 for f in frames if f['buffer_result'].get('status') == 'dropped')
         is_playing = last_br.get('is_playing', False)
         if 'playback_started' in events:
             state = "▶ PLAYBACK START"
@@ -273,8 +277,9 @@ class Simulator:
             state = "▶ playing"
         else:
             state = "⏳ buffering…"
-        if dropped:
-            state += f"  ❌{dropped} dropped (buffer full)"
+        pacing_s = float(record.get('request_pacing_s', 0.0))
+        if pacing_s > 0:
+            state += f"  paced {pacing_s:.2f}s"
 
         played = bstats['frames_played']
         total = getattr(self, '_total_frames', 0)
@@ -315,7 +320,6 @@ class Simulator:
                 self._reward_quality_change.get(u.user_id, 0.0),
                 stats.get('total_stall_time_s', 0.0),
                 stats.get('rebuffer_count', 0),
-                stats.get('frames_dropped', 0),
                 stats.get('startup_delay_s', 0.0),
                 total_frames,
             )
@@ -350,7 +354,6 @@ class Simulator:
                   f"stall {qterms['stall_duration']:+.1f} · "
                   f"rebuffer {qterms['rebuffering']:+.1f} · "
                   f"change {qterms['quality_change']:+.1f} · "
-                  f"drops {qterms['frame_drops']:+.1f} · "
                   f"startup {qterms['startup_delay']:+.1f}")
             if rl_reward is not None:
                 print(f"   Reward (RL objective): {rl_reward:.1f}   "
@@ -359,8 +362,7 @@ class Simulator:
             print(f"   Playback            : {stats['frames_played']}/{total_frames} frames · "
                   f"{fps_real:.1f} real fps · {total_time:.1f}s to stream "
                   f"{total_frames/30.0:.0f}s of video")
-            if stats['frames_dropped']:
-                print(f"   Frames dropped      : {stats['frames_dropped']} (buffer overflow — eager fetch)")
+            print(f"   Request pacing      : {session.total_request_pacing_s:.2f}s")
             avg = (f" · avg {stats['total_stall_time_s']/stats['rebuffer_count']:.2f}s"
                    if stats['rebuffer_count'] else "")
             print(f"   Rebuffering         : {stats['rebuffer_count']} event(s) · "
@@ -385,7 +387,7 @@ class Simulator:
             'total_time_s': total_time,
             'fps': fps_real,
             'frames_played': stats['frames_played'],
-            'frames_dropped': stats['frames_dropped'],
+            'request_pacing_s': session.total_request_pacing_s,
             'rebuffer_count': stats['rebuffer_count'],
             'total_stall_time_s': stats['total_stall_time_s'],
             'mean_rep_id': (sum(qh) / len(qh)) if qh else 0,

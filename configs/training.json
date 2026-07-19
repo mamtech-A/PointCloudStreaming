@@ -1,20 +1,21 @@
 {
-  "_comment": "IST-2026 wide search under the six-term objective. The existing trace split is retained unchanged by author decision. The test files were inspected in an earlier experiment, so they are fixed evaluation files rather than a new untouched test set. Training and every model/segment/baseline choice use train+validation only; test evaluation requires an explicit frozen second stage.",
+  "_comment": "IST-2026 wide search under the five-term reward/QoE with request pacing. The existing trace split is retained unchanged by author decision. The test files were inspected in an earlier experiment, so they are fixed evaluation files rather than a new untouched test set. Training and every model/segment/baseline choice use train+validation only; test evaluation requires an explicit frozen second stage.",
   "protocol": "configs/experiment_protocol.json",
   "trace_registry": "configs/trace_window_registry.json",
 
   "artifacts": {
-    "tag": "qoe_v3_gap_finite",
-    "lstm_model_template": "models/bandwidth_lstm_s{segment_frames}.pkl",
-    "dqn_model": "models/abr_dqn_qoe_v3_gap_finite.pkl",
-    "sweep_results": "models/dqn_sweep_results_qoe_v3_gap_finite.json",
-    "baseline_config": "models/baseline_config_qoe_v3_gap_finite.json",
-    "final_results": "models/final_test_results_qoe_v3_gap_finite.json",
-    "training_summary": "models/TRAINING_SUMMARY_qoe_v3_gap_finite.md"
+    "tag": "qoe_v4_request_pacing",
+    "lstm_model_template": "models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+    "dqn_model": "models/abr_dqn_qoe_v4_request_pacing.pkl",
+    "sweep_results": "models/dqn_sweep_results_qoe_v4_request_pacing.json",
+    "baseline_config": "models/baseline_config_qoe_v4_request_pacing.json",
+    "final_results": "models/final_test_results_qoe_v4_request_pacing.json",
+    "training_summary": "models/TRAINING_SUMMARY_qoe_v4_request_pacing.md"
   },
 
   "lstm": {
     "signal": "achieved",
+    "data_dir_template": "data/lstm_achieved_request_pacing_s{segment_frames}",
     "segment_frames": [5, 8, 10, 15],
     "gen_args": {
       "offsets": 8,
@@ -31,7 +32,7 @@
     "sequence_length": 8,
     "epochs": 50,
     "select_metric": "low_bw_mae",
-    "_selection_note": "The previously validation-selected log1p transform and 128x2 architecture are frozen. Existing segment-specific predictors are reused because the reward and finite-window changes do not alter the LSTM prediction target or observation cadence. Final-test traces were excluded from their training data."
+    "_selection_note": "The previously validation-selected log1p transform and 128x2 architecture are frozen. Segment-specific datasets and predictors are regenerated because request pacing changes request timestamps and therefore the achieved-throughput sequence, although pacing time itself is excluded from each transfer-throughput sample. Final-test traces remain excluded from predictor training."
   },
 
   "dqn_sweep": {
@@ -74,8 +75,7 @@
       "eval-sequences": "longdress,loot,redandblack,soldier",
       "reward-spec": {
         "rebuffer_weight": 2.0,
-        "startup_weight": 1.0,
-        "drop_weight": null
+        "startup_weight": 1.0
       }
     },
     "axes": {

@@ -1,4 +1,4 @@
-"""One canonical six-term objective for both DQN reward and reported QoE.
+"""One canonical five-term objective for both DQN reward and reported QoE.
 
 For an episode containing ``N`` frames and segment ``t`` containing ``S_t``::
 
@@ -6,18 +6,17 @@ For an episode containing ``N`` frames and segment ``t`` containing ``S_t``::
           - mu * delta_stall_seconds
           - rebuffer_weight * delta_rebuffer_events
           - lam * abs(segment_quality_t - segment_quality_t_minus_1)
-          - (100/N) * delta_dropped_frames
           - startup_weight * delta_startup_seconds
 
 Summing the segment rewards gives the reported episode QoE exactly. Startup is
 pre-playback waiting; stall time and rebuffer events begin only after playback
-has started. The quality and default drop coefficients share the fixed episode
-scale ``100/N``.
+has started. The quality term uses the fixed episode scale ``100/N``. Request
+pacing prevents buffer-overflow frame loss, so drops are not an objective term.
 """
 
 from ..network_model.manifest import tier_quality
 
-OBJECTIVE_VERSION = 'six_term_equal_reward_qoe_v2_fixed_log_bitrate'
+OBJECTIVE_VERSION = 'five_term_equal_reward_qoe_v4_request_pacing'
 
 DEFAULT_REWARD_SPEC = {
     'utility': 'fixed_log_bitrate',
@@ -25,8 +24,6 @@ DEFAULT_REWARD_SPEC = {
     'rebuffer_weight': 2.0,
     'lam': 1.0,
     'startup_weight': 1.0,
-    # None means the same 100/N coefficient used for per-frame quality.
-    'drop_weight': None,
 }
 
 _UTILITIES = ('fixed_log_bitrate',)
@@ -40,7 +37,7 @@ class RewardFunction:
         if unknown:
             raise ValueError(
                 f"unsupported reward keys {sorted(unknown)}; the reward and QoE "
-                "must use only the canonical six-term objective"
+                "must use only the canonical five-term objective"
             )
         self.spec = {**DEFAULT_REWARD_SPEC, **(spec or {})}
         if self.spec['utility'] not in _UTILITIES:
@@ -64,23 +61,16 @@ class RewardFunction:
             raise ValueError("episode_frames must be positive")
         return 100.0 / n
 
-    def drop_weight(self, episode_frames):
-        configured = self.spec.get('drop_weight')
-        return (self.quality_scale(episode_frames) if configured is None
-                else float(configured))
-
     def step(self, q, prev_q, stall_s, rebuffer_events=0,
-             startup_s=0.0, dropped=0, episode_frames=None):
+             startup_s=0.0, episode_frames=None):
         """One-frame adapter for :meth:`step_segment`."""
         return self.step_segment(
             q, q, prev_q, stall_s, rebuffer_events,
-            startup_s=startup_s, dropped=dropped,
-            episode_frames=episode_frames,
+            startup_s=startup_s, episode_frames=episode_frames,
         )
 
     def step_segment(self, q_sum, q_mean, prev_q_mean, stall_s,
-                     rebuffer_events=0, startup_s=0.0, dropped=0,
-                     episode_frames=None):
+                     rebuffer_events=0, startup_s=0.0, episode_frames=None):
         """Canonical per-segment reward whose episode sum equals QoE."""
         scale = self.quality_scale(episode_frames)
         quality_change = (0.0 if prev_q_mean is None
@@ -90,12 +80,11 @@ class RewardFunction:
             - float(self.spec['mu']) * float(stall_s or 0.0)
             - float(self.spec['rebuffer_weight']) * int(rebuffer_events or 0)
             - float(self.spec['lam']) * quality_change
-            - self.drop_weight(episode_frames) * int(dropped or 0)
             - float(self.spec['startup_weight']) * float(startup_s or 0.0)
         )
 
     def episode_terms(self, q_sum, quality_change_sum, stall_s,
-                      rebuffer_events, dropped, startup_s, episode_frames):
+                      rebuffer_events, startup_s, episode_frames):
         """Signed episode terms computed independently from cumulative outcomes."""
         terms = {
             'quality': self.quality_scale(episode_frames) * float(q_sum),
@@ -104,8 +93,6 @@ class RewardFunction:
                             * int(rebuffer_events or 0)),
             'quality_change': (-float(self.spec['lam'])
                                * float(quality_change_sum or 0.0)),
-            'frame_drops': (-self.drop_weight(episode_frames)
-                            * int(dropped or 0)),
             'startup_delay': (-float(self.spec['startup_weight'])
                               * float(startup_s or 0.0)),
         }
@@ -114,10 +101,9 @@ class RewardFunction:
 
     def describe(self):
         sp = self.spec
-        drop = '(100/N)' if sp.get('drop_weight') is None else sp['drop_weight']
         return (
             f"(100/N)*sum(q[{sp['utility']}]) - {sp['mu']}*stall_duration "
             f"- {sp['rebuffer_weight']}*rebuffer_events "
-            f"- {sp['lam']}*sum|delta_segment_q| - {drop}*dropped_frames "
+            f"- {sp['lam']}*sum|delta_segment_q| "
             f"- {sp['startup_weight']}*startup_delay"
         )

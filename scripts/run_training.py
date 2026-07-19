@@ -246,10 +246,13 @@ def main():
     )
 
     achieved = lstm_cfg.get("signal", "capacity") == "achieved"
+    data_template = lstm_cfg.get(
+        "data_dir_template", "data/lstm_achieved_s{segment_frames}"
+    )
     data_dirs = {
         segment: (
             os.path.join(run_dir, "lstm_data", f"s{segment}") if args.smoke else
-            os.path.join(project_root, "data", f"lstm_achieved_s{segment}")
+            absolute(data_template.format(segment_frames=segment))
         )
         for segment in active_segments
     }

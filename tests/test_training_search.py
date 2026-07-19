@@ -110,8 +110,7 @@ def test_validation_restores_training_rng_state():
         @staticmethod
         def get_buffer_stats():
             return {
-                "rebuffer_count": 0, "frames_dropped": 0,
-                "startup_delay_s": 0.0,
+                "rebuffer_count": 0, "startup_delay_s": 0.0,
             }
 
     class Env:
@@ -137,9 +136,6 @@ def test_validation_restores_training_rng_state():
         def quality_change_sum(): return 0.0
         @staticmethod
         def qoe_terms(): return {"total": 0.0}
-        @staticmethod
-        def frames_dropped(): return 0
-
     class Registry:
         @staticmethod
         def validate_evaluation_count(_split, _count, trace_paths):

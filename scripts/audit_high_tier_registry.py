@@ -64,7 +64,8 @@ def _load_manifests(pattern, frames):
 def _initialize_worker(context):
     protocol = load_protocol(context["protocol"], context["trace_dir"])
     registry = load_trace_registry(
-        context["registry"], protocol, context["trace_dir"], verify_hashes=True
+        context["registry"], protocol, context["trace_dir"], verify_hashes=True,
+        allow_candidate_registry=True,
     )
     pool, _paths = _load_manifests(context["mpd"], context["frames"])
     validate_high_tier(pool, context["sequences"])
@@ -119,11 +120,17 @@ def _write_new(path, content, overwrite):
 
 def _markdown(report):
     summary = report["summary"]
+    scope = (
+        "all Very-low-eligible candidate windows"
+        if report["audit_type"]
+        == "read_only_static_high_candidate_window_headroom"
+        else "the frozen production registry"
+    )
     lines = [
         "# Static-High registry headroom audit", "",
-        "This read-only audit does not modify traces, splits, the frozen window "
-        "registry, training, or evaluation.", "", "## Decision rule", "",
-        "- Every frozen registry window is tested with the maximum-demand "
+        f"This read-only audit covers {scope} and does not modify traces, "
+        "splits, training, or evaluation.", "", "## Decision rule", "",
+        "- Every included window is tested with the maximum-demand "
         "static High G-PCC tier.",
         f"- Required sequences: {', '.join(report['settings']['sequences'])}.",
         f"- Segment sizes: {report['settings']['segment_frames']}.",
@@ -175,7 +182,13 @@ def _markdown(report):
             )
     else:
         lines.append("| None | — | — |")
-    lines += ["", "The JSON companion retains every case outcome and headroom value.", ""]
+    detail_note = (
+        "The JSON companion retains every case outcome and headroom value."
+        if report["settings"].get("case_details_included", True)
+        else "The JSON companion retains per-window status, counts, and headroom; "
+             "case rows are intentionally omitted for the all-candidate audit."
+    )
+    lines += ["", detail_note, ""]
     return "\n".join(lines)
 
 
@@ -191,6 +204,11 @@ def main():
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--json-out", default="reports/high_tier_headroom_audit.json")
     parser.add_argument("--markdown-out", default="reports/HIGH_TIER_HEADROOM_AUDIT.md")
+    parser.add_argument(
+        "--omit-case-details", action="store_true",
+        help=("retain per-window status/count/headroom but omit the 48 case "
+              "records per window; useful for the all-candidate selection audit"),
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     if args.frames <= 0 or args.jobs <= 0:
@@ -202,7 +220,8 @@ def main():
     mpd_pattern = _absolute(args.mpd)
     protocol = load_protocol(protocol_path, trace_dir)
     registry = load_trace_registry(
-        registry_path, protocol, trace_dir, verify_hashes=True
+        registry_path, protocol, trace_dir, verify_hashes=True,
+        allow_candidate_registry=True,
     )
     settings = registry.settings()
     sequences = list(settings["required_sequences"])
@@ -252,9 +271,22 @@ def main():
             executor.shutdown()
 
     summary = summarize_high_audit(results)
+    report_windows = results
+    if args.omit_case_details:
+        report_windows = [
+            {key: value for key, value in window.items() if key != "cases"}
+            for window in results
+        ]
+    candidate_mode = (
+        registry.data.get("registry_type") == "candidate_high_tier_audit_windows"
+    )
     payload = {
         "schema_version": 1,
-        "audit_type": "read_only_static_high_frozen_registry_headroom",
+        "audit_type": (
+            "read_only_static_high_candidate_window_headroom"
+            if candidate_mode else
+            "read_only_static_high_frozen_registry_headroom"
+        ),
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source_commit": _git_commit(),
         "protocol": os.path.relpath(protocol_path, PROJECT_ROOT).replace("\\", "/"),
@@ -273,6 +305,33 @@ def main():
                 "src/high_tier_audit.py": sha256_file(
                     os.path.join(PROJECT_ROOT, "src", "high_tier_audit.py")
                 ),
+                "src/network_model/buffer.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "network_model", "buffer.py")
+                ),
+                "src/network_model/finite_trace.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "network_model", "finite_trace.py")
+                ),
+                "src/network_model/links.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "network_model", "links.py")
+                ),
+                "src/network_model/manifest.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "network_model", "manifest.py")
+                ),
+                "src/network_model/session.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "network_model", "session.py")
+                ),
+                "src/network_model/tcp_protocol.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "network_model", "tcp_protocol.py")
+                ),
+                "src/rl/env.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "rl", "env.py")
+                ),
+                "src/rl/reward.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "rl", "reward.py")
+                ),
+                "src/trace_registry.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "trace_registry.py")
+                ),
             },
         },
         "settings": {
@@ -283,9 +342,13 @@ def main():
             "jitter_seeds": jitter_seeds,
             "terminal_capacity_policy": "finite; no final-sample clamping",
             "eligibility": "all 48 maximum-demand cases finish in measured data",
+            "case_details_included": not args.omit_case_details,
+            "case_count_per_window": (
+                len(sequences) * len(segment_frames) * len(jitter_seeds)
+            ),
         },
         "summary": summary,
-        "windows": results,
+        "windows": report_windows,
     }
     unsigned = dict(payload)
     payload["audit_id"] = _content_digest(unsigned)

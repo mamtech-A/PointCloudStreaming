@@ -262,11 +262,14 @@ def main():
                 os.path.join("src", "trace_audit.py"),
                 os.path.join("src", "trace_gaps.py"),
                 os.path.join("src", "network_model", "trace.py"),
+                os.path.join("src", "network_model", "buffer.py"),
+                os.path.join("src", "network_model", "finite_trace.py"),
                 os.path.join("src", "network_model", "links.py"),
                 os.path.join("src", "network_model", "tcp_protocol.py"),
                 os.path.join("src", "network_model", "session.py"),
                 os.path.join("src", "network_model", "manifest.py"),
                 os.path.join("src", "rl", "env.py"),
+                os.path.join("src", "rl", "reward.py"),
             )
         },
     }

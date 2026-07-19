@@ -108,7 +108,7 @@ def test_registry_materializes_finite_block_local_windows():
         raise AssertionError("registry window clamped beyond its block")
 
 
-def test_trace_exhaustion_uses_existing_frame_drop_term():
+def test_trace_exhaustion_is_an_unscored_protocol_failure():
     env = StreamingEnv(
         {"longdress": _frames(10)},
         tcp_params={
@@ -124,15 +124,12 @@ def test_trace_exhaustion_uses_existing_frame_drop_term():
     try:
         env.step(0)
     except TraceWindowExhausted:
-        _state, reward, done, info = env.terminate_trace_exhausted()
+        pass
     else:
         raise AssertionError("high action unexpectedly completed")
-    assert done is True
-    assert reward == -100.0
-    assert env.qoe() == -100.0
-    assert env.frames_dropped() == 10
-    assert env.policy_trace_exhausted() is True
-    assert info["terminal_dropped_frames"] == 10
+    assert env.frame_idx == 0
+    assert env.qoe() == 0.0
+    assert not hasattr(env, "terminate_trace_exhausted")
 
 
 def test_macro_aggregation_does_not_overweight_parent_case_count():
@@ -141,8 +138,8 @@ def test_macro_aggregation_does_not_overweight_parent_case_count():
             "trace": trace, "sequence": "longdress", "eval_seed": 42,
             "reward": qoe, "qoe": qoe, "qoe_quality": qoe,
             "mean_quality": 0.0, "stall_s": 0.0, "rebuffer_events": 0,
-            "quality_change": 0.0, "frames_dropped": 0, "startup_s": 0.0,
-            "policy_trace_exhausted": False,
+            "quality_change": 0.0, "startup_s": 0.0,
+            "request_pacing_s": 0.0,
         }
     result = aggregate_records([
         row("short.csv", 0.0),

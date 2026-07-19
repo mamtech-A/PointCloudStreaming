@@ -11,7 +11,7 @@ Multi-sequence: pass `manifest_frames` as a dict {sequence_name: frames} and
 pick the content per episode via `reset(trace, sequence=...)`. Each of the six
 G-PCC tiers has one fixed quality utility shared by every sequence.
 
-Reward and QoE use one canonical six-term objective (src/rl/reward.py). The
+Reward and QoE use one canonical five-term objective (src/rl/reward.py). The
 undiscounted sum of segment rewards equals the reported episode QoE.
 """
 
@@ -66,6 +66,11 @@ class StreamingEnv:
         # DASH-style segments: one env step = one segment of S frames
         # (one ABR decision + one TCP transfer). S=1 = legacy per-frame.
         self.segment_frames = max(1, int(segment_frames))
+        geometry_buffer = User(
+            "geometry-check", self.target_fps, self.buffer_capacity_s,
+            self.min_buffer_s,
+        ).buffer
+        geometry_buffer.validate_atomic_segment(self.segment_frames)
         # Every sequence in the pool must share one ladder size (= action space).
         sizes = {name: len(fr[0]['representations']) if fr else 0
                  for name, fr in self.manifest_pool.items()}
@@ -146,14 +151,18 @@ class StreamingEnv:
         self._prev_stall_s = 0.0
         self._prev_rebuffer_count = 0
         self._prev_startup_s = 0.0
-        self._prev_dropped = 0
-        self._terminal_dropped = 0
-        self._trace_exhausted = False
         return self._observe()
+
+    def _prepare_next_request(self):
+        if self.session is None or self.frame_idx >= len(self.frames):
+            return 0.0
+        count = min(self.segment_frames, len(self.frames) - self.frame_idx)
+        return self.session.prepare_request(count, self.frame_idx)
 
     def _observe(self):
         if self.frame_idx >= len(self.frames):
             return np.zeros(self.state_dim, dtype=np.float32)
+        self._prepare_next_request()
         frame = self.frames[self.frame_idx]
         st = self.session._build_state(frame['representations'], frame['id'])
         pred = self.lstm_provider.predict(st) if self.lstm_provider else None
@@ -170,6 +179,7 @@ class StreamingEnv:
         """
         if self.session is None or self.frame_idx >= len(self.frames):
             raise RuntimeError("no active decision state")
+        self._prepare_next_request()
         frame = self.frames[self.frame_idx]
         return self.session._build_state(frame["representations"], frame["id"])
 
@@ -190,19 +200,16 @@ class StreamingEnv:
         rebuffer_events = max(0, (int(stats.get('rebuffer_count', 0))
                                   - self._prev_rebuffer_count))
         startup_s = max(0.0, stats.get('startup_delay_s', 0.0) - self._prev_startup_s)
-        dropped = max(0, stats.get('frames_dropped', 0) - self._prev_dropped)
         quality_change = (0.0 if self.prev_quality is None
                           else abs(q_mean - self.prev_quality))
         self._prev_stall_s = float(stats.get('total_stall_time_s', 0.0))
         self._prev_rebuffer_count = int(stats.get('rebuffer_count', 0))
         self._prev_startup_s = stats.get('startup_delay_s', 0.0)
-        self._prev_dropped = stats.get('frames_dropped', 0)
         # Use the full episode frame count as the fixed 100/N scale, including
         # when the last segment is shorter than segment_frames.
         reward = self.reward_fn.step_segment(
             q_sum, q_mean, self.prev_quality, stall, rebuffer_events,
-            startup_s=startup_s, dropped=dropped,
-            episode_frames=len(self.frames),
+            startup_s=startup_s, episode_frames=len(self.frames),
         )
         self._episode_quality_sum += q_sum
         self._quality_change_sum += quality_change
@@ -216,63 +223,26 @@ class StreamingEnv:
             'quality': q_mean, 'n_frames': len(segment),
             'stall_s': stall, 'buffer_s': self.user.buffer.buffer_level_s,
             'rebuffer_events': rebuffer_events,
-            'startup_s': startup_s, 'dropped': dropped,
+            'startup_s': startup_s,
+            'request_pacing_s': record.get('request_pacing_s', 0.0),
             'reward': reward, 'sequence': self.sequence,
         }
         return self._observe(), reward, done, info
-
-    def terminate_trace_exhausted(self):
-        """End an episode that needs unobserved post-window throughput.
-
-        The remaining content is accounted for through the existing canonical
-        frame-drop term. No stall duration or future bandwidth is invented.
-        This makes the terminal training reward and reported QoE identical
-        while preserving an explicit policy-failure flag for evaluation.
-        """
-        if self.session is None or self.frame_idx >= len(self.frames):
-            raise RuntimeError("trace exhaustion requires an active episode")
-        remaining = len(self.frames) - self.frame_idx
-        q_reference = self.prev_quality if self.prev_quality is not None else 0.0
-        reward = self.reward_fn.step_segment(
-            q_sum=0.0,
-            q_mean=q_reference,
-            prev_q_mean=self.prev_quality,
-            stall_s=0.0,
-            rebuffer_events=0,
-            startup_s=0.0,
-            dropped=remaining,
-            episode_frames=len(self.frames),
-        )
-        self._terminal_dropped += remaining
-        self._episode_reward += reward
-        failed_at_frame = self.frame_idx
-        self.frame_idx = len(self.frames)
-        self._trace_exhausted = True
-        info = {
-            "policy_trace_exhausted": True,
-            "failed_at_frame": failed_at_frame,
-            "terminal_dropped_frames": remaining,
-            "reward": reward,
-            "sequence": self.sequence,
-        }
-        return self._observe(), reward, True, info
 
     def qoe(self):
         """The one canonical raw QoE; equals the undiscounted reward sum."""
         return self.qoe_terms()['total'] if self.session else 0.0
 
     def qoe_terms(self):
-        """Signed six-term QoE breakdown from cumulative episode outcomes."""
+        """Signed five-term QoE breakdown from cumulative episode outcomes."""
         if not self.session:
-            return self.reward_fn.episode_terms(0, 0, 0, 0, 0, 0,
-                                                len(self.frames))
+            return self.reward_fn.episode_terms(0, 0, 0, 0, 0, len(self.frames))
         stats = self.user.get_buffer_stats()
         return self.reward_fn.episode_terms(
             self._episode_quality_sum,
             self._quality_change_sum,
             stats.get('total_stall_time_s', 0.0),
             stats.get('rebuffer_count', 0),
-            stats.get('frames_dropped', 0) + self._terminal_dropped,
             stats.get('startup_delay_s', 0.0),
             len(self.frames),
         )
@@ -293,14 +263,3 @@ class StreamingEnv:
         if not self.session:
             return 0.0
         return self.user.get_buffer_stats()['total_stall_time_s']
-
-    def frames_dropped(self):
-        if not self.session:
-            return 0
-        return int(
-            self.user.get_buffer_stats().get('frames_dropped', 0)
-            + self._terminal_dropped
-        )
-
-    def policy_trace_exhausted(self):
-        return bool(self._trace_exhausted)

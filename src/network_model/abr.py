@@ -130,9 +130,9 @@ class MPCABR(ABRStrategy):
     The controller enumerates representation sequences over a short horizon,
     predicts download time with a recent-window harmonic throughput estimate,
     and maximizes the canonical scaled tier utility minus predictable startup,
-    stall-duration, rebuffer-event, and switch costs. Frame drops are omitted
-    because future decoder/buffer drops are not observable to this controller.
-    It never reads the underlying link-capacity trace.
+    stall-duration, rebuffer-event, and switch costs. Request pacing admits a
+    segment only when it can fit, so buffer-overflow loss is not modeled. The
+    controller never reads the underlying link-capacity trace.
     """
 
     name = 'mpc'
@@ -180,6 +180,15 @@ class MPCABR(ABRStrategy):
             prev = previous
             score = 0.0
             for step_index, action in enumerate(actions):
+                # The shared client paces every future request until the whole
+                # segment can fit. Reflect that playback consumption here;
+                # simply clamping an overflowing prediction would overstate
+                # future buffer occupancy.
+                pacing_s = max(
+                    0.0,
+                    buffer_s + self.segment_duration_s - self.buffer_capacity_s,
+                )
+                buffer_s = max(0.0, buffer_s - pacing_s)
                 download_s = bitrates[action] * self.segment_duration_s / estimate
                 stall_s = max(0.0, download_s - buffer_s)
                 buffer_s = min(

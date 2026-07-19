@@ -106,7 +106,7 @@ def audit_high_case(env, finite_trace, sequence, jitter_seed):
         "stall_duration_s": float(stats.get("total_stall_time_s", 0.0)),
         "rebuffer_events": int(stats.get("rebuffer_count", 0)),
         "startup_delay_s": float(stats.get("startup_delay_s", 0.0)),
-        "frames_dropped": int(stats.get("frames_dropped", 0)),
+        "request_pacing_s": float(env.session.total_request_pacing_s),
     }
 
 

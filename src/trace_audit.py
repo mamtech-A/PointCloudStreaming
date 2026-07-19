@@ -360,7 +360,7 @@ def audit_case(env, trace_window, sequence, jitter_seed):
         "stall_duration_s": float(stats.get("total_stall_time_s", 0.0)),
         "rebuffer_events": int(stats.get("rebuffer_count", 0)),
         "startup_delay_s": float(stats.get("startup_delay_s", 0.0)),
-        "frames_dropped": int(stats.get("frames_dropped", 0)),
+        "request_pacing_s": float(env.session.total_request_pacing_s),
     }
 
 
@@ -1027,11 +1027,11 @@ def render_markdown_report(report):
         "eligible block/window inside that parent; otherwise fragmented or "
         "long traces would be overrepresented.",
         "",
-        "Static Very-low eligibility certifies that a window has a feasible "
-        "action, not that every ABR action will finish. The follow-up runtime "
-        "guard must record a policy that exhausts an eligible trace as "
-        "`policy_trace_exhausted`; it must never clamp or silently remove that "
-        "policy's case.",
+        "Static Very-low eligibility certifies only the minimum-demand action. "
+        "The production registry must additionally retain only windows whose "
+        "maximum-demand Static High cases all finish. Any unexpected runtime "
+        "exhaustion is then a fatal protocol failure with no complete-session "
+        "QoE; it must never clamp the final trace sample.",
         "",
     ])
     return "\n".join(lines)

@@ -1,4 +1,4 @@
-"""Tests for the one canonical six-term reward/QoE objective.
+"""Tests for the one canonical five-term reward/QoE objective.
 
 Run directly: python tests/test_qoe_reward.py
 """
@@ -16,6 +16,7 @@ from src.rl.env import StreamingEnv
 from src.rl.dqn import DQNAgent
 from src.network_model import Server, EdgeNode, User, Topology
 from src.network_model.buffer import ClientBuffer
+from src.network_model.finite_trace import FiniteTraceWindow, TraceWindowExhausted
 from src.network_model.manifest import (
     PointCloud, TIER_AVERAGE_BITRATE_BPS, TIER_QUALITY_UTILITY, tier_quality,
     parse_mpd_xml,
@@ -25,15 +26,15 @@ from src.network_model.trace import BandwidthTrace
 
 # ---------------------------------------------------------------- reward spec
 
-def test_segment_reward_has_exact_six_terms():
+def test_segment_reward_has_exact_five_terms():
     rf = RewardFunction()
     got = rf.step_segment(
         q_sum=6.4, q_mean=0.8, prev_q_mean=0.6,
-        stall_s=1.5, rebuffer_events=1, startup_s=0.7, dropped=2,
+        stall_s=1.5, rebuffer_events=1, startup_s=0.7,
         episode_frames=300,
     )
     expected = ((100.0 / 300) * 6.4 - 4.3 * 1.5 - 2.0
-                - abs(0.8 - 0.6) - (100.0 / 300) * 2 - 0.7)
+                - abs(0.8 - 0.6) - 0.7)
     assert abs(got - expected) < 1e-12, (got, expected)
 
 
@@ -61,24 +62,24 @@ def test_quality_change_uses_fixed_tier_gap():
 def test_episode_terms_match_sum_of_segment_rewards():
     rf = RewardFunction()
     r1 = rf.step_segment(4.0, 0.5, None, 0.0, 0,
-                         startup_s=2.0, dropped=0, episode_frames=16)
+                         startup_s=2.0, episode_frames=16)
     r2 = rf.step_segment(6.4, 0.8, 0.5, 1.25, 1,
-                         startup_s=0.0, dropped=2, episode_frames=16)
-    terms = rf.episode_terms(10.4, 0.3, 1.25, 1, 2, 2.0, 16)
+                         startup_s=0.0, episode_frames=16)
+    terms = rf.episode_terms(10.4, 0.3, 1.25, 1, 2.0, 16)
     assert abs((r1 + r2) - terms['total']) < 1e-12
     assert set(terms) == {
         'quality', 'stall_duration', 'rebuffering', 'quality_change',
-        'frame_drops', 'startup_delay', 'total',
+        'startup_delay', 'total',
     }
 
 
 def test_superseded_reward_shapes_are_rejected():
     for key in ('stall_mode', 'stall_cap_s', 'event_penalty',
-                'switch_mode', 'lam_down'):
+                'switch_mode', 'lam_down', 'drop_weight'):
         try:
             RewardFunction({key: 1})
         except ValueError as exc:
-            assert 'canonical six-term' in str(exc)
+            assert 'canonical five-term' in str(exc)
         else:
             raise AssertionError(f"superseded key {key!r} was accepted")
 
@@ -89,11 +90,11 @@ def test_default_spec_enables_all_requested_costs():
     assert DEFAULT_REWARD_SPEC['rebuffer_weight'] == 2.0
     assert DEFAULT_REWARD_SPEC['lam'] == 1.0
     assert DEFAULT_REWARD_SPEC['startup_weight'] == 1.0
-    assert DEFAULT_REWARD_SPEC['drop_weight'] is None
     description = RewardFunction().describe()
     for text in ('stall_duration', 'rebuffer_events', 'delta_segment_q',
-                 'dropped_frames', 'startup_delay'):
+                 'startup_delay'):
         assert text in description, description
+    assert 'drop' not in description
 
 
 def test_fixed_tier_quality_is_log_bitrate_normalized():
@@ -199,22 +200,149 @@ def test_qoe_terms_total_and_startup():
     assert terms['rebuffering'] == 0.0
 
 
-def test_qoe_drop_term_charges_100_over_N():
-    """Overflowing the buffer charges exactly (100/N) per dropped frame."""
+def test_request_pacing_prevents_buffer_overflow():
+    """A fast link waits before requests instead of discarding received media."""
     random.seed(0)
-    # Fast flat link + tiny buffer -> eager fetch must overflow.
+    # Fast flat link + tiny buffer forces intentional inter-request waiting.
     tr = BandwidthTrace([200e6] * 30)
     session, frames = _mk_session(tr, n_frames=90, buffer_capacity_s=1.0)
     for i in range(0, len(frames), 5):
         session.step_segment(frames[i:i + 5], i)
     stats = session.user.get_buffer_stats()
-    assert stats['frames_dropped'] > 0, "expected buffer-overflow drops"
+    assert 'frames_dropped' not in stats
+    assert stats['frames_received'] == len(frames)
+    assert session.total_request_pacing_s > 0.0
+    assert stats['buffer_level_s'] <= stats['buffer_capacity_s'] + 1e-9
     terms = session.qoe_quality_terms()
-    n = len(session.chosen_densities)
-    assert abs(terms['frame_drops'] + (100.0 / n) * stats['frames_dropped']) < 1e-9
-    # Weight override works.
-    t0 = session.qoe_quality_terms(w_drop=0.0)
-    assert t0['frame_drops'] == 0.0
+    assert 'frame_drops' not in terms
+
+
+def test_request_pacing_advances_trace_clock_but_not_qoe_or_throughput_sample():
+    """Idle pacing is visible to the next decision but is not network time."""
+    random.seed(0)
+    session, frames = _mk_session(
+        BandwidthTrace([200e6] * 60), n_frames=40, buffer_capacity_s=1.0
+    )
+    # Fill the one-second buffer and cross the one-second startup threshold.
+    for i in range(0, 30, 5):
+        session.step_segment(frames[i:i + 5], i)
+    before = session.user.get_buffer_stats()
+    assert before['playback_started'] and before['is_playing']
+    clock_before = session.cumulative_time_s
+    history_before = list(session.observed_throughput_history)
+
+    paced_s = session.prepare_request(5, 30)
+    paced_clock = session.cumulative_time_s
+    assert session.prepare_request(5, 30) == paced_s
+    assert session.cumulative_time_s == paced_clock
+    try:
+        session.prepare_request(5, 35)
+    except RuntimeError as exc:
+        assert 'does not match' in str(exc)
+    else:
+        raise AssertionError('mismatched prepared request was accepted')
+    after_pacing = session.user.get_buffer_stats()
+    assert paced_s > 0.0
+    assert abs(session.cumulative_time_s - clock_before - paced_s) < 1e-9
+    assert session.observed_throughput_history == history_before
+    assert after_pacing['startup_delay_s'] == before['startup_delay_s']
+    assert after_pacing['total_stall_time_s'] == before['total_stall_time_s']
+    assert after_pacing['rebuffer_count'] == before['rebuffer_count']
+    assert abs(after_pacing['buffer_level_s'] - (1.0 - 5.0 / 30.0)) < 1e-9
+
+    class _RecordingFixed:
+        name = 'recording-fixed'
+        def __init__(self): self.buffer_levels = []
+        def reset(self): pass
+        def select(self, state):
+            self.buffer_levels.append(state.buffer_level_s)
+            return 1
+        def report(self, *args): return None
+
+    policy = _RecordingFixed()
+    session.abr = policy
+    record = session.step_segment(frames[30:35], 30)
+    assert abs(record['request_pacing_s'] - paced_s) < 1e-9
+    assert abs(record['request_start_s'] - (clock_before + paced_s)) < 1e-9
+    assert abs(policy.buffer_levels[-1] - after_pacing['buffer_level_s']) < 1e-9
+    transfer_s = record['metrics']['time_s']
+    expected_bps = record['metrics']['sent_bytes'] * 8.0 / transfer_s
+    assert abs(session.observed_throughput_history[-1] - expected_bps) < 1e-6
+    assert abs(session.observed_throughput_history[-1]
+               - record['data_bytes'] * 8.0 / (transfer_s + paced_s)) > 1.0
+
+
+def test_fractional_playback_waits_preserve_frame_accounting():
+    buffer = ClientBuffer(target_fps=30.0, buffer_capacity_s=1.0,
+                          min_buffer_s=1.0 / 30.0)
+    for frame_id in range(12):
+        buffer.add_frame(frame_id, 0, 1, 0.0, 0.0)
+    for step in range(1, 11):
+        buffer.advance_playback(0.01, step * 0.01)
+    stats = buffer.get_statistics()
+    assert stats['frames_played'] == 3
+    assert stats['buffer_level_frames'] == 9
+    assert abs(stats['buffer_level_s'] - 0.3) < 1e-9
+
+
+def test_exact_depletion_is_not_rebuffer_until_positive_unplayed_time():
+    buffer = ClientBuffer(target_fps=10.0, buffer_capacity_s=1.0,
+                          min_buffer_s=0.1)
+    for frame_id in range(5):
+        buffer.add_frame(frame_id, 0, 1, 0.0, 0.0)
+    buffer.advance_playback(0.5, 0.5)
+    assert buffer.buffer_level_s == 0.0
+    assert buffer.rebuffer_count == 0
+
+    # Zero-time arrival at the depletion boundary keeps playback continuous.
+    buffer.add_frame(5, 0, 1, 0.0, 0.5)
+    assert buffer.rebuffer_count == 0
+    assert buffer.total_stall_time == 0.0
+
+    # After that frame is played, a positive 0.2 s gap is one true event.
+    buffer.advance_playback(0.1, 0.6)
+    result = buffer.add_frame(6, 0, 1, 0.2, 0.8)
+    assert result['event'] == 'playback_resumed'
+    assert buffer.rebuffer_count == 1
+    assert abs(buffer.total_stall_time - 0.2) < 1e-9
+
+
+def test_pacing_cannot_move_a_request_beyond_a_finite_trace():
+    session, frames = _mk_session(
+        BandwidthTrace([200e6] * 60), n_frames=40, buffer_capacity_s=1.0
+    )
+    for i in range(0, 30, 5):
+        session.step_segment(frames[i:i + 5], i)
+    required_wait = max(0.0, session.user.buffer.buffer_level_s
+                        - (1.0 - 5.0 / 30.0))
+    assert required_wait > 0.0
+    measured_end = session.cumulative_time_s + required_wait / 2.0
+    session.access_link.trace = FiniteTraceWindow(BandwidthTrace(
+        [200e6, 200e6], name='short-window',
+        sample_times_s=[0.0, measured_end],
+    ))
+    clock_before = session.cumulative_time_s
+    buffer_before = session.user.buffer.buffer_level_s
+    try:
+        session.prepare_request(5, 30)
+    except TraceWindowExhausted as exc:
+        assert exc.trace_end_s == measured_end
+    else:
+        raise AssertionError('pacing silently crossed the measured trace end')
+    assert session.cumulative_time_s == clock_before
+    assert session.user.buffer.buffer_level_s == buffer_before
+
+
+def test_atomic_segment_geometry_is_rejected_before_an_episode_starts():
+    try:
+        StreamingEnv(
+            _synthetic_frames(30), segment_frames=9, target_fps=30.0,
+            buffer_capacity_s=1.0, min_buffer_s=0.95,
+        )
+    except ValueError as exc:
+        assert 'cannot reach' in str(exc)
+    else:
+        raise AssertionError('incompatible segment/buffer geometry was accepted')
 
 
 def test_startup_delay_frozen_after_playback_starts():
@@ -267,7 +395,7 @@ def test_env_reward_sum_equals_qoe_for_partial_segments():
         assert rebuffer_deltas == stats['rebuffer_count']
 
 
-def test_env_reward_qoe_equality_includes_frame_drops():
+def test_env_reward_qoe_equality_with_request_pacing():
     frames = _synthetic_frames(90)
     env = StreamingEnv(
         frames, segment_frames=5, buffer_capacity_s=1.0,
@@ -281,10 +409,10 @@ def test_env_reward_qoe_equality_includes_frame_drops():
         _, reward, done, _ = env.step(1)
         total_reward += reward
     stats = env.user.get_buffer_stats()
-    assert stats['frames_dropped'] > 0
+    assert 'frames_dropped' not in stats
+    assert env.session.total_request_pacing_s > 0.0
     assert abs(total_reward - env.qoe()) < 1e-9
-    expected_drop_term = -(100.0 / len(frames)) * stats['frames_dropped']
-    assert abs(env.qoe_terms()['frame_drops'] - expected_drop_term) < 1e-9
+    assert 'frame_drops' not in env.qoe_terms()
 
 
 def test_reward_qoe_equality_with_fixed_tier_utility():

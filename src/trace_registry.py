@@ -26,13 +26,19 @@ def sha256_file(path):
 class TraceWindowRegistry:
     """Frozen training/evaluation windows reconstructed from unchanged CSVs."""
 
-    def __init__(self, path, protocol, trace_dir, verify_hashes=True):
+    def __init__(self, path, protocol, trace_dir, verify_hashes=True,
+                 allow_candidate_registry=False):
         self.path = os.path.abspath(os.fspath(path))
         self.trace_dir = os.path.abspath(os.fspath(trace_dir))
         with open(self.path, encoding="utf-8") as handle:
             self.data = json.load(handle)
         if self.data.get("schema_version") != 1:
             raise ValueError("unsupported trace-window registry schema")
+        if (self.data.get("registry_type") == "candidate_high_tier_audit_windows"
+                and not allow_candidate_registry):
+            raise ValueError(
+                "candidate audit registry cannot be used for training/evaluation"
+            )
         expected_protocol = protocol_digest(protocol)
         if self.data.get("protocol_digest") != expected_protocol:
             raise ValueError("trace-window registry/protocol digest mismatch")
@@ -51,6 +57,20 @@ class TraceWindowRegistry:
             raise FileNotFoundError(f"registry source audit is absent: {audit_path}")
         if sha256_file(audit_path) != self.data["source_audit_sha256"]:
             raise ValueError("trace-window registry/source audit hash mismatch")
+        high_audit_rel = self.data.get("source_high_audit")
+        if high_audit_rel:
+            high_audit_path = os.path.join(project_root, high_audit_rel)
+            if not os.path.isfile(high_audit_path):
+                raise FileNotFoundError(
+                    f"registry maximum-tier audit is absent: {high_audit_path}"
+                )
+            if sha256_file(high_audit_path) != self.data.get(
+                    "source_high_audit_sha256"):
+                raise ValueError("trace-window registry/high audit hash mismatch")
+            with open(high_audit_path, encoding="utf-8") as handle:
+                high_audit = json.load(handle)
+            if high_audit.get("audit_id") != self.data.get("source_high_audit_id"):
+                raise ValueError("trace-window registry/high audit ID mismatch")
         self.max_gap_s = float(
             self.data["settings"]["maximum_contiguous_gap_s"]
         )
@@ -194,5 +214,8 @@ class TraceWindowRegistry:
         return finite
 
 
-def load_trace_registry(path, protocol, trace_dir, verify_hashes=True):
-    return TraceWindowRegistry(path, protocol, trace_dir, verify_hashes)
+def load_trace_registry(path, protocol, trace_dir, verify_hashes=True,
+                        allow_candidate_registry=False):
+    return TraceWindowRegistry(
+        path, protocol, trace_dir, verify_hashes, allow_candidate_registry
+    )

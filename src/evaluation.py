@@ -8,12 +8,9 @@ from collections import defaultdict
 
 import numpy as np
 
-from .network_model.finite_trace import TraceWindowExhausted
-
-
 METRICS = (
     "reward", "qoe", "qoe_quality", "mean_quality", "stall_s",
-    "rebuffer_events", "quality_change", "frames_dropped", "startup_s",
+    "rebuffer_events", "quality_change", "startup_s", "request_pacing_s",
 )
 
 
@@ -23,12 +20,6 @@ def _metric_summary(records):
         values = [float(r[metric]) for r in records]
         result[metric] = float(np.mean(values)) if values else 0.0
         result[f"{metric}_std"] = float(np.std(values)) if values else 0.0
-    failures = sum(bool(row.get("policy_trace_exhausted")) for row in records)
-    result["policy_trace_exhausted_cases"] = failures
-    result["completed_cases"] = len(records) - failures
-    result["policy_trace_exhausted_rate"] = (
-        failures / len(records) if records else 0.0
-    )
     return result
 
 
@@ -49,12 +40,8 @@ def aggregate_records(records):
         "aggregation": "macro_parent_trace",
         "case_level_summary": case_level,
         "per_trace": per_trace,
-        "policy_trace_exhausted_cases": case_level[
-            "policy_trace_exhausted_cases"
-        ],
-        "completed_cases": case_level["completed_cases"],
     }
-    for metric in (*METRICS, "policy_trace_exhausted_rate"):
+    for metric in METRICS:
         values = [float(summary[metric]) for summary in per_trace.values()]
         result[metric] = float(np.mean(values)) if values else 0.0
         result[f"{metric}_std"] = float(np.std(values)) if values else 0.0
@@ -99,22 +86,13 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
                             reset_policy()
                         done = False
                         total_reward = 0.0
-                        policy_failure = False
-                        failure_detail = None
+                        request_pacing_s = 0.0
                         while not done:
                             action = int(choose_action(observation, env))
-                            try:
-                                observation, reward, done, _ = env.step(action)
-                            except TraceWindowExhausted as exc:
-                                observation, reward, done, failure_detail = (
-                                    env.terminate_trace_exhausted()
-                                )
-                                failure_detail.update({
-                                    "reason": "policy_trace_exhausted",
-                                    "trace_end_s": exc.trace_end_s,
-                                    "remaining_bits_in_tcp_round": exc.remaining_bits,
-                                })
-                                policy_failure = True
+                            observation, reward, done, info = env.step(action)
+                            request_pacing_s += float(
+                                info.get("request_pacing_s", 0.0)
+                            )
                             total_reward += reward
                         qoe = float(env.qoe())
                         if abs(total_reward - qoe) > 1e-8:
@@ -139,11 +117,9 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
                             "stall_s": float(env.total_stall_s()),
                             "rebuffer_events": int(stats.get('rebuffer_count', 0)),
                             "quality_change": float(env.quality_change_sum()),
-                            "frames_dropped": env.frames_dropped(),
                             "startup_s": float(stats.get('startup_delay_s', 0.0)),
+                            "request_pacing_s": request_pacing_s,
                             "qoe_terms": env.qoe_terms(),
-                            "policy_trace_exhausted": policy_failure,
-                            "policy_failure": failure_detail,
                         })
     finally:
         random.setstate(rng_state)

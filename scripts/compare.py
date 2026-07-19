@@ -89,17 +89,17 @@ def main():
     print("\n" + "=" * 100)
     print("COMPARISON SUMMARY")
     print("=" * 100)
-    hdr = (f"{'strategy':<10} {'QoE':>8} {'rebuf':>6} {'stall_s':>9} {'dropped':>8} "
+    hdr = (f"{'strategy':<10} {'QoE':>8} {'rebuf':>6} {'stall_s':>9} {'pacing_s':>9} "
            f"{'mean_rep':>9} {'switches':>9} {'mean_qual':>10}")
     print(hdr)
     print("-" * len(hdr))
     for r in runs:
         print(f"{r['abr']:<10} {r['qoe']:>8.1f} "
               f"{r['rebuffer_count']:>6d} {r['total_stall_time_s']:>9.1f} "
-              f"{r['frames_dropped']:>8d} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d} "
+              f"{r['request_pacing_s']:>9.1f} {r['mean_rep_id']:>9.2f} {r['quality_switches']:>9d} "
               f"{r['mean_quality']:>10.3f}")
     print("\nreward = QoE = 100*mean_q - 4.3*stall_s - 2.0*rebuffer_events")
-    print("             - 1.0*sum|dq_segment| - (100/N)*dropped - 1.0*startup_s")
+    print("             - 1.0*sum|dq_segment| - 1.0*startup_s")
     print("             (raw, unclipped; startup and post-start stalls are disjoint).")
     print("Logs written to logs/baseline/, logs/lstm/, logs/dqn/")
 

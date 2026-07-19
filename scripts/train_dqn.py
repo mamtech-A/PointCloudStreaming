@@ -45,7 +45,6 @@ except Exception:
 
 from src.network_model import DEFAULT_TCP_PARAMS
 from src.network_model.manifest import parse_mpd_xml
-from src.network_model.finite_trace import TraceWindowExhausted
 from src.lstm_model import LSTMPredictor
 from src.experiment_protocol import (
     evaluation_settings, load_protocol, protocol_digest, split_paths,
@@ -360,14 +359,13 @@ def main():
     best_entry = None
     history = {'episode_reward': [], 'validation': []}
     episode = 0
-    training_policy_failures = 0
     ep_rng = random.Random(args.seed + 1)
 
     ep_csv_path = os.path.join(run_dir, 'episodes.csv')
     ep_csv = open(ep_csv_path, 'w', encoding='utf-8')
     ep_csv.write(
         'episode,sequence,file,window_id,block_id,start_time_s,reward,qoe,'
-        'qoe_quality,policy_trace_exhausted,epsilon,mean_loss\n'
+        'qoe_quality,request_pacing_s,epsilon,mean_loss\n'
     )
 
     def epsilon():
@@ -422,16 +420,12 @@ def main():
             done = False
             ep_reward = 0.0
             losses = []
-            policy_trace_exhausted = False
+            request_pacing_s = 0.0
             while not done:
                 eps = epsilon()
                 a = agent.act(s, eps)
-                try:
-                    s2, r, done, _ = env.step(a)
-                except TraceWindowExhausted:
-                    s2, r, done, _ = env.terminate_trace_exhausted()
-                    policy_trace_exhausted = True
-                    training_policy_failures += 1
+                s2, r, done, info = env.step(a)
+                request_pacing_s += float(info.get('request_pacing_s', 0.0))
                 agent.push(s, a, r, s2, done)
                 loss = agent.learn()
                 if loss is not None:
@@ -455,14 +449,14 @@ def main():
             print(f"[ep {episode:4d}] {seq:<12s} {os.path.basename(path):>32s} "
                   f"{window['block_id']}@{window['start_time_s']:.0f}s "
                   f"reward=QoE={ep_reward:8.2f} "
-                  f"failed={int(policy_trace_exhausted)} "
+                  f"pacing={request_pacing_s:.2f}s "
                   f"eps={eps:.3f} loss={mean_loss:.4f}")
             ep_csv.write(
                          f"{episode},{seq},{os.path.basename(path)},"
                          f"{window['id']},{window['block_id']},"
                          f"{window['start_time_s']:.3f},"
                          f"{ep_reward:.4f},{episode_qoe:.2f},{episode_qoe:.2f},"
-                         f"{int(policy_trace_exhausted)},{eps:.4f},"
+                         f"{request_pacing_s:.4f},{eps:.4f},"
                          f"{mean_loss:.6f}\n")
             ep_csv.flush()
 
@@ -519,10 +513,6 @@ def main():
         'episodes_per_epoch': episodes_per_epoch,
         'episodes_per_parent_per_epoch': episodes_per_parent,
         'episodes_run': episode,
-        'training_policy_trace_exhausted_cases': training_policy_failures,
-        'training_policy_trace_exhausted_rate': (
-            training_policy_failures / episode if episode else 0.0
-        ),
         'steps_run': step_count,
         'stopped_early': stopped_early,
         'untrained': base,
