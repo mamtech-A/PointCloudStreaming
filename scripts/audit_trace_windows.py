@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Audit timestamp-derived trace windows without changing the experiment.
+"""Audit timestamp-derived trace windows before freezing the experiment.
 
 The command writes a detailed JSON registry and a compact Markdown review.  It
-never edits source traces or makes the registry active in training/evaluation.
+never edits source traces; ``build_trace_registry.py`` separately freezes the
+reviewed windows consumed by training and evaluation.
 """
 
 from __future__ import annotations
