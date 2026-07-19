@@ -281,7 +281,7 @@ def main():
         f"Done: {summary['eligible_window_count']}/"
         f"{summary['candidate_window_count']} windows eligible; "
         f"{summary['excluded_trace_count']}/"
-        f"{summary['trace_count']} traces classified as outages."
+        f"{summary['trace_count']} traces lack an eligible window."
     )
     print(f"JSON: {json_path}")
     print(f"Markdown: {markdown_path}")

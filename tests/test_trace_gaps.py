@@ -19,6 +19,7 @@ from src.trace_gaps import (
     build_gap_inventory,
     split_trace_at_gaps,
     threshold_sensitivity,
+    render_gap_markdown,
     validate_gap_threshold,
 )
 
@@ -154,6 +155,36 @@ def test_invalid_gap_threshold_is_rejected():
             pass
         else:
             raise AssertionError(f"invalid threshold accepted: {value}")
+
+
+def test_nondefault_gap_report_uses_its_configured_threshold():
+    report = {
+        "settings": {"long_gap_s": 10.0},
+        "summary": {
+            "long_gap_count": 0,
+            "affected_trace_count": 0,
+            "trace_count": 1,
+            "maximum_gap_s": 0.0,
+            "gap_count_over_10s": 0,
+            "gap_count_over_30s": 0,
+            "gap_count_over_60s": 0,
+            "one_second_delta_count": 1,
+            "timestamp_delta_count": 1,
+            "duplicate_timestamp_count": 0,
+            "cadence_delta_count_0_to_3s": 1,
+            "cadence_delta_fraction_0_to_3s": 1.0,
+            "borderline_delta_count_over_3_to_5s": 0,
+            "long_gaps_with_network_mode_change": 0,
+            "long_gaps_with_cell_id_change": 0,
+        },
+        "threshold_sensitivity": [],
+        "long_gaps": [],
+    }
+    markdown = render_gap_markdown(report)
+    assert "split at gaps >10 s" in markdown
+    assert "Every gap greater than 10 seconds" in markdown
+    assert "non-primary 10-second sensitivity run" in markdown
+    assert "Every gap greater than 5 seconds" not in markdown
 
 
 def _run_all():

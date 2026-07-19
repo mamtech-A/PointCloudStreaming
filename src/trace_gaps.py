@@ -350,6 +350,8 @@ def build_gap_inventory(protocol, trace_dir, *, long_gap_s=DEFAULT_MAX_GAP_S,
 def render_gap_markdown(report):
     settings = report["settings"]
     summary = report["summary"]
+    long_gap_s = float(settings["long_gap_s"])
+    is_primary_five_second_report = math.isclose(long_gap_s, 5.0)
     lines = [
         "# Timestamp-gap audit",
         "",
@@ -371,7 +373,7 @@ def render_gap_markdown(report):
         "The cleaned corpus has no measured positive application-layer download "
         "throughput sample inside these intervals. Holding the previous rate "
         "across them would invent observations, so the recommended policy is "
-        "to split at gaps >5 s while preserving the parent file's "
+        f"to split at gaps >{long_gap_s:g} s while preserving the parent file's "
         "train/validation/test assignment.",
         "",
         f"- {summary['cadence_delta_count_0_to_3s']}/"
@@ -379,9 +381,6 @@ def render_gap_markdown(report):
         f"({100.0 * summary['cadence_delta_fraction_0_to_3s']:.2f}%) are "
         "between 0 and 3 seconds; only "
         f"{summary['borderline_delta_count_over_3_to_5s']} are 4-5 seconds.",
-        f"- Long-gap bands: {summary['long_gap_count_6_to_10s']} at 6-10 s; "
-        f"{summary['long_gap_count_11_to_30s']} at 11-30 s; "
-        f"{summary['long_gap_count_over_30s']} above 30 s.",
         f"- Endpoint context changes across "
         f"{summary['long_gaps_with_network_mode_change']} gaps for radio mode "
         f"and {summary['long_gaps_with_cell_id_change']} gaps for cell ID.",
@@ -400,16 +399,30 @@ def render_gap_markdown(report):
             f"{row['candidate_window_count_at_grid_stride']} | "
             f"{100.0 * row['usable_duration_fraction']:.2f}% |"
         )
+    if is_primary_five_second_report:
+        lines.extend([
+            "",
+            f"Long-gap bands: {summary['long_gap_count_6_to_10s']} at 6-10 s; "
+            f"{summary['long_gap_count_11_to_30s']} at 11-30 s; "
+            f"{summary['long_gap_count_over_30s']} above 30 s.",
+            "",
+            "The source paper describes one-second logging granularity. A "
+            "2-second cutoff would split the 607 observed 3-second deltas and "
+            "over-fragment the corpus. The primary rule conservatively "
+            "tolerates 4-5 seconds of sampling irregularity and splits every "
+            "interval of at least 6 seconds. This threshold is fixed from "
+            "acquisition cadence, before any ABR/QoE comparison; 3- and "
+            "10-second alternatives remain sensitivity checks.",
+        ])
+    else:
+        lines.extend([
+            "",
+            f"This is a non-primary {long_gap_s:g}-second sensitivity run. "
+            "Threshold choice must remain independent of ABR/QoE outcomes.",
+        ])
     lines.extend([
         "",
-        "The source paper describes one-second logging granularity. A 2-second "
-        "cutoff would split the 607 observed 3-second deltas and over-fragment "
-        "the corpus. The primary rule conservatively tolerates 4-5 seconds of "
-        "sampling irregularity and splits every interval of at least 6 seconds. "
-        "This threshold is fixed from acquisition cadence, before any ABR/QoE "
-        "comparison; 3- and 10-second alternatives remain sensitivity checks.",
-        "",
-        "## Every gap greater than 5 seconds",
+        f"## Every gap greater than {long_gap_s:g} seconds",
         "",
         "| Split | Trace | Gap (s) | Before timestamp | Before mode / kbps | "
         "After timestamp | After mode / kbps | Cell change |",

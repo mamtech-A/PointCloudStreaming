@@ -40,9 +40,13 @@ from .trace_gaps import (
 )
 
 
-AUDIT_SCHEMA_VERSION = 2
+AUDIT_SCHEMA_VERSION = 3
 ELIGIBLE = "eligible"
-OUTAGE = "outage"
+INELIGIBLE = "ineligible"
+# Backward-compatible import name for callers of the first audit draft. The
+# value deliberately no longer claims that trace exhaustion is a physical
+# network outage.
+OUTAGE = INELIGIBLE
 _TIME_EPSILON_S = 1e-9
 
 
@@ -429,8 +433,8 @@ def audit_case(env, trace_window, sequence, jitter_seed):
         return {
             "sequence": sequence,
             "jitter_seed": int(jitter_seed),
-            "status": OUTAGE,
-            "reason": "vlow_exceeds_trace_end",
+            "status": INELIGIBLE,
+            "reason": "vlow_requires_unobserved_post_block_time",
             "completed_frames": int(env.frame_idx),
             "required_frames": len(env.frames),
             "measured_duration_s": float(finite_trace.duration_s),
@@ -474,7 +478,7 @@ def audit_window(env_by_segment, trace_window, sequences, jitter_seeds):
                 case = audit_case(env, trace_window, sequence, seed)
                 case["segment_frames"] = int(segment_frames)
                 cases.append(case)
-    failures = [case for case in cases if case["status"] == OUTAGE]
+    failures = [case for case in cases if case["status"] == INELIGIBLE]
     failed_combinations = []
     for segment_frames in sorted(env_by_segment):
         for sequence in sequences:
@@ -483,7 +487,9 @@ def audit_window(env_by_segment, trace_window, sequences, jitter_seeds):
                 if case["segment_frames"] == segment_frames
                 and case["sequence"] == sequence
             ]
-            group_failures = [case for case in group if case["status"] == OUTAGE]
+            group_failures = [
+                case for case in group if case["status"] == INELIGIBLE
+            ]
             completions = [case["completion_time_s"] for case in group
                            if case["status"] == ELIGIBLE]
             headrooms = [case["headroom_s"] for case in group
@@ -533,7 +539,7 @@ def audit_window(env_by_segment, trace_window, sequences, jitter_seeds):
             (float(case["stall_duration_s"]) if is_eligible else None),
         ])
     return {
-        "status": OUTAGE if failures else ELIGIBLE,
+        "status": INELIGIBLE if failures else ELIGIBLE,
         "case_count": len(cases),
         "failure_count": len(failures),
         "maximum_completion_time_s": max(completions, default=None),
@@ -592,13 +598,13 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
 
     trace_records = []
     eligible_registry = []
-    outage_registry = []
+    ineligible_registry = []
     legacy_evaluation_windows = []
     selected_evaluation_windows = []
     by_split = {
         split: {"traces": 0, "eligible_traces": 0, "excluded_traces": 0,
                 "candidate_windows": 0, "eligible_windows": 0,
-                "outage_windows": 0, "selected_windows": 0}
+                "ineligible_windows": 0, "selected_windows": 0}
         for split in ("train", "validation", "test")
     }
     corpus_rat_duration = defaultdict(float)
@@ -704,14 +710,14 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                         "eligible" if result["status"] == ELIGIBLE
                         else "no_measured_interval_after_start"
                         if window_summary["duration_s"] <= 0
-                        else "vlow_exceeds_contiguous_block_end"
+                        else "vlow_requires_unobserved_post_block_time"
                     )
                     windows.append(window)
                     block_windows.append(window)
                     if result["status"] == ELIGIBLE:
                         eligible_registry.append(window)
                     else:
-                        outage_registry.append(window)
+                        ineligible_registry.append(window)
                 block_eligible_count = sum(
                     row["status"] == ELIGIBLE for row in block_windows
                 )
@@ -727,7 +733,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                     "gap_after_s": block.gap_after_s,
                     "candidate_window_count": len(block_windows),
                     "eligible_window_count": block_eligible_count,
-                    "outage_window_count": (
+                    "ineligible_window_count": (
                         len(block_windows) - block_eligible_count
                     ),
                     "candidate_window_ids": [
@@ -740,7 +746,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 })
 
             eligible_count = sum(w["status"] == ELIGIBLE for w in windows)
-            trace_status = ELIGIBLE if eligible_count else OUTAGE
+            trace_status = ELIGIBLE if eligible_count else INELIGIBLE
             selected = (select_evenly_spaced_windows(
                 windows, selected_windows_per_trace
             ) if split in ("validation", "test") else [])
@@ -807,7 +813,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                         "eligible" if legacy["status"] == ELIGIBLE
                         else "no_measured_interval_after_start"
                         if legacy["duration_s"] <= 0
-                        else "vlow_exceeds_contiguous_block_end"
+                        else "vlow_requires_unobserved_post_block_time"
                     )
                     legacy_windows.append(legacy)
                     legacy_evaluation_windows.append(legacy)
@@ -817,7 +823,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 "status": trace_status,
                 "candidate_window_count": len(windows),
                 "eligible_window_count": eligible_count,
-                "outage_window_count": len(windows) - eligible_count,
+                "ineligible_window_count": len(windows) - eligible_count,
                 "selected_window_count": len(selected),
                 "selected_window_ids": selected_ids,
                 "candidate_window_ids": [window["id"] for window in windows],
@@ -833,7 +839,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
             counts["traces"] += 1
             counts["candidate_windows"] += len(windows)
             counts["eligible_windows"] += eligible_count
-            counts["outage_windows"] += len(windows) - eligible_count
+            counts["ineligible_windows"] += len(windows) - eligible_count
             counts["selected_windows"] += len(selected)
             if trace_status == ELIGIBLE:
                 counts["eligible_traces"] += 1
@@ -843,7 +849,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
     total_rat_s = sum(corpus_rat_duration.values())
     excluded_traces = [
         {"split": row["split"], "trace": row["trace"]}
-        for row in trace_records if row["status"] == OUTAGE
+        for row in trace_records if row["status"] == INELIGIBLE
     ]
     eligible_traces = [
         {"split": row["split"], "trace": row["trace"]}
@@ -853,12 +859,14 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
         "trace_count": len(trace_records),
         "eligible_trace_count": len(eligible_traces),
         "excluded_trace_count": len(excluded_traces),
-        "candidate_window_count": len(eligible_registry) + len(outage_registry),
+        "candidate_window_count": (
+            len(eligible_registry) + len(ineligible_registry)
+        ),
         "eligible_window_count": len(eligible_registry),
-        "outage_window_count": len(outage_registry),
+        "ineligible_window_count": len(ineligible_registry),
         "legacy_evaluation_window_count": len(legacy_evaluation_windows),
-        "legacy_evaluation_outage_count": sum(
-            row["status"] == OUTAGE for row in legacy_evaluation_windows
+        "legacy_evaluation_ineligible_count": sum(
+            row["status"] == INELIGIBLE for row in legacy_evaluation_windows
         ),
         "minimum_selected_evaluation_duration_s": min(
             (row["measured_duration_s"]
@@ -922,6 +930,10 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 "split a parent trace before every consecutive timestamp "
                 f"delta greater than {max_gap_s:g} seconds"
             ),
+            "excluded_gap_duration_definition": (
+                "exclude the full endpoint-to-endpoint delta at every split; "
+                "infer no terminal width after the last pre-gap observation"
+            ),
             "selected_windows_per_trace": int(selected_windows_per_trace),
             "legacy_comparison": (
                 "current evenly_spaced_offsets with min_tail_samples=120; "
@@ -938,6 +950,11 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
             "eligibility": (
                 "every required case completes before the final measured "
                 "timestamp; stalls do not make a feasible window ineligible"
+            ),
+            "ineligibility_interpretation": (
+                "Static Very-low requires unobserved post-block time. This is "
+                "insufficient observed support and is excluded from ABR "
+                "ranking; it is not asserted to be a physical network outage"
             ),
             "trace_retention": (
                 "retain a trace when at least one candidate window is eligible"
@@ -958,14 +975,19 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 "headroom_s", "stall_duration_s",
             ],
             "registry_layout": (
-                "eligible_windows and outage_windows are self-contained; trace "
-                "records reference them by candidate_window_ids"
+                "eligible_windows and ineligible_windows are self-contained; "
+                "trace records reference them by candidate_window_ids"
+            ),
+            "required_future_consumer_policy": (
+                "evaluation uses identical selected windows for every ABR and "
+                "macro-averages parent-trace means; training samples parent "
+                "traces uniformly before blocks/windows"
             ),
         },
         "summary": summary,
         "registries": {
             "eligible_windows": eligible_registry,
-            "outage_windows": outage_registry,
+            "ineligible_windows": ineligible_registry,
             "eligible_traces": eligible_traces,
             "excluded_traces": excluded_traces,
             "selected_evaluation_windows": selected_evaluation_windows,
@@ -1015,17 +1037,21 @@ def render_markdown_report(report):
         "",
         f"- Traces: {summary['trace_count']} total; "
         f"{summary['eligible_trace_count']} retained; "
-        f"{summary['excluded_trace_count']} classified as outages.",
+        f"{summary['excluded_trace_count']} lack an eligible window.",
         f"- Candidate windows: {summary['candidate_window_count']} total; "
         f"{summary['eligible_window_count']} eligible; "
-        f"{summary['outage_window_count']} outages.",
+        f"{summary['ineligible_window_count']} lack sufficient observed "
+        "support.",
         f"- Gap split: {summary['split_gap_count']} discontinuities produce "
         f"{summary['contiguous_block_count']} contiguous blocks; "
         f"{summary['excluded_gap_duration_s']:.1f} s of unobserved intervals "
         "are excluded from capacity integration.",
-        f"- Old 120-row rule: {summary['legacy_evaluation_outage_count']}/"
+        "- Excluded-gap duration uses the full endpoint-to-endpoint delta and "
+        "assigns no inferred terminal second to the last pre-gap sample.",
+        f"- Old 120-row rule: "
+        f"{summary['legacy_evaluation_ineligible_count']}/"
         f"{summary['legacy_evaluation_window_count']} registered validation/test "
-        "windows are outages under the strict test.",
+        "windows lack sufficient observed support under the strict test.",
         f"- Mobility: {summary['mobility_trace_count']}.",
         f"- Duration-weighted RAT composition: "
         f"{_rat_text(summary['corpus_rat_share'])}.",
@@ -1036,6 +1062,10 @@ def render_markdown_report(report):
         "Raw CSVs and their parent train/validation/test assignments remain "
         "unchanged. Splitting is a read-only audit view; within a block, the "
         "previous observation is held only until the next observed timestamp.",
+        "A rejected window is not labeled a physical network outage: the audit "
+        "only establishes that Static Very-low cannot finish without "
+        "unobserved post-block throughput. It is excluded from ABR ranking and "
+        "reported separately as insufficient observed support.",
         "",
         "## Per-trace results",
         "",
@@ -1066,12 +1096,12 @@ def render_markdown_report(report):
         )
     lines.extend([
         "",
-        "## Outage windows",
+        "## Windows with insufficient observed support",
         "",
         "| Window | Block | Global start (s) | Measured tail (s) | Reason | Failed cases |",
         "|---|---|---:|---:|---|---:|",
     ])
-    for window in report["registries"]["outage_windows"]:
+    for window in report["registries"]["ineligible_windows"]:
         lines.append(
             f"| `{window['id']}` | {window['block_id']} | "
             f"{window['start_time_s']:.1f} | "
@@ -1093,11 +1123,14 @@ def render_markdown_report(report):
         )
     lines.extend([
         "",
-        "Outage windows are reported separately and must not be used to rank "
+        "Ineligible windows are reported separately and must not be used to rank "
         "ABR algorithms. The registry is not consumed by training/evaluation "
         "until the audit is reviewed and a follow-up pipeline change is approved. "
         "When activated, results must be macro-averaged per trace so traces with "
         "more eligible windows do not receive extra weight.",
+        "Training must first sample parent traces uniformly, then sample an "
+        "eligible block/window inside that parent; otherwise fragmented or "
+        "long traces would be overrepresented.",
         "",
         "Static Very-low eligibility certifies that a window has a feasible "
         "action, not that every ABR action will finish. The follow-up runtime "

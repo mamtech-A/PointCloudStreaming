@@ -14,7 +14,7 @@ from src.network_model.trace import BandwidthTrace
 from src.rl.env import StreamingEnv
 from src.trace_audit import (
     ELIGIBLE,
-    OUTAGE,
+    INELIGIBLE,
     FiniteTraceWindow,
     TraceWindowExhausted,
     audit_case,
@@ -109,7 +109,7 @@ def test_exact_time_slice_keeps_capacity_in_effect_before_next_row():
     assert measured_end_time_s(window) == 1.0
 
 
-def test_fast_case_is_eligible_and_slow_case_is_outage():
+def test_fast_case_is_eligible_and_slow_case_is_ineligible():
     env = _env({"longdress": _frames(4, vlow_bytes=1000)})
     fast = BandwidthTrace([10e6, 10e6], sample_times_s=[0.0, 2.0])
     slow = BandwidthTrace([1e3, 1e3], sample_times_s=[0.0, 1.0])
@@ -117,8 +117,8 @@ def test_fast_case_is_eligible_and_slow_case_is_outage():
     rejected = audit_case(env, slow, "longdress", 42)
     assert accepted["status"] == ELIGIBLE
     assert accepted["completion_time_s"] <= accepted["measured_duration_s"]
-    assert rejected["status"] == OUTAGE
-    assert rejected["reason"] == "vlow_exceeds_trace_end"
+    assert rejected["status"] == INELIGIBLE
+    assert rejected["reason"] == "vlow_requires_unobserved_post_block_time"
     assert rejected["completed_frames"] < rejected["required_frames"]
 
 
@@ -132,7 +132,7 @@ def test_all_four_sequences_are_required_for_window_eligibility():
     env = _env(pool)
     trace = BandwidthTrace([1e6, 1e6], sample_times_s=[0.0, 1.0])
     result = audit_window({1: env}, trace, list(pool), [42])
-    assert result["status"] == OUTAGE
+    assert result["status"] == INELIGIBLE
     assert set(result["tested_sequences"]) == set(pool)
     failures = result["failed_cases"]
     assert [case["sequence"] for case in failures] == ["soldier"]
@@ -152,7 +152,7 @@ def test_selection_keeps_trace_with_fewer_than_requested_eligible_windows():
     windows = [
         {"id": "a", "status": ELIGIBLE, "start_time_s": 0.0,
          "sample_offset": 0},
-        {"id": "b", "status": OUTAGE, "start_time_s": 60.0,
+        {"id": "b", "status": INELIGIBLE, "start_time_s": 60.0,
          "sample_offset": 10},
     ]
     selected = select_evenly_spaced_windows(windows, 3)
@@ -215,16 +215,16 @@ def test_trace_is_excluded_only_when_no_candidate_window_is_eligible():
         by_name = {row["trace"]: row for row in report["traces"]}
         assert by_name[names["train"]]["status"] == ELIGIBLE
         assert by_name[names["train"]]["eligible_window_count"] == 1
-        assert by_name[names["train"]]["outage_window_count"] == 1
-        assert by_name[names["validation"]]["status"] == OUTAGE
-        assert by_name[names["test"]]["status"] == OUTAGE
+        assert by_name[names["train"]]["ineligible_window_count"] == 1
+        assert by_name[names["validation"]]["status"] == INELIGIBLE
+        assert by_name[names["test"]]["status"] == INELIGIBLE
         registered = (
             report["registries"]["eligible_windows"]
-            + report["registries"]["outage_windows"]
+            + report["registries"]["ineligible_windows"]
         )
         assert registered
         for window in registered:
-            assert window["status"] in (ELIGIBLE, OUTAGE)
+            assert window["status"] in (ELIGIBLE, INELIGIBLE)
             assert window["reason"]
             assert window["case_count"] == 4
             assert len(window["case_evidence"]) == 4
@@ -280,7 +280,7 @@ def test_protocol_windows_restart_inside_blocks_and_never_cross_gap():
             ]
         registered = (
             report["registries"]["eligible_windows"]
-            + report["registries"]["outage_windows"]
+            + report["registries"]["ineligible_windows"]
         )
         assert {row["block_id"] for row in registered} == {
             "block-000", "block-001"
