@@ -18,6 +18,7 @@ if SCRIPTS not in sys.path:
 
 import run_training
 import sweep
+from gen_lstm_dataset import select_registry_windows
 from src.evaluation import _evaluate
 
 
@@ -78,12 +79,25 @@ def test_lstm_and_dqn_search_use_the_same_requested_segment_values():
     assert config["dqn_sweep"]["base_args"]["trace-registry"] == (
         "configs/trace_window_registry.json"
     )
+    assert "request_pacing" in config["artifacts"]["lstm_model_template"]
+    assert "request_pacing" in config["lstm"]["data_dir_template"]
     assert config["final_eval"]["split"] == "test"
     assert config["final_eval"]["strategies"] == "dqn,fixed,buffer,mpc"
     search = config["dqn_sweep"]
     assert search["screen_overrides"]["epochs"] == 3
     assert search["base_args"]["epochs"] == 8
     assert search["confirmation_selection_seeds"] == list(range(45, 54))
+
+
+def test_lstm_windows_are_deterministic_and_time_spread():
+    rows = [
+        {"id": f"w{index}", "start_time_s": float(index * 10),
+         "source_sample_index": index}
+        for index in range(10)
+    ]
+    shuffled = list(reversed(rows))
+    selected = select_registry_windows(shuffled, 3)
+    assert [row["id"] for row in selected] == ["w0", "w4", "w9"]
 
 
 def test_registered_test_files_are_unchanged():

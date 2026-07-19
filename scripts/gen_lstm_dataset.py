@@ -2,15 +2,16 @@
 """Generate ACHIEVED-throughput series for LSTM training (signal-mismatch fix).
 
 The LSTM used to be trained on trace capacity (`DL_bitrate`) but is FED the
-session's achieved per-frame throughput at inference — a different signal
+session's achieved per-segment throughput at inference — a different signal
 (RTT-bound on small frames, serialization-bound in fades). This script closes
 that gap: it runs quiet simulations (representative policies x static traces x
-several start offsets) under the CURRENT transport model and records each
+several finite registry windows) under the CURRENT transport model and records each
 SEGMENT's achieved throughput (one sample per fetch, as at inference), producing a derived dataset the LSTM can train on
 that matches what it will see at inference.
 
 Outputs (default data/lstm_achieved/):
-  <source-trace-stem>__<policy>__off<N>.csv   State,DL_bitrate (kbps) rows
+  <sequence>__<trace>__<policy>__win<N>__seed<N>.csv
+                                              State,DL_bitrate (kbps) rows
   split.json                                  train/validation file lists from
                                               the registered experiment protocol
                                               (all series from one source trace
@@ -20,7 +21,7 @@ Train the LSTM on it with:
   python train_model.py --bandwidth-dir data/lstm_achieved --split-from data/lstm_achieved/split.json
 
 Usage:
-    python gen_lstm_dataset.py                 # full: 4 policies x 4 offsets
+    python gen_lstm_dataset.py                 # finite registered windows
     python gen_lstm_dataset.py --offsets 1 --policies fixed3 --max-frames 40  # smoke
 """
 
@@ -29,6 +30,9 @@ import sys
 import json
 import argparse
 import glob
+import random
+
+import numpy as np
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -43,8 +47,8 @@ from src.network_model import (
 )
 from src.network_model.abr import ABRStrategy
 from src.network_model.manifest import parse_mpd_xml
-from src.network_model.trace import BandwidthTrace
 from src.experiment_protocol import load_protocol, protocol_digest
+from src.trace_registry import load_trace_registry
 
 
 class FixedABR(ABRStrategy):
@@ -85,28 +89,56 @@ POLICIES = {
 }
 
 
-def run_series(frames, trace, abr_factory, segment_frames=1):
+def run_series(frames, trace, abr_factory, segment_frames=1, jitter_seed=42):
     """One quiet episode; returns the achieved throughput series (bps) — one
     sample per SEGMENT (matches what the LSTM is fed at inference)."""
-    server = Server("gen://origin")
-    server.manifest.frames = frames
-    from src.network_model.manifest import PointCloud
-    for fr in frames:
-        for rep in fr['representations']:
-            server.add_pointcloud(fr['id'], rep['id'], PointCloud(points=None))
-    topo = Topology(server)
-    edge = EdgeNode("edge", server=server,
-                    tcp_params={**DEFAULT_TCP_PARAMS, 'log_packets': False},
-                    abr_factory=abr_factory)
-    topo.add_edge(edge)
-    user = User("gen-user")
-    session = topo.add_user(user, edge, trace=trace)
-    session.start()
-    seg = max(1, int(segment_frames))
-    for i in range(0, len(frames), seg):
-        session.step_segment(frames[i:i + seg], i)
-    topo.close_all()
-    return list(session.observed_throughput_history)
+    py_state = random.getstate()
+    np_state = np.random.get_state()
+    random.seed(int(jitter_seed))
+    np.random.seed(int(jitter_seed))
+    try:
+        server = Server("gen://origin")
+        server.manifest.frames = frames
+        from src.network_model.manifest import PointCloud
+        for fr in frames:
+            for rep in fr['representations']:
+                server.add_pointcloud(fr['id'], rep['id'], PointCloud(points=None))
+        topo = Topology(server)
+        edge = EdgeNode("edge", server=server,
+                        tcp_params={**DEFAULT_TCP_PARAMS, 'log_packets': False},
+                        abr_factory=abr_factory)
+        topo.add_edge(edge)
+        user = User("gen-user")
+        session = topo.add_user(user, edge, trace=trace)
+        session.start()
+        seg = max(1, int(segment_frames))
+        for i in range(0, len(frames), seg):
+            session.step_segment(frames[i:i + seg], i)
+        topo.close_all()
+        return list(session.observed_throughput_history)
+    finally:
+        random.setstate(py_state)
+        np.random.set_state(np_state)
+
+
+def select_registry_windows(windows, count):
+    """Choose up to ``count`` deterministic windows spread over trace time."""
+    rows = sorted(
+        windows,
+        key=lambda row: (
+            float(row['start_time_s']), int(row['source_sample_index'])
+        ),
+    )
+    count = max(1, int(count))
+    if len(rows) <= count:
+        return rows
+    if count == 1:
+        return [rows[0]]
+    indexes = [
+        int(round(index * (len(rows) - 1) / float(count - 1)))
+        for index in range(count)
+    ]
+    return [rows[index] for index in indexes]
 
 
 def sequence_name(path):
@@ -131,13 +163,16 @@ def main():
     p.add_argument('--protocol', default=os.path.join(project_root, 'configs',
                                                        'experiment_protocol.json'),
                    help='registered trace split; final-test traces are never generated')
+    p.add_argument('--trace-registry', default=os.path.join(
+        project_root, 'configs', 'trace_window_registry.json'),
+        help='finite pacing-aware windows; candidate audit registries are rejected')
     p.add_argument('--mpd', default=os.path.join(project_root, 'manifests', 'mpd_gpcc*.xml'),
                    help='manifest path or glob; default includes all four 8i sequences')
     p.add_argument('--out-dir', default=os.path.join(project_root, 'data', 'lstm_achieved'))
     p.add_argument('--policies', nargs='*', default=list(POLICIES),
                    choices=list(POLICIES), help='which policies generate series')
     p.add_argument('--offsets', type=int, default=4,
-                   help='episode start offsets per trace (spread evenly)')
+                   help='maximum finite registry windows per parent trace')
     p.add_argument('--segment-frames', type=int, default=10,
                    help='frames per fetched segment; MUST match the DQN eval/'
                         'inference setting so the LSTM trains on the same signal')
@@ -149,9 +184,31 @@ def main():
     protocol_path = (args.protocol if os.path.isabs(args.protocol)
                      else os.path.join(project_root, args.protocol))
     protocol = load_protocol(protocol_path, args.trace_dir)
+    registry_path = (args.trace_registry if os.path.isabs(args.trace_registry)
+                     else os.path.join(project_root, args.trace_registry))
+    registry = load_trace_registry(
+        registry_path, protocol, args.trace_dir, verify_hashes=True
+    )
     train_src = list(protocol['trace_split']['train'])
     validation_src = list(protocol['trace_split']['validation'])
     final_test_src = list(protocol['trace_split']['test'])
+    registry.validate_experiment(
+        sorted(content_pool), args.segment_frames, args.max_frames
+    )
+    registered_windows = {
+        'train': registry.windows_by_parent('train', train_src),
+        'validation': registry.windows_by_parent('validation', validation_src),
+    }
+    selected_windows = {
+        side: {
+            src: select_registry_windows(rows, args.offsets)
+            for src, rows in parents.items()
+        }
+        for side, parents in registered_windows.items()
+    }
+    jitter_seeds = [
+        int(seed) for seed in registry.settings()['required_jitter_seeds']
+    ]
     os.makedirs(args.out_dir, exist_ok=True)
     # Derived dataset: wipe stale series so split.json and the dir never disagree
     # (e.g. leftovers generated under a different segment size).
@@ -161,33 +218,33 @@ def main():
 
     split = {'train_files': [], 'validation_files': []}
     n_series = 0
-    traces = {
-        src: BandwidthTrace.from_file(os.path.join(args.trace_dir, src))
-        for src in train_src + validation_src
-    }
     for sequence, frames in sorted(content_pool.items()):
         for src in train_src + validation_src:
+            split_name = 'train' if src in train_src else 'validation'
             side = 'train_files' if src in train_src else 'validation_files'
             stem = os.path.splitext(src)[0]
-            full = traces[src]
-            n = len(full)
-            offs = [int(round(i * n / float(args.offsets))) for i in range(args.offsets)]
-            offs = sorted({min(o, max(0, n - 120)) for o in offs})
-            for off in offs:
-                trace = full.slice_from(off) if off else full
-                for pol in args.policies:
-                    series = run_series(
-                        frames, trace, POLICIES[pol], args.segment_frames)
-                    name = f"{sequence}__{stem}__{pol}__off{off}.csv"
-                    with open(os.path.join(args.out_dir, name), 'w', encoding='utf-8',
-                              newline='') as f:
-                        f.write('State,DL_bitrate\n')
-                        for bps in series:
-                            f.write(f"D,{bps / 1000.0:.3f}\n")
-                    split[side].append(name)
-                    n_series += 1
-                    print(f"  {name}: {len(series)} samples "
-                          f"(mean {sum(series)/max(1,len(series))/1e6:.2f} Mbps)")
+            for window in selected_windows[split_name][src]:
+                trace = registry.materialize(window)
+                window_tag = f"win{int(window['source_sample_index'])}"
+                for jitter_seed in jitter_seeds:
+                    for pol in args.policies:
+                        series = run_series(
+                            frames, trace, POLICIES[pol], args.segment_frames,
+                            jitter_seed=jitter_seed,
+                        )
+                        name = (
+                            f"{sequence}__{stem}__{pol}__{window_tag}"
+                            f"__seed{jitter_seed}.csv"
+                        )
+                        with open(os.path.join(args.out_dir, name), 'w',
+                                  encoding='utf-8', newline='') as f:
+                            f.write('State,DL_bitrate\n')
+                            for bps in series:
+                                f.write(f"D,{bps / 1000.0:.3f}\n")
+                        split[side].append(name)
+                        n_series += 1
+                        print(f"  {name}: {len(series)} samples "
+                              f"(mean {sum(series)/max(1,len(series))/1e6:.2f} Mbps)")
 
     # ``test_files`` is retained as an API alias for the existing LSTM trainer;
     # scientifically these are validation files used for early stopping/model
@@ -200,6 +257,21 @@ def main():
     }
     split['protocol'] = os.path.relpath(protocol_path, project_root)
     split['protocol_digest'] = protocol_digest(protocol)
+    split['trace_registry'] = os.path.relpath(registry_path, project_root)
+    split['trace_registry_id'] = registry.registry_id
+    window_selection = {
+        'method': 'evenly spaced within each parent registry list',
+        'maximum_windows_per_parent': args.offsets,
+    }
+    window_selection.update({
+        side: {
+            src: [window['id'] for window in rows]
+            for src, rows in parents.items()
+        }
+        for side, parents in selected_windows.items()
+    })
+    split['window_selection'] = window_selection
+    split['jitter_seeds'] = jitter_seeds
     split['policies'] = args.policies
     split['mpd'] = [os.path.basename(path) for path in manifest_paths]
     split['content_sequences'] = sorted(content_pool)

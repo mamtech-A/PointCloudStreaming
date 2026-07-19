@@ -70,7 +70,7 @@ def main():
         "configs", "trace_window_registry.json"))
     parser.add_argument("--mpd", default=os.path.join("manifests", "mpd_gpcc*.xml"))
     parser.add_argument("--out", default=os.path.join("models", "baseline_config.json"))
-    parser.add_argument("--lstm", default=os.path.join("models", "bandwidth_lstm.pkl"))
+    parser.add_argument("--lstm", default="")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--experiment-config-digest", default="")
     parser.add_argument("--max-frames", type=int, default=0)
@@ -85,6 +85,11 @@ def main():
     parser.add_argument("--quick", action="store_true",
                         help="one candidate per family for pipeline smoke tests")
     args = parser.parse_args()
+    if not args.lstm:
+        args.lstm = os.path.join(
+            "models",
+            f"bandwidth_lstm_request_pacing_s{args.segment_frames}.pkl",
+        )
 
     def absolute(path):
         return path if os.path.isabs(path) else os.path.join(project_root, path)

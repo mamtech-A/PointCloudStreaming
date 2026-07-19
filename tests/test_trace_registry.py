@@ -63,8 +63,10 @@ def _frames(count):
 
 def test_checked_in_registry_has_expected_frozen_counts():
     protocol, registry = _registry()
-    assert registry.registry_id == "39c0494ccea0d522"
-    assert len(registry.windows("train")) == 468
+    assert registry.registry_id == "a49c7f37510aab99"
+    assert registry.data["registry_type"] == "gap_split_finite_high_supported_windows"
+    assert registry.settings()["minimum_maximum_tier_headroom_s"] == 5.0
+    assert len(registry.windows("train")) == 413
     assert len(registry.windows("validation")) == 12
     assert len(registry.windows("test")) == 12
     for split in ("validation", "test"):
@@ -83,11 +85,32 @@ def test_training_epoch_samples_every_parent_equally():
         paths, registry, random.Random(123), randomize=True
     )
     counts = Counter(os.path.basename(path) for path, _window in episodes)
-    assert per_parent == 36
-    assert len(episodes) == 468
-    assert set(counts.values()) == {36}
+    assert per_parent == 32
+    assert len(episodes) == 416
+    assert set(counts.values()) == {32}
     eligible_ids = {row["id"] for row in registry.windows("train")}
     assert all(window["id"] in eligible_ids for _path, window in episodes)
+
+
+def test_all_candidate_registry_is_audit_only():
+    protocol = load_protocol(PROTOCOL_PATH, TRACE_DIR)
+    candidate_path = os.path.join(
+        ROOT, "reports", "trace_window_registry_all_candidates.json"
+    )
+    try:
+        load_trace_registry(
+            candidate_path, protocol, TRACE_DIR, verify_hashes=True
+        )
+    except ValueError as exc:
+        assert "candidate audit registry" in str(exc)
+    else:
+        raise AssertionError("candidate registry was accepted for experiments")
+    candidate = load_trace_registry(
+        candidate_path, protocol, TRACE_DIR, verify_hashes=True,
+        allow_candidate_registry=True,
+    )
+    assert sum(len(candidate.windows(split)) for split in
+               ("train", "validation", "test")) == 759
 
 
 def test_registry_materializes_finite_block_local_windows():

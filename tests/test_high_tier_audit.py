@@ -72,7 +72,7 @@ def test_high_case_reports_successful_headroom():
     assert case["headroom_s"] > 0
 
 
-def test_high_case_reports_finite_exhaustion_without_drops():
+def test_high_case_reports_finite_exhaustion_without_synthetic_qoe():
     case = audit_high_case(
         _env(),
         FiniteTraceWindow(BandwidthTrace(
@@ -111,6 +111,31 @@ def test_summary_counts_window_and_case_failures():
     assert summary["minimum_successful_headroom_s"] == 5.0
 
 
+def test_checked_in_candidate_audit_covers_every_vlow_eligible_window():
+    report_path = os.path.join(ROOT, "reports", "high_tier_candidate_audit.json")
+    registry_path = os.path.join(
+        ROOT, "reports", "trace_window_registry_all_candidates.json"
+    )
+    with open(report_path, encoding="utf-8") as handle:
+        report = json.load(handle)
+    with open(registry_path, encoding="utf-8") as handle:
+        registry = json.load(handle)
+    unsigned = dict(report)
+    audit_id = unsigned.pop("audit_id")
+    canonical = json.dumps(unsigned, sort_keys=True, separators=(",", ":"))
+    assert hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16] == audit_id
+    assert report["audit_type"] == (
+        "read_only_static_high_candidate_window_headroom"
+    )
+    assert report["trace_registry_id"] == registry["registry_id"]
+    assert report["settings"]["case_details_included"] is False
+    assert report["summary"]["window_count"] == 759
+    assert report["summary"]["high_supported_window_count"] == 675
+    assert report["summary"]["failed_case_count"] == 3210
+    assert len(report["windows"]) == 759
+    assert all("cases" not in window for window in report["windows"])
+
+
 def test_checked_in_full_audit_matches_the_frozen_registry():
     report_path = os.path.join(ROOT, "reports", "high_tier_headroom_audit.json")
     registry_path = os.path.join(ROOT, "configs", "trace_window_registry.json")
@@ -131,10 +156,11 @@ def test_checked_in_full_audit_matches_the_frozen_registry():
     }
     audited_ids = {window["id"] for window in report["windows"]}
     assert audited_ids == registered_ids
-    assert report["summary"]["window_count"] == 492
-    assert report["summary"]["case_count"] == 23_616
-    assert report["summary"]["high_supported_window_count"] == 431
-    assert report["summary"]["failed_case_count"] == 2_424
+    assert report["summary"]["window_count"] == 437
+    assert report["summary"]["case_count"] == 20_976
+    assert report["summary"]["high_supported_window_count"] == 437
+    assert report["summary"]["failed_case_count"] == 0
+    assert report["summary"]["minimum_successful_headroom_s"] >= 5.0
     for relative_path, expected_hash in report["input_hashes"]["implementation"].items():
         digest = hashlib.sha256()
         with open(os.path.join(ROOT, relative_path), "rb") as handle:
@@ -152,3 +178,7 @@ def test_checked_in_full_audit_matches_the_frozen_registry():
         failures = sum(case["status"] == UNSUPPORTED for case in window["cases"])
         assert failures == window["failure_count"]
         assert (window["status"] == SUPPORTED) == (failures == 0)
+        for case in window["cases"]:
+            assert "frames_dropped" not in case
+            if case["status"] == SUPPORTED:
+                assert "request_pacing_s" in case

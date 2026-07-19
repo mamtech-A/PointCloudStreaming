@@ -131,7 +131,8 @@ def resolve_lstm_path(requested, segment_frames):
     if requested:
         return requested if os.path.isabs(requested) else os.path.join(project_root, requested)
     specific = os.path.join(
-        project_root, 'models', f'bandwidth_lstm_s{int(segment_frames)}.pkl')
+        project_root, 'models',
+        f'bandwidth_lstm_request_pacing_s{int(segment_frames)}.pkl')
     return specific
 
 
@@ -190,7 +191,7 @@ def main():
                    help='ABLATION: drop the lstm_pred feature from the state')
     p.add_argument('--lstm', type=str, default='',
                    help='LSTM checkpoint. Empty selects '
-                        'models/bandwidth_lstm_s<segment-frames>.pkl')
+                        'models/bandwidth_lstm_request_pacing_s<segment-frames>.pkl')
     p.add_argument('--segment-frames', type=int, default=10,
                    help='frames per DASH-style segment (one decision + one transfer); '
                         '1 = legacy per-frame fetching')

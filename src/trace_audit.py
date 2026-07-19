@@ -905,7 +905,7 @@ def render_markdown_report(report):
     lines = [
         "# Trace-window feasibility audit",
         "",
-        "This is a read-only preview. It does not modify trace CSVs, protocol "
+        "This is a read-only audit. It does not modify trace CSVs, protocol "
         "splits, training episodes, checkpoints, or evaluation code.",
         "",
         "## Decision rule",
@@ -1019,9 +1019,9 @@ def render_markdown_report(report):
     lines.extend([
         "",
         "Ineligible windows are reported separately and must not be used to rank "
-        "ABR algorithms. The registry is not consumed by training/evaluation "
-        "until the audit is reviewed and a follow-up pipeline change is approved. "
-        "When activated, results must be macro-averaged per trace so traces with "
+        "ABR algorithms. Reviewed eligible windows feed the maximum-tier support "
+        "audit and the finite-window registry consumed by training/evaluation. "
+        "Results must be macro-averaged per trace so traces with "
         "more eligible windows do not receive extra weight.",
         "Training must first sample parent traces uniformly, then sample an "
         "eligible block/window inside that parent; otherwise fragmented or "

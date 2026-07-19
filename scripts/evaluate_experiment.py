@@ -154,7 +154,7 @@ def main():
     parser.add_argument("--split", choices=["validation", "test"], default="test")
     parser.add_argument("--sweep-results", default=os.path.join(
         "models", "dqn_sweep_results.json"))
-    parser.add_argument("--lstm", default=os.path.join("models", "bandwidth_lstm.pkl"))
+    parser.add_argument("--lstm", default="")
     parser.add_argument("--baseline-config", default=os.path.join(
         "models", "baseline_config.json"),
         help="validation-selected causal baseline parameters")
@@ -276,7 +276,12 @@ def main():
     if baseline_config_rel and tuned_required:
         raise ValueError(f"requested baselines were not validation-tuned: {tuned_required}")
 
-    lstm_path = absolute(args.lstm)
+    lstm_path = absolute(
+        args.lstm or os.path.join(
+            "models",
+            f"bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+        )
+    )
     if "dqn" in requested or "lstm_rule" in requested:
         validate_lstm_provenance(
             lstm_path, segment_frames, protocol_digest(protocol))
@@ -407,7 +412,7 @@ def main():
     strategy_factories = {
         "throughput": lambda: BandwidthABR(**baseline_params["throughput"]),
         "lstm_rule": lambda: LSTMABR(
-            LSTMPredictor().load(absolute(args.lstm)), **baseline_params["lstm_rule"]
+            LSTMPredictor().load(lstm_path), **baseline_params["lstm_rule"]
         ),
         "buffer": lambda: BufferBasedABR(**baseline_params["buffer"]),
         "mpc": lambda: MPCABR(

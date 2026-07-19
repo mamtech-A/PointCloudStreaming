@@ -92,7 +92,9 @@ def artifact_set(cfg, run_dir, smoke):
         "baseline_config": "models/baseline_config.json",
         "final_results": "models/final_test_results.json",
         "training_summary": "models/TRAINING_SUMMARY.md",
-        "lstm_model_template": "models/bandwidth_lstm_s{segment_frames}.pkl",
+        "lstm_model_template": (
+            "models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl"
+        ),
     }
     if smoke:
         return {
@@ -102,7 +104,8 @@ def artifact_set(cfg, run_dir, smoke):
             "final_results": os.path.join(run_dir, "smoke_validation_results.json"),
             "training_summary": os.path.join(run_dir, "SMOKE_SUMMARY.md"),
             "lstm_model_template": os.path.join(
-                run_dir, "lstm_models", "bandwidth_lstm_s{segment_frames}.pkl"
+                run_dir, "lstm_models",
+                "bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
             ),
         }
     artifacts = {}
@@ -247,7 +250,8 @@ def main():
 
     achieved = lstm_cfg.get("signal", "capacity") == "achieved"
     data_template = lstm_cfg.get(
-        "data_dir_template", "data/lstm_achieved_s{segment_frames}"
+        "data_dir_template",
+        "data/lstm_achieved_request_pacing_s{segment_frames}",
     )
     data_dirs = {
         segment: (
@@ -268,6 +272,7 @@ def main():
             command += [
                 "--segment-frames", segment,
                 "--out-dir", data_dirs[segment],
+                "--trace-registry", registry_rel,
             ]
             if args.smoke:
                 command += [

@@ -46,7 +46,8 @@ segment_frames = int(winner_config.get(
     "segment-frames", sweep.get("base_args", {}).get("segment-frames", 8)
 ))
 lstm_template = artifacts.get(
-    "lstm_model_template", "models/bandwidth_lstm_s{segment_frames}.pkl"
+    "lstm_model_template",
+    "models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
 )
 lstm_model_path = absolute(lstm_template.format(segment_frames=segment_frames))
 

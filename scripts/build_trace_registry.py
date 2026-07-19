@@ -67,6 +67,11 @@ def main():
         help=("put every Very-low-eligible validation/test candidate in the "
               "output; intended only for constructing a maximum-tier audit"),
     )
+    parser.add_argument(
+        "--minimum-high-headroom-s", type=float, default=5.0,
+        help=("minimum measured time remaining after every successful Static-High "
+              "case; defaults to one 5-second client-buffer horizon"),
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
@@ -78,6 +83,8 @@ def main():
     trace_dir = absolute(args.trace_dir)
     out_path = absolute(args.out)
     high_audit_path = absolute(args.high_audit) if args.high_audit else None
+    if args.minimum_high_headroom_s < 0:
+        raise ValueError("--minimum-high-headroom-s must be non-negative")
     if os.path.exists(out_path) and not args.overwrite:
         raise FileExistsError(f"refusing to overwrite {out_path} without --overwrite")
 
@@ -212,7 +219,9 @@ def main():
                 )
         supported_ids = {
             window_id for window_id, window in audited.items()
-            if window.get("status") == HIGH_SUPPORTED
+            if (window.get("status") == HIGH_SUPPORTED
+                and float(window.get("minimum_headroom_s", -1.0))
+                >= args.minimum_high_headroom_s)
         }
         eligible = [window for window in eligible if window["id"] in supported_ids]
         by_id = {window["id"]: window for window in eligible}
@@ -306,6 +315,9 @@ def main():
         },
     }
     if high_report is not None:
+        payload["settings"]["minimum_maximum_tier_headroom_s"] = float(
+            args.minimum_high_headroom_s
+        )
         payload.update({
             "source_high_audit": os.path.relpath(
                 high_audit_path, PROJECT_ROOT
