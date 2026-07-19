@@ -8,8 +8,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from .experiment_protocol import evenly_spaced_offsets
-from .network_model.trace import BandwidthTrace
+from .network_model.finite_trace import TraceWindowExhausted
 
 
 METRICS = (
@@ -24,6 +23,12 @@ def _metric_summary(records):
         values = [float(r[metric]) for r in records]
         result[metric] = float(np.mean(values)) if values else 0.0
         result[f"{metric}_std"] = float(np.std(values)) if values else 0.0
+    failures = sum(bool(row.get("policy_trace_exhausted")) for row in records)
+    result["policy_trace_exhausted_cases"] = failures
+    result["completed_cases"] = len(records) - failures
+    result["policy_trace_exhausted_rate"] = (
+        failures / len(records) if records else 0.0
+    )
     return result
 
 
@@ -35,9 +40,24 @@ def _grouped(records, key):
 
 
 def aggregate_records(records):
-    """Aggregate case rows while preserving the dimensions needed by figures."""
-    result = _metric_summary(records)
-    result["per_trace"] = _grouped(records, "trace")
+    """Macro-average parent-trace means and retain every case-level row."""
+    case_level = _metric_summary(records)
+    per_trace = _grouped(records, "trace")
+    result = {
+        "n_cases": len(records),
+        "n_parent_traces": len(per_trace),
+        "aggregation": "macro_parent_trace",
+        "case_level_summary": case_level,
+        "per_trace": per_trace,
+        "policy_trace_exhausted_cases": case_level[
+            "policy_trace_exhausted_cases"
+        ],
+        "completed_cases": case_level["completed_cases"],
+    }
+    for metric in (*METRICS, "policy_trace_exhausted_rate"):
+        values = [float(summary[metric]) for summary in per_trace.values()]
+        result[metric] = float(np.mean(values)) if values else 0.0
+        result[f"{metric}_std"] = float(np.std(values)) if values else 0.0
     result["per_sequence"] = _grouped(records, "sequence")
     result["per_seed"] = _grouped(records, "eval_seed")
     result["cases"] = records
@@ -45,7 +65,8 @@ def aggregate_records(records):
 
 
 def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
-              choose_action, reset_policy=None, min_tail_samples=120):
+              choose_action, reset_policy=None, window_registry=None,
+              split_name=None):
     """Evaluate one policy over the full Cartesian registered case set.
 
     ``choose_action`` receives ``(observation, env)`` and returns an action
@@ -55,29 +76,45 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
     rng_state = random.getstate()
     np_state = np.random.get_state()
     records = []
-    traces = {path: BandwidthTrace.from_file(path) for path in trace_paths}
+    if window_registry is None:
+        raise ValueError("evaluation requires the frozen trace-window registry")
+    if split_name not in ("validation", "test"):
+        raise ValueError("evaluation split_name must be validation or test")
+    grouped_windows = window_registry.validate_evaluation_count(
+        split_name, offsets_per_trace, trace_paths
+    )
     try:
         for eval_seed in eval_seeds:
             for sequence in sequences:
                 for path in trace_paths:
-                    full_trace = traces[path]
-                    offsets = evenly_spaced_offsets(
-                        len(full_trace), offsets_per_trace, min_tail_samples
-                    )
-                    for offset in offsets:
+                    filename = os.path.basename(path)
+                    for window in grouped_windows[filename]:
                         # Reuse the same seed for the same registered case across
                         # all policies, giving paired transport-jitter outcomes.
                         random.seed(int(eval_seed))
                         np.random.seed(int(eval_seed))
-                        trace = full_trace.slice_from(offset) if offset else full_trace
+                        trace = window_registry.materialize(window)
                         observation = env.reset(trace, sequence=sequence)
                         if reset_policy is not None:
                             reset_policy()
                         done = False
                         total_reward = 0.0
+                        policy_failure = False
+                        failure_detail = None
                         while not done:
                             action = int(choose_action(observation, env))
-                            observation, reward, done, _ = env.step(action)
+                            try:
+                                observation, reward, done, _ = env.step(action)
+                            except TraceWindowExhausted as exc:
+                                observation, reward, done, failure_detail = (
+                                    env.terminate_trace_exhausted()
+                                )
+                                failure_detail.update({
+                                    "reason": "policy_trace_exhausted",
+                                    "trace_end_s": exc.trace_end_s,
+                                    "remaining_bits_in_tcp_round": exc.remaining_bits,
+                                })
+                                policy_failure = True
                             total_reward += reward
                         qoe = float(env.qoe())
                         if abs(total_reward - qoe) > 1e-8:
@@ -88,7 +125,11 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
                         records.append({
                             "trace": os.path.basename(path),
                             "sequence": sequence,
-                            "offset": int(offset),
+                            "window_id": window["id"],
+                            "block_id": window["block_id"],
+                            "start_time_s": float(window["start_time_s"]),
+                            "measured_duration_s": float(window["duration_s"]),
+                            "offset": int(window["source_sample_index"]),
                             "eval_seed": int(eval_seed),
                             "reward": float(total_reward),
                             "qoe": qoe,
@@ -98,9 +139,11 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
                             "stall_s": float(env.total_stall_s()),
                             "rebuffer_events": int(stats.get('rebuffer_count', 0)),
                             "quality_change": float(env.quality_change_sum()),
-                            "frames_dropped": int(stats.get('frames_dropped', 0)),
+                            "frames_dropped": env.frames_dropped(),
                             "startup_s": float(stats.get('startup_delay_s', 0.0)),
                             "qoe_terms": env.qoe_terms(),
+                            "policy_trace_exhausted": policy_failure,
+                            "policy_failure": failure_detail,
                         })
     finally:
         random.setstate(rng_state)
@@ -109,17 +152,20 @@ def _evaluate(env, trace_paths, eval_seeds, sequences, offsets_per_trace,
 
 
 def evaluate_agent(agent, env, trace_paths, eval_seeds, sequences,
-                   offsets_per_trace=1, min_tail_samples=120):
+                   offsets_per_trace=1, window_registry=None,
+                   split_name="validation"):
     """Greedy DQN evaluation over registered traces, contents, and offsets."""
     return _evaluate(
         env, trace_paths, eval_seeds, sequences, offsets_per_trace,
         choose_action=lambda observation, _env: agent.act(observation, epsilon=0.0),
-        min_tail_samples=min_tail_samples,
+        window_registry=window_registry,
+        split_name=split_name,
     )
 
 
 def evaluate_strategy(strategy_factory, env, trace_paths, eval_seeds, sequences,
-                      offsets_per_trace=1, min_tail_samples=120):
+                      offsets_per_trace=1, window_registry=None,
+                      split_name="validation"):
     """Evaluate an ``ABRStrategy`` through the same StreamingEnv as the DQN."""
     strategy = strategy_factory()
 
@@ -136,5 +182,6 @@ def evaluate_strategy(strategy_factory, env, trace_paths, eval_seeds, sequences,
         env, trace_paths, eval_seeds, sequences, offsets_per_trace,
         choose_action=choose_action,
         reset_policy=strategy.reset,
-        min_tail_samples=min_tail_samples,
+        window_registry=window_registry,
+        split_name=split_name,
     )

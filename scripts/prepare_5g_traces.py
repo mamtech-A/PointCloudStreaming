@@ -18,20 +18,22 @@ Cleaning policy (per file):
   reason; assert the cleaned minimum is > 0.
 - KEEP NetworkMode 4G-fallback periods: realistic NSA behavior; the per-file
   %5G is printed so the mix is visible.
-- Row order is preserved; dropping idle gaps creates time discontinuities,
-  which is acceptable because the simulator consumes samples positionally
-  (one per frame), not by wall clock.
-- STATIC mobility traces only (2026-07): the Driving traces were removed from
-  the corpus as unsuitable for the point-cloud streaming scenario (handover
-  churn + HSPA+/4G fallback periods). Recover via git history if needed.
-- Drop files with fewer than MIN_SAMPLES cleaned rows (matches the 300-frame
-  episode length; avoids flat clamped tails). No concatenation of short files
-  and no chunking of long ones — either would leak data across the file-level
+- Row order and Timestamp are preserved. Dropping idle/non-download rows can
+  create discontinuities; the production pipeline consumes the real time axis
+  and splits before every retained-row timestamp gap greater than 5 seconds.
+- Process both Static and Driving Download traces. Mobility and RAT fallback
+  are disclosed experimental factors, not trace-exclusion criteria.
+- Drop files with fewer than MIN_SAMPLES retained observations as an initial
+  corpus guard. This does not certify a streaming window: the timestamp audit
+  and static Very-low feasibility check do that without terminal clamping.
+  No concatenation and no arbitrary chunking of long traces is used; either
+  would leak data across the file-level
   train/test split.
 - ALL original G-NetTrack columns are kept (RSRP/SNR/CQI/PING* enable future
   multivariate work). The simulator's loader only reads DL_bitrate (kbps).
 
-Regenerate with:  python prepare_5g_traces.py
+After regeneration, rerun audit_trace_gaps.py, audit_trace_windows.py, and
+build_trace_registry.py before training.
 """
 
 import sys
@@ -78,7 +80,7 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
     rows, all_kept_mbps, dropped = [], [], []
-    for mob in ('Static',):  # Driving excluded (see module docstring)
+    for mob in ('Static', 'Driving'):
         src_dir = os.path.join(RAW_DIR, mob)
         for fname in sorted(os.listdir(src_dir)):
             if not fname.lower().endswith('.csv'):

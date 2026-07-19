@@ -6,13 +6,13 @@ traces for checkpoint selection. The final test split is never evaluated here.
 The LSTM remains an optional feature provider (drop it with --no-lstm-pred for
 the preregistered ablation).
 
-Content: every manifest matching --mpd (default manifests/mpd_gpcc*.xml) forms the
-training pool; each episode draws a (sequence, trace, offset) triple. Validation
-uses deterministic offsets registered in configs/experiment_protocol.json.
+Content: every manifest matching --mpd (default manifests/mpd_gpcc*.xml) forms
+the training pool. Each episode draws a content sequence and one feasible,
+gap-split window from the frozen trace registry.
 
-Coverage: each epoch TILES every training trace end-to-end with windows every
---coverage-stride samples (episode count per file proportional to its length),
-instead of one arbitrary window per file per epoch.
+Coverage: every parent trace contributes the same number of episodes per epoch.
+Within a parent, only audited windows are shuffled and sampled. Validation uses
+the registry's three frozen windows per parent and macro-averages parent means.
 
 NOTE: each env step is a full TCP transfer of a (large) point-cloud frame, so
 training is compute-heavy. The defaults are modest; scale up with the flags
@@ -21,7 +21,7 @@ below for a real run. The script prints exactly how much it covers.
 Usage:
     python train_dqn.py                          # default modest run
     python train_dqn.py --epochs 8               # registered training cap
-    python train_dqn.py --epochs 1 --max-train-files 1 --max-frames 40 --eval-every 2 --coverage-stride 1500   # smoke
+    python train_dqn.py --epochs 1 --max-train-files 1 --max-validation-files 1 --max-frames 40 --eval-offsets 1 --no-lstm-pred   # smoke
 """
 
 import os
@@ -45,23 +45,19 @@ except Exception:
 
 from src.network_model import DEFAULT_TCP_PARAMS
 from src.network_model.manifest import parse_mpd_xml
-from src.network_model.trace import BandwidthTrace
+from src.network_model.finite_trace import TraceWindowExhausted
 from src.lstm_model import LSTMPredictor
 from src.experiment_protocol import (
     evaluation_settings, load_protocol, protocol_digest, split_paths,
 )
 from src.evaluation import evaluate_agent
+from src.trace_registry import load_trace_registry
 from src.rl.env import StreamingEnv
 from src.rl.dqn import DQNAgent
 from src.rl.features import DEFAULT_FEATURE_SPEC
 from src.rl.reward import OBJECTIVE_VERSION
 
 TCP_PARAMS = dict(DEFAULT_TCP_PARAMS)
-
-# Keep at least this many trace samples ahead of an episode's start offset
-# (~>=2 min of wall-clock: plenty for a 300-frame episode even with stalls).
-MIN_TAIL_SAMPLES = 120
-
 
 def sequence_name(mpd_path):
     """manifests/mpd_gpcc.xml -> 'longdress'; manifests/mpd_gpcc_<seq>.xml -> '<seq>'."""
@@ -85,31 +81,45 @@ def load_manifest_pool(mpd_arg, max_frames=0):
     return pool
 
 
-def build_epoch_episodes(train_paths, traces, stride, rng, random_phase):
-    """Coverage-tiled (trace_path, offset) windows: every train trace is tiled
-    end-to-end each epoch, so episodes-per-file is proportional to file length
-    (the long static traces stop being under-used). A per-epoch random phase
-    decorrelates window boundaries across epochs."""
+def build_epoch_episodes(train_paths, registry, rng, randomize=True):
+    """Sample every parent equally, then sample its eligible windows.
+
+    The per-parent episode count is the ceiling of the mean eligible-window
+    count. Windows are shuffled and cycled within a parent when necessary, so
+    long or fragmented parents cannot dominate the training objective.
+    """
+    grouped = registry.windows_by_parent("train", train_paths)
+    episodes_per_parent = int(math.ceil(
+        sum(len(rows) for rows in grouped.values()) / float(len(grouped))
+    ))
+    path_by_name = {os.path.basename(path): path for path in train_paths}
     episodes = []
-    for path in train_paths:
-        n = len(traces[path])
-        k = max(1, int(round(n / float(stride))))
-        phase = rng.randrange(stride) if (random_phase and stride > 1) else 0
-        max_off = max(0, n - MIN_TAIL_SAMPLES)
-        for j in range(k):
-            episodes.append((path, min(j * stride + phase, max_off)))
-    rng.shuffle(episodes)
-    return episodes
+    for filename, rows in grouped.items():
+        selected = []
+        while len(selected) < episodes_per_parent:
+            cycle = list(rows)
+            if randomize:
+                rng.shuffle(cycle)
+            selected.extend(cycle)
+        episodes.extend(
+            (path_by_name[filename], window)
+            for window in selected[:episodes_per_parent]
+        )
+    if randomize:
+        rng.shuffle(episodes)
+    return episodes, episodes_per_parent
 
 
-def evaluate(agent, env, trace_paths, eval_seeds, sequences, offsets_per_trace=1):
+def evaluate(agent, env, trace_paths, eval_seeds, sequences, offsets_per_trace,
+             registry):
     """Greedy case-level evaluation on validation traces only."""
     if isinstance(sequences, str):
         sequences = [sequences]
     return evaluate_agent(
         agent, env, trace_paths, eval_seeds, sequences,
         offsets_per_trace=offsets_per_trace,
-        min_tail_samples=MIN_TAIL_SAMPLES,
+        window_registry=registry,
+        split_name="validation",
     )
 
 
@@ -155,23 +165,25 @@ def main():
     p = argparse.ArgumentParser(description="Train DQN ABR agent")
     p.add_argument('--protocol', default=os.path.join('configs', 'experiment_protocol.json'),
                    help='registered explicit train/validation/test protocol')
+    p.add_argument('--trace-registry', default=os.path.join(
+        'configs', 'trace_window_registry.json'),
+        help='frozen gap-split finite-window registry')
     p.add_argument('--epochs', type=int, default=8,
-                   help='maximum passes over the coverage-tiled training set')
+                   help='maximum passes over the parent-balanced window registry')
     p.add_argument('--mpd', type=str, default=os.path.join('manifests', 'mpd_gpcc*.xml'),
                    help='manifest path or glob; every match is one content sequence')
     p.add_argument('--eval-sequences', type=str, default='',
                    help='comma-separated validation contents; default comes from protocol')
     p.add_argument('--eval-offsets', type=int, default=0,
-                   help='deterministic offsets per validation trace; 0 = protocol value')
+                   help='frozen windows per validation parent; 0 = protocol value')
     p.add_argument('--max-train-files', type=int, default=0, help='0 = all train files')
     p.add_argument('--max-validation-files', type=int, default=0,
                    help='0 = all validation files (smoke-test convenience only)')
     p.add_argument('--coverage-stride', type=int, default=60,
-                   help='samples between episode start offsets when tiling each '
-                        'training trace (episodes per file ~= file length / stride)')
+                   help='compatibility assertion: must equal the registry timestamp '
+                        'grid stride (training windows are already frozen)')
     p.add_argument('--random-offset', action=argparse.BooleanOptionalAction, default=True,
-                   help='randomize the per-epoch training tiling phase; validation '
-                        'offsets remain deterministic')
+                   help='shuffle eligible windows within each uniformly sampled parent')
     p.add_argument('--reward-spec', type=str, default=None,
                    help='JSON dict overriding the reward spec (see src/rl/reward.py), '
                         'e.g. \'{"mu":4.3,"rebuffer_weight":2.0}\'')
@@ -236,6 +248,18 @@ def main():
                      else os.path.join(project_root, args.protocol))
     protocol = load_protocol(protocol_path, bandwidth_dir)
     protocol_id = protocol_digest(protocol)
+    registry_path = (args.trace_registry if os.path.isabs(args.trace_registry)
+                     else os.path.join(project_root, args.trace_registry))
+    trace_registry = load_trace_registry(
+        registry_path, protocol, bandwidth_dir, verify_hashes=True
+    )
+    if not math.isclose(
+        float(args.coverage_stride), trace_registry.grid_stride_s, abs_tol=1e-9
+    ):
+        raise ValueError(
+            f"--coverage-stride={args.coverage_stride} does not match frozen "
+            f"registry grid {trace_registry.grid_stride_s:g}s"
+        )
     lstm_path = resolve_lstm_path(args.lstm, args.segment_frames)
     train_files = list(protocol['trace_split']['train'])
     validation_files = list(protocol['trace_split']['validation'])
@@ -263,6 +287,9 @@ def main():
             f"available={seq_names}"
         )
     mean_frames = int(np.mean([len(f) for f in manifest_pool.values()]))
+    trace_registry.validate_experiment(
+        seq_names, args.segment_frames, args.max_frames
+    )
 
     feature_spec = [f for f in DEFAULT_FEATURE_SPEC
                     if not (args.no_lstm_pred and f == 'lstm_pred')]
@@ -295,10 +322,11 @@ def main():
                      sequence_length=getattr(predictor, 'sequence_length', 10),
                      reward_spec=env.reward_fn.spec)
 
-    # Cache traces once (timestamp axis preserved by slice_from per episode).
-    traces = {path: BandwidthTrace.from_file(path) for path in train_paths}
-    episodes_per_epoch = sum(max(1, int(round(len(traces[p]) / float(args.coverage_stride))))
-                             for p in train_paths)
+    preview_episodes, episodes_per_parent = build_epoch_episodes(
+        train_paths, trace_registry, random.Random(args.seed + 1),
+        args.random_offset,
+    )
+    episodes_per_epoch = len(preview_episodes)
     total_episodes = args.epochs * episodes_per_epoch
     steps_per_episode = max(1, -(-mean_frames // max(1, args.segment_frames)))  # ceil
     total_steps_est = max(1, total_episodes * steps_per_episode)
@@ -311,7 +339,8 @@ def main():
           f"| validation files: {len(validation_files)} | registered test files: "
           f"{len(registered_test_files)} (NOT evaluated) "
           f"| frames/episode: {mean_frames}")
-    print(f"   coverage stride: {args.coverage_stride} samples -> "
+    print(f"   registry: {trace_registry.registry_id} | grid: "
+          f"{trace_registry.grid_stride_s:g}s | {episodes_per_parent} episodes/parent -> "
           f"{episodes_per_epoch} episodes/epoch x {args.epochs} epochs = {total_episodes} episodes "
           f"(~{total_steps_est} env steps)")
     print(f"   segment: {args.segment_frames} frames/request "
@@ -331,11 +360,15 @@ def main():
     best_entry = None
     history = {'episode_reward': [], 'validation': []}
     episode = 0
+    training_policy_failures = 0
     ep_rng = random.Random(args.seed + 1)
 
     ep_csv_path = os.path.join(run_dir, 'episodes.csv')
     ep_csv = open(ep_csv_path, 'w', encoding='utf-8')
-    ep_csv.write('episode,sequence,file,offset,reward,qoe,qoe_quality,epsilon,mean_loss\n')
+    ep_csv.write(
+        'episode,sequence,file,window_id,block_id,start_time_s,reward,qoe,'
+        'qoe_quality,policy_trace_exhausted,epsilon,mean_loss\n'
+    )
 
     def epsilon():
         frac = min(1.0, step_count / decay_steps)
@@ -348,6 +381,7 @@ def main():
         ev = evaluate(
             agent, env, validation_paths, eval_seeds, eval_sequences,
             offsets_per_trace=eval_offsets,
+            registry=trace_registry,
         )
         entry = {'episode': episode, **ev}
         history['validation'].append(entry)
@@ -370,26 +404,34 @@ def main():
     base = evaluate(
         agent, env, validation_paths, eval_seeds, eval_sequences,
         offsets_per_trace=eval_offsets,
+        registry=trace_registry,
     )
     print(f"[validation @ ep 0] untrained: reward=QoE={base['qoe']:.2f}")
 
     stopped_early = False
     for epoch in range(args.epochs):
-        epoch_eps = build_epoch_episodes(train_paths, traces, args.coverage_stride,
-                                         ep_rng, args.random_offset)
-        for k, (path, off) in enumerate(epoch_eps):
+        epoch_eps, _ = build_epoch_episodes(
+            train_paths, trace_registry, ep_rng, args.random_offset
+        )
+        for k, (path, window) in enumerate(epoch_eps):
             # Round-robin content over the epoch's shuffled windows (offset by
             # epoch so a (window % sequence) correlation can't persist).
             seq = seq_names[(epoch + k) % len(seq_names)]
-            trace = traces[path].slice_from(off) if off else traces[path]
+            trace = trace_registry.materialize(window)
             s = env.reset(trace, sequence=seq)
             done = False
             ep_reward = 0.0
             losses = []
+            policy_trace_exhausted = False
             while not done:
                 eps = epsilon()
                 a = agent.act(s, eps)
-                s2, r, done, _ = env.step(a)
+                try:
+                    s2, r, done, _ = env.step(a)
+                except TraceWindowExhausted:
+                    s2, r, done, _ = env.terminate_trace_exhausted()
+                    policy_trace_exhausted = True
+                    training_policy_failures += 1
                 agent.push(s, a, r, s2, done)
                 loss = agent.learn()
                 if loss is not None:
@@ -410,12 +452,18 @@ def main():
                 raise AssertionError(
                     f"reward/QoE mismatch: return={ep_reward} qoe={episode_qoe}"
                 )
-            print(f"[ep {episode:4d}] {seq:<12s} {os.path.basename(path):>32s}@{off:<5d} "
+            print(f"[ep {episode:4d}] {seq:<12s} {os.path.basename(path):>32s} "
+                  f"{window['block_id']}@{window['start_time_s']:.0f}s "
                   f"reward=QoE={ep_reward:8.2f} "
+                  f"failed={int(policy_trace_exhausted)} "
                   f"eps={eps:.3f} loss={mean_loss:.4f}")
-            ep_csv.write(f"{episode},{seq},{os.path.basename(path)},{off},"
+            ep_csv.write(
+                         f"{episode},{seq},{os.path.basename(path)},"
+                         f"{window['id']},{window['block_id']},"
+                         f"{window['start_time_s']:.3f},"
                          f"{ep_reward:.4f},{episode_qoe:.2f},{episode_qoe:.2f},"
-                         f"{eps:.4f},{mean_loss:.6f}\n")
+                         f"{int(policy_trace_exhausted)},{eps:.4f},"
+                         f"{mean_loss:.6f}\n")
             ep_csv.flush()
 
             if args.eval_every and episode % args.eval_every == 0:
@@ -463,11 +511,18 @@ def main():
         'validation_seeds': eval_seeds,
         'protocol': os.path.relpath(protocol_path, project_root),
         'protocol_digest': protocol_id,
+        'trace_registry': os.path.relpath(registry_path, project_root),
+        'trace_registry_id': trace_registry.registry_id,
         'train_files': train_files,
         'validation_files': validation_files,
         'registered_test_files_not_evaluated': registered_test_files,
         'episodes_per_epoch': episodes_per_epoch,
+        'episodes_per_parent_per_epoch': episodes_per_parent,
         'episodes_run': episode,
+        'training_policy_trace_exhausted_cases': training_policy_failures,
+        'training_policy_trace_exhausted_rate': (
+            training_policy_failures / episode if episode else 0.0
+        ),
         'steps_run': step_count,
         'stopped_early': stopped_early,
         'untrained': base,

@@ -32,6 +32,7 @@ from src.rl.dqn import DQNAgent
 from src.rl.env import StreamingEnv
 from src.rl.features import DEFAULT_FEATURE_SPEC
 from src.rl.reward import DEFAULT_REWARD_SPEC, OBJECTIVE_VERSION
+from src.trace_registry import load_trace_registry
 
 
 class FixedABR(ABRStrategy):
@@ -148,6 +149,8 @@ def main():
     parser = argparse.ArgumentParser(description="Registered DQN/baseline evaluation")
     parser.add_argument("--protocol", default=os.path.join(
         "configs", "experiment_protocol.json"))
+    parser.add_argument("--trace-registry", default=os.path.join(
+        "configs", "trace_window_registry.json"))
     parser.add_argument("--split", choices=["validation", "test"], default="test")
     parser.add_argument("--sweep-results", default=os.path.join(
         "models", "dqn_sweep_results.json"))
@@ -185,6 +188,9 @@ def main():
 
     trace_dir = os.path.join(project_root, "bandwidth_5g")
     protocol = load_protocol(absolute(args.protocol), trace_dir)
+    trace_registry = load_trace_registry(
+        absolute(args.trace_registry), protocol, trace_dir, verify_hashes=True
+    )
     settings = evaluation_settings(protocol, args.split)
     trace_paths = split_paths(protocol, args.split, trace_dir)
     sequences = ([s.strip() for s in args.sequences.split(",") if s.strip()]
@@ -207,11 +213,16 @@ def main():
     if (args.experiment_config_digest and
             sweep.get("experiment_config_digest") != args.experiment_config_digest):
         raise ValueError("sweep/current experiment config digest mismatch")
+    if sweep.get("trace_registry_id") != trace_registry.registry_id:
+        raise ValueError("sweep/current trace-window registry mismatch")
     winner_entry = find_winner_entry(sweep)
     winner_config = dict(winner_entry["config"])
     base_args = dict(sweep.get("base_args", {}))
     segment_frames = int(winner_config.get(
         "segment-frames", base_args.get("segment-frames", 8)))
+    trace_registry.validate_experiment(
+        sequences, segment_frames, args.max_frames
+    )
     reward_spec = dict(DEFAULT_REWARD_SPEC)
     reward_spec.update(base_args.get("reward-spec", {}))
     reward_spec.update(winner_config.get("reward-spec", {}))
@@ -235,6 +246,8 @@ def main():
             raise ValueError("baseline parameters were not selected on validation")
         if baseline_config.get("protocol_digest") != protocol_digest(protocol):
             raise ValueError("baseline config/protocol digest mismatch")
+        if baseline_config.get("trace_registry_id") != trace_registry.registry_id:
+            raise ValueError("baseline config/current trace-window registry mismatch")
         if int(baseline_config.get("segment_frames", -1)) != segment_frames:
             raise ValueError("baseline config/DQN segment_frames mismatch")
         if baseline_config.get("objective_version") != OBJECTIVE_VERSION:
@@ -288,6 +301,7 @@ def main():
     print(f"REGISTERED EVALUATION | split={args.split} | protocol={protocol_digest(protocol)}")
     print(f"traces={len(trace_paths)} sequences={sequences} offsets/trace={offsets} "
           f"jitter_seeds={eval_seeds} segment_frames={segment_frames}")
+    print(f"trace_registry={trace_registry.registry_id} (finite blocks, macro trace)")
     print("=" * 96)
 
     payload = {
@@ -296,6 +310,10 @@ def main():
         "split": args.split,
         "protocol": os.path.relpath(absolute(args.protocol), project_root),
         "protocol_digest": protocol_digest(protocol),
+        "trace_registry": os.path.relpath(
+            absolute(args.trace_registry), project_root
+        ),
+        "trace_registry_id": trace_registry.registry_id,
         "git_commit": git_commit(),
         "trace_files": [os.path.basename(p) for p in trace_paths],
         "sequences": sequences,
@@ -346,6 +364,8 @@ def main():
             result = evaluate_agent(
                 agent, env, trace_paths, eval_seeds, sequences,
                 offsets_per_trace=offsets,
+                window_registry=trace_registry,
+                split_name=args.split,
             )
             for case in result["cases"]:
                 case["training_seed"] = int(seed)
@@ -366,6 +386,8 @@ def main():
             result = evaluate_strategy(
                 lambda arm=arm: FixedABR(arm), baseline_env,
                 trace_paths, eval_seeds, sequences, offsets,
+                window_registry=trace_registry,
+                split_name=args.split,
             )
             fixed_results[name] = result
             print(f"{name}: qoe_quality={result['qoe_quality']:.3f}")
@@ -407,6 +429,8 @@ def main():
             continue
         result = evaluate_strategy(
             factory, baseline_env, trace_paths, eval_seeds, sequences, offsets,
+            window_registry=trace_registry,
+            split_name=args.split,
         )
         result["causal"] = True
         payload["results"][name] = result

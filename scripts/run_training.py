@@ -225,6 +225,14 @@ def main():
     artifacts = artifact_set(cfg, run_dir, args.smoke)
     lstm_cfg = cfg["lstm"]
     protocol_rel = cfg.get("protocol", os.path.join("configs", "experiment_protocol.json"))
+    registry_rel = cfg.get(
+        "trace_registry", os.path.join("configs", "trace_window_registry.json")
+    )
+    if not os.path.isfile(absolute(registry_rel)):
+        raise FileNotFoundError(f"missing frozen trace registry: {registry_rel}")
+    registry_id = load_json(absolute(registry_rel)).get("registry_id")
+    if not registry_id:
+        raise ValueError(f"trace registry has no registry_id: {registry_rel}")
 
     runner.note(
         f"pipeline start | config={relative(config_path)} smoke={args.smoke} "
@@ -233,6 +241,9 @@ def main():
     )
     shutil.copyfile(config_path, os.path.join(run_dir, "training.config.json"))
     shutil.copyfile(absolute(protocol_rel), os.path.join(run_dir, "experiment_protocol.json"))
+    shutil.copyfile(
+        absolute(registry_rel), os.path.join(run_dir, "trace_window_registry.json")
+    )
 
     achieved = lstm_cfg.get("signal", "capacity") == "achieved"
     data_dirs = {
@@ -367,6 +378,7 @@ def main():
         if (
             frozen_baseline.get("experiment_config_digest") != config_digest
             or frozen_baseline.get("protocol_digest") != sweep.get("protocol_digest")
+            or frozen_baseline.get("trace_registry_id") != sweep.get("trace_registry_id")
             or int(frozen_baseline.get("segment_frames", -1)) != winner_segment
             or set(frozen_baseline.get("families", {})) != expected_families
         ):
@@ -381,6 +393,7 @@ def main():
         command = py(
             os.path.join("scripts", "tune_baselines.py"),
             "--protocol", protocol_rel,
+            "--trace-registry", registry_rel,
             "--segment-frames", winner_segment,
             "--families", cfg.get("baselines", {}).get(
                 "families", "fixed,buffer,mpc"
@@ -410,6 +423,7 @@ def main():
             if (
                 frozen_result.get("experiment_config_digest") != config_digest
                 or frozen_result.get("protocol_digest") != sweep.get("protocol_digest")
+                or frozen_result.get("trace_registry_id") != sweep.get("trace_registry_id")
                 or frozen_result.get("winner_trial") != sweep["winner"]["trial"]
                 or frozen_result.get("winner_config") != winner_config
                 or frozen_result.get("split") !=
@@ -426,6 +440,7 @@ def main():
             command = py(
                 os.path.join("scripts", "evaluate_experiment.py"),
                 "--protocol", protocol_rel,
+                "--trace-registry", registry_rel,
                 "--sweep-results", artifacts["sweep_results"],
                 "--baseline-config", artifacts["baseline_config"],
                 "--lstm", selected_lstm,
@@ -454,6 +469,8 @@ def main():
         f"- run directory: `{relative(run_dir)}`",
         f"- mode: {'SMOKE (not a paper result)' if args.smoke else 'full wide search'}",
         f"- experiment config digest: `{config_digest}`",
+        f"- trace registry: `{registry_rel}`",
+        f"- trace registry ID: `{registry_id}`",
         f"- segment candidates: {all_segments}",
         f"- frozen segment size: **{winner_segment} frames**",
         f"- test split changed by pipeline: **no**", "",

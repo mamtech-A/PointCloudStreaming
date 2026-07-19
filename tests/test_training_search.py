@@ -74,6 +74,10 @@ def test_lstm_and_dqn_search_use_the_same_requested_segment_values():
     assert run_training.validate_search_config(config) == [5, 8, 10, 15]
     expected_contents = "longdress,loot,redandblack,soldier"
     assert config["dqn_sweep"]["base_args"]["eval-sequences"] == expected_contents
+    assert config["trace_registry"] == "configs/trace_window_registry.json"
+    assert config["dqn_sweep"]["base_args"]["trace-registry"] == (
+        "configs/trace_window_registry.json"
+    )
     assert config["final_eval"]["split"] == "test"
     assert config["final_eval"]["strategies"] == "dqn,fixed,buffer,mpc"
     search = config["dqn_sweep"]
@@ -133,6 +137,24 @@ def test_validation_restores_training_rng_state():
         def quality_change_sum(): return 0.0
         @staticmethod
         def qoe_terms(): return {"total": 0.0}
+        @staticmethod
+        def frames_dropped(): return 0
+
+    class Registry:
+        @staticmethod
+        def validate_evaluation_count(_split, _count, trace_paths):
+            filename = os.path.basename(trace_paths[0])
+            return {filename: [{
+                "id": "validation/example#block-000@time-0.000s",
+                "block_id": "block-000",
+                "start_time_s": 0.0,
+                "duration_s": 10.0,
+                "source_sample_index": 0,
+            }]}
+
+        @staticmethod
+        def materialize(_window):
+            return object()
 
     trace = os.path.join(
         ROOT, "bandwidth_5g", "driving_B_2019.12.16_12.27.05.csv"
@@ -145,6 +167,7 @@ def test_validation_restores_training_rng_state():
     _evaluate(
         Env(), [trace], [42], ["longdress"], 1,
         choose_action=lambda _observation, _env: 0,
+        window_registry=Registry(), split_name="validation",
     )
     actual = (random.random(), float(np.random.random()))
     assert actual == expected

@@ -54,7 +54,7 @@ except Exception:
 STORE_TRUE_FLAGS = {'no-lstm-pred'}
 
 SMOKE_BASE = {
-    'epochs': 1, 'max-frames': 30, 'coverage-stride': 2000, 'eval-every': 3,
+    'epochs': 1, 'max-frames': 30, 'coverage-stride': 60, 'eval-every': 3,
     'max-validation-files': 1, 'eval-offsets': 1, 'eval-seeds': '42',
     'eval-sequences': 'longdress,loot,redandblack,soldier',
 }
@@ -97,7 +97,7 @@ def argv_value(argv, flag):
 
 def trial_provenance(argv, config_digest, code_digest):
     files = {}
-    for flag in ('--protocol', '--lstm'):
+    for flag in ('--protocol', '--trace-registry', '--lstm'):
         value = argv_value(argv, flag)
         if not value:
             continue
@@ -456,6 +456,14 @@ def main():
     front = [table[i]['trial'] for i in pareto_front(pts)]
 
     winner = table[0]
+    registry_ids = {
+        summary.get('trace_registry_id')
+        for trial_results in final_results.values()
+        for summary in trial_results.values()
+    }
+    if len(registry_ids) != 1 or None in registry_ids:
+        raise ValueError(f"sweep trials used inconsistent trace registries: {registry_ids}")
+    trace_registry_id = next(iter(registry_ids))
     # Install the representative (closest-to-mean) seed, not the lucky best
     # seed. All winner-config seeds are evaluated once on final test later.
     winner_mean = winner['metrics'][select_by]
@@ -480,6 +488,7 @@ def main():
             'objective_version'),
         'protocol_digest': final_results[winner['trial']][representative_seed].get(
             'protocol_digest'),
+        'trace_registry_id': trace_registry_id,
         'experiment_config_digest': config_digest,
         'training_code_digest': code_digest,
         'select_by': select_by, 'selection_split': 'validation',

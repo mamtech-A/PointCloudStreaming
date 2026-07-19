@@ -147,6 +147,8 @@ class StreamingEnv:
         self._prev_rebuffer_count = 0
         self._prev_startup_s = 0.0
         self._prev_dropped = 0
+        self._terminal_dropped = 0
+        self._trace_exhausted = False
         return self._observe()
 
     def _observe(self):
@@ -219,6 +221,42 @@ class StreamingEnv:
         }
         return self._observe(), reward, done, info
 
+    def terminate_trace_exhausted(self):
+        """End an episode that needs unobserved post-window throughput.
+
+        The remaining content is accounted for through the existing canonical
+        frame-drop term. No stall duration or future bandwidth is invented.
+        This makes the terminal training reward and reported QoE identical
+        while preserving an explicit policy-failure flag for evaluation.
+        """
+        if self.session is None or self.frame_idx >= len(self.frames):
+            raise RuntimeError("trace exhaustion requires an active episode")
+        remaining = len(self.frames) - self.frame_idx
+        q_reference = self.prev_quality if self.prev_quality is not None else 0.0
+        reward = self.reward_fn.step_segment(
+            q_sum=0.0,
+            q_mean=q_reference,
+            prev_q_mean=self.prev_quality,
+            stall_s=0.0,
+            rebuffer_events=0,
+            startup_s=0.0,
+            dropped=remaining,
+            episode_frames=len(self.frames),
+        )
+        self._terminal_dropped += remaining
+        self._episode_reward += reward
+        failed_at_frame = self.frame_idx
+        self.frame_idx = len(self.frames)
+        self._trace_exhausted = True
+        info = {
+            "policy_trace_exhausted": True,
+            "failed_at_frame": failed_at_frame,
+            "terminal_dropped_frames": remaining,
+            "reward": reward,
+            "sequence": self.sequence,
+        }
+        return self._observe(), reward, True, info
+
     def qoe(self):
         """The one canonical raw QoE; equals the undiscounted reward sum."""
         return self.qoe_terms()['total'] if self.session else 0.0
@@ -234,7 +272,7 @@ class StreamingEnv:
             self._quality_change_sum,
             stats.get('total_stall_time_s', 0.0),
             stats.get('rebuffer_count', 0),
-            stats.get('frames_dropped', 0),
+            stats.get('frames_dropped', 0) + self._terminal_dropped,
             stats.get('startup_delay_s', 0.0),
             len(self.frames),
         )
@@ -255,3 +293,14 @@ class StreamingEnv:
         if not self.session:
             return 0.0
         return self.user.get_buffer_stats()['total_stall_time_s']
+
+    def frames_dropped(self):
+        if not self.session:
+            return 0
+        return int(
+            self.user.get_buffer_stats().get('frames_dropped', 0)
+            + self._terminal_dropped
+        )
+
+    def policy_trace_exhausted(self):
+        return bool(self._trace_exhausted)

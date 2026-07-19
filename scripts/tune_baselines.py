@@ -25,6 +25,7 @@ from src.network_model.manifest import parse_mpd_xml
 from src.rl.env import StreamingEnv
 from src.rl.features import DEFAULT_FEATURE_SPEC
 from src.rl.reward import DEFAULT_REWARD_SPEC, OBJECTIVE_VERSION
+from src.trace_registry import load_trace_registry
 
 
 class FixedABR(ABRStrategy):
@@ -65,6 +66,8 @@ def main():
     parser = argparse.ArgumentParser(description="Validation-only baseline tuning")
     parser.add_argument("--protocol", default=os.path.join(
         "configs", "experiment_protocol.json"))
+    parser.add_argument("--trace-registry", default=os.path.join(
+        "configs", "trace_window_registry.json"))
     parser.add_argument("--mpd", default=os.path.join("manifests", "mpd_gpcc*.xml"))
     parser.add_argument("--out", default=os.path.join("models", "baseline_config.json"))
     parser.add_argument("--lstm", default=os.path.join("models", "bandwidth_lstm.pkl"))
@@ -92,6 +95,9 @@ def main():
 
     trace_dir = os.path.join(project_root, "bandwidth_5g")
     protocol = load_protocol(absolute(args.protocol), trace_dir)
+    trace_registry = load_trace_registry(
+        absolute(args.trace_registry), protocol, trace_dir, verify_hashes=True
+    )
     settings = evaluation_settings(protocol, "validation")
     trace_paths = split_paths(protocol, "validation", trace_dir)
     sequences = ([s.strip() for s in args.sequences.split(",") if s.strip()]
@@ -100,6 +106,9 @@ def main():
              if args.eval_seeds else list(settings["jitter_seeds"]))
     offsets = args.offsets or int(settings["offsets_per_trace"])
     pool = load_pool(absolute(args.mpd), args.max_frames)
+    trace_registry.validate_experiment(
+        sequences, args.segment_frames, args.max_frames
+    )
 
     reward_spec = dict(DEFAULT_REWARD_SPEC)
     env = StreamingEnv(
@@ -169,6 +178,8 @@ def main():
         for params in candidates:
             metrics = evaluate_strategy(
                 factory(name, params), env, trace_paths, seeds, sequences, offsets,
+                window_registry=trace_registry,
+                split_name="validation",
             )
             rows.append({"params": params, "metrics": metrics})
             print(f"{name} {params}: qoe_quality={metrics['qoe_quality']:.3f} "
@@ -186,6 +197,10 @@ def main():
         "selection_metric": "qoe_quality",
         "protocol": os.path.relpath(absolute(args.protocol), project_root),
         "protocol_digest": protocol_digest(protocol),
+        "trace_registry": os.path.relpath(
+            absolute(args.trace_registry), project_root
+        ),
+        "trace_registry_id": trace_registry.registry_id,
         "trace_files": [os.path.basename(p) for p in trace_paths],
         "sequences": sequences,
         "offsets_per_trace": offsets,
