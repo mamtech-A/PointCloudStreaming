@@ -39,17 +39,25 @@ def _csv_floats(value):
     return result
 
 
-def _git_state():
+def _git_state(ignored_output_paths=()):
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
         ).strip()
         tracked_changes = subprocess.check_output(
-            ["git", "status", "--porcelain", "--untracked-files=no"],
+            ["git", "diff", "--name-only", "HEAD", "--"],
             cwd=PROJECT_ROOT,
             text=True,
-        ).strip()
-        return commit, bool(tracked_changes)
+        ).splitlines()
+        ignored = {
+            os.path.relpath(_absolute(path), PROJECT_ROOT).replace("\\", "/")
+            for path in ignored_output_paths
+        }
+        dirty_source_paths = [
+            path.strip().replace("\\", "/") for path in tracked_changes
+            if path.strip().replace("\\", "/") not in ignored
+        ]
+        return commit, bool(dirty_source_paths)
     except (OSError, subprocess.CalledProcessError):
         return None, None
 
@@ -111,7 +119,7 @@ def main():
         sensitivity_thresholds_s=args.thresholds,
         grid_stride_s=args.grid_stride_s,
     )
-    source_commit, dirty = _git_state()
+    source_commit, dirty = _git_state([json_path, markdown_path])
     report.update({
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source_commit": source_commit,

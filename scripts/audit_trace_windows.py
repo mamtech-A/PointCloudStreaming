@@ -75,17 +75,25 @@ def _csv_strings(value):
     return result
 
 
-def _git_state():
+def _git_state(ignored_output_paths=()):
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
         ).strip()
         tracked_changes = subprocess.check_output(
-            ["git", "status", "--porcelain", "--untracked-files=no"],
+            ["git", "diff", "--name-only", "HEAD", "--"],
             cwd=PROJECT_ROOT,
             text=True,
-        ).strip()
-        return commit, bool(tracked_changes)
+        ).splitlines()
+        ignored = {
+            os.path.relpath(_absolute(path), PROJECT_ROOT).replace("\\", "/")
+            for path in ignored_output_paths
+        }
+        dirty_source_paths = [
+            path.strip().replace("\\", "/") for path in tracked_changes
+            if path.strip().replace("\\", "/") not in ignored
+        ]
+        return commit, bool(dirty_source_paths)
     except (OSError, subprocess.CalledProcessError):
         return None, None
 
@@ -255,7 +263,9 @@ def main():
             )
         },
     }
-    source_commit, tracked_files_dirty = _git_state()
+    source_commit, tracked_files_dirty = _git_state(
+        [args.json_out, args.markdown_out]
+    )
     report = audit_protocol(
         protocol,
         trace_dir,
