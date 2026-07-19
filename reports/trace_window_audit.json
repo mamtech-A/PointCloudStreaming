@@ -1,8 +1,8 @@
 {
   "schema_version": 3,
   "audit_type": "read_only_trace_window_feasibility",
-  "generated_at_utc": "2026-07-19T21:56:47.031093+00:00",
-  "source_commit": "1eda93b0128fb91cf1b0cea9925652c785366581",
+  "generated_at_utc": "2026-07-19T23:12:01.033988+00:00",
+  "source_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
   "source_tracked_files_dirty": false,
   "input_hashes": {
     "protocol": {
@@ -15,8 +15,8 @@
       "manifests\\mpd_gpcc_soldier.xml": "8ed4847f90c2450ccc5d53e9b4ff707d403024469e4321935b37cfcc4422916d"
     },
     "audit_implementation": {
-      "scripts\\audit_trace_windows.py": "796407e21e17fde72dc4efd9314b44cbd34d420d5502e2795f800960cd56b61a",
-      "src\\trace_audit.py": "59b9672ce819b2e8d357028c5b8b5d0456807e38fb15408f5dd6398e5e3ac78f",
+      "scripts\\audit_trace_windows.py": "e5fb8b3a1e2eefb0ea29ab90ffe1121162f224a7885f1e7d5e7052ae57a95ae8",
+      "src\\trace_audit.py": "09c343f823f69f1ce3cfad4c84c8a4a706a2e8324b0090b7c8f426354b1b101a",
       "src\\trace_gaps.py": "c12c65643e597e3245357377b2fb7ed686196faae3c2942f4e58591caf9553c2",
       "src\\network_model\\trace.py": "fafb193643814f7e55f4ed3f26cc26c698524a587506def8c5e570d88e961de3",
       "src\\network_model\\buffer.py": "5be532c58aebc0b7b1c8d62c3da2b06a20246d205189f4da2f8d42fbb050e7aa",

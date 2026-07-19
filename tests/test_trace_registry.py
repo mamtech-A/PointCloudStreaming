@@ -63,7 +63,7 @@ def _frames(count):
 
 def test_checked_in_registry_has_expected_frozen_counts():
     protocol, registry = _registry()
-    assert registry.registry_id == "a49c7f37510aab99"
+    assert registry.registry_id == "223c00899f3e86f8"
     assert registry.data["registry_type"] == "gap_split_finite_high_supported_windows"
     assert registry.settings()["minimum_maximum_tier_headroom_s"] == 5.0
     assert len(registry.windows("train")) == 413

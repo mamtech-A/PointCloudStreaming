@@ -1,6 +1,6 @@
 # Trace-window feasibility audit
 
-This is a read-only preview. It does not modify trace CSVs, protocol splits, training episodes, checkpoints, or evaluation code.
+This is a read-only audit. It does not modify trace CSVs, protocol splits, training episodes, checkpoints, or evaluation code.
 
 ## Decision rule
 
@@ -131,7 +131,7 @@ A rejected window is not labeled a physical network outage: the audit only estab
 | `legacy-test/static_B_2020.02.13_13.57.29.csv@sample-1472` | 1682.0 | 1815.0 | eligible | 0 |
 | `legacy-test/static_B_2020.02.13_13.57.29.csv@sample-2945` | 3360.0 | 137.0 | eligible | 0 |
 
-Ineligible windows are reported separately and must not be used to rank ABR algorithms. The registry is not consumed by training/evaluation until the audit is reviewed and a follow-up pipeline change is approved. When activated, results must be macro-averaged per trace so traces with more eligible windows do not receive extra weight.
+Ineligible windows are reported separately and must not be used to rank ABR algorithms. Reviewed eligible windows feed the maximum-tier support audit and the finite-window registry consumed by training/evaluation. Results must be macro-averaged per trace so traces with more eligible windows do not receive extra weight.
 Training must first sample parent traces uniformly, then sample an eligible block/window inside that parent; otherwise fragmented or long traces would be overrepresented.
 
 Static Very-low eligibility certifies only the minimum-demand action. The production registry must additionally retain only windows whose maximum-demand Static High cases all finish. Any unexpected runtime exhaustion is then a fatal protocol failure with no complete-session QoE; it must never clamp the final trace sample.

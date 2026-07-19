@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
   "audit_type": "read_only_static_high_candidate_window_headroom",
-  "generated_at_utc": "2026-07-19T22:14:40.115170+00:00",
-  "source_commit": "1eda93b0128fb91cf1b0cea9925652c785366581",
+  "generated_at_utc": "2026-07-19T23:29:42.988198+00:00",
+  "source_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
   "protocol": "configs/experiment_protocol.json",
   "protocol_digest": "4071599372abeb61",
   "trace_registry": "reports/trace_window_registry_all_candidates.json",
-  "trace_registry_id": "73c69148ae418f69",
+  "trace_registry_id": "e1d52528a7129527",
   "input_hashes": {
     "protocol": "1149e7807d7ace3fa962c2a353f734c3003c86ea245eb0b6dd994792c5db6a98",
-    "registry": "7f7fcfb3c37f3d980b0de53e2d9d40ea7fcded110433e9988beb5347b88d32fb",
+    "registry": "5265c08c6c17ffd6663d422f36e3c9916b17d38f5522bb3f69b5dd8a2ec9af55",
     "manifests": {
       "manifests/mpd_gpcc_longdress.xml": "a961073f3ba39197fbe0a3a45c8ba2bd442df86a1464f80d006479a7aeb523fd",
       "manifests/mpd_gpcc_loot.xml": "bce2f2287193e6822d1119be6235aadc7c4057b2864e82230e5887c1f7b92b25",
@@ -10177,5 +10177,5 @@
       "maximum_completion_time_s": null
     }
   ],
-  "audit_id": "a3c49cd690e97674"
+  "audit_id": "706a18b5fa589ad1"
 }

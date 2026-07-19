@@ -13,7 +13,7 @@ This read-only audit covers all Very-low-eligible candidate windows and does not
 
 ## Summary
 
-- Registry: `73c69148ae418f69`.
+- Registry: `e1d52528a7129527`.
 - Windows: 759 total; 675 High-supported; 84 unsupported.
 - Cases: 36432 total; 3210 require unobserved capacity.
 - Minimum successful headroom: 0.111 s.

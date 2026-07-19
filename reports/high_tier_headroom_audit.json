@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
   "audit_type": "read_only_static_high_frozen_registry_headroom",
-  "generated_at_utc": "2026-07-19T22:49:51.621501+00:00",
-  "source_commit": "1eda93b0128fb91cf1b0cea9925652c785366581",
+  "generated_at_utc": "2026-07-19T23:41:05.023563+00:00",
+  "source_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
   "protocol": "configs/experiment_protocol.json",
   "protocol_digest": "4071599372abeb61",
   "trace_registry": "configs/trace_window_registry.json",
-  "trace_registry_id": "a49c7f37510aab99",
+  "trace_registry_id": "223c00899f3e86f8",
   "input_hashes": {
     "protocol": "1149e7807d7ace3fa962c2a353f734c3003c86ea245eb0b6dd994792c5db6a98",
-    "registry": "ad676b53a763fa1ec3399642e63b2a9d91927573f80e4b3ed4875372ff7bf7c4",
+    "registry": "4a461094aba36153034d7f3823bdbcf8c56833083bd91eb5f5b5f90c8e6cc208",
     "manifests": {
       "manifests/mpd_gpcc_longdress.xml": "a961073f3ba39197fbe0a3a45c8ba2bd442df86a1464f80d006479a7aeb523fd",
       "manifests/mpd_gpcc_loot.xml": "bce2f2287193e6822d1119be6235aadc7c4057b2864e82230e5887c1f7b92b25",
@@ -321505,5 +321505,5 @@
       ]
     }
   ],
-  "audit_id": "004bdb7e2405a252"
+  "audit_id": "786e482ed1ffd588"
 }

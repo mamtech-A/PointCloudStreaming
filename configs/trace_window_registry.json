@@ -2,8 +2,8 @@
   "schema_version": 1,
   "registry_type": "gap_split_finite_high_supported_windows",
   "source_audit": "reports/trace_window_audit.json",
-  "source_audit_sha256": "06ebf8189a0f25d1d3ec11c9b55d47ba9bccaf830af51fe905ab2234697e1412",
-  "source_audit_commit": "1eda93b0128fb91cf1b0cea9925652c785366581",
+  "source_audit_sha256": "ad603c6195ef9f37238f73bad501716703fa47370f5b927f9dd627d7b12b11b6",
+  "source_audit_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
   "protocol": "configs/experiment_protocol.json",
   "protocol_digest": "4071599372abeb61",
   "trace_hashes": {
@@ -5784,7 +5784,7 @@
     }
   },
   "source_high_audit": "reports/high_tier_candidate_audit.json",
-  "source_high_audit_sha256": "c0461025759ce90a1e3621c48177c6b61725273af72086084d768e833840235b",
-  "source_high_audit_id": "a3c49cd690e97674",
-  "registry_id": "a49c7f37510aab99"
+  "source_high_audit_sha256": "786a1cc1e31d9096987a86c986e75f58ffc9095f5243c286118bb0aab0be79dd",
+  "source_high_audit_id": "706a18b5fa589ad1",
+  "registry_id": "223c00899f3e86f8"
 }

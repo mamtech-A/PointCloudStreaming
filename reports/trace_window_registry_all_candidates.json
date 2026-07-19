@@ -2,8 +2,8 @@
   "schema_version": 1,
   "registry_type": "candidate_high_tier_audit_windows",
   "source_audit": "reports/trace_window_audit.json",
-  "source_audit_sha256": "06ebf8189a0f25d1d3ec11c9b55d47ba9bccaf830af51fe905ab2234697e1412",
-  "source_audit_commit": "1eda93b0128fb91cf1b0cea9925652c785366581",
+  "source_audit_sha256": "ad603c6195ef9f37238f73bad501716703fa47370f5b927f9dd627d7b12b11b6",
+  "source_audit_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
   "protocol": "configs/experiment_protocol.json",
   "protocol_digest": "4071599372abeb61",
   "trace_hashes": {
@@ -9968,5 +9968,5 @@
       ]
     }
   },
-  "registry_id": "73c69148ae418f69"
+  "registry_id": "e1d52528a7129527"
 }
