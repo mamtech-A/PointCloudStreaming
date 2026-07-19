@@ -1,0 +1,121 @@
+# Static-High registry headroom audit
+
+This read-only audit does not modify traces, splits, the frozen window registry, training, or evaluation.
+
+## Decision rule
+
+- Every frozen registry window is tested with the maximum-demand static High G-PCC tier.
+- Required sequences: longdress, loot, redandblack, soldier.
+- Segment sizes: [5, 8, 10, 15].
+- Transport seeds: [42, 43, 44].
+- A window is High-supported only when all required cases complete before its last measured timestamp.
+- No terminal sample is clamped and no post-trace capacity is invented.
+
+## Summary
+
+- Registry: `39c0494ccea0d522`.
+- Windows: 492 total; 431 High-supported; 61 unsupported.
+- Cases: 23616 total; 2424 require unobserved capacity.
+- Minimum successful headroom: 0.111 s.
+
+## Split results
+
+| Split | Windows | High-supported | Unsupported | Failed cases |
+|---|---:|---:|---:|---:|
+| train | 468 | 415 | 53 | 2076 |
+| validation | 12 | 8 | 4 | 156 |
+| test | 12 | 8 | 4 | 192 |
+
+## Per-trace results
+
+| Split | Trace | Windows | High-supported | Unsupported | Failed cases |
+|---|---|---:|---:|---:|---:|
+| validation | `driving_B_2019.12.14_10.16.30.csv` | 3 | 2 | 1 | 48 |
+| validation | `driving_B_2019.12.16_07.22.43.csv` | 3 | 2 | 1 | 48 |
+| test | `driving_B_2019.12.16_11.49.59.csv` | 3 | 2 | 1 | 48 |
+| train | `driving_B_2019.12.16_12.27.05.csv` | 23 | 22 | 1 | 37 |
+| test | `driving_B_2019.12.16_14.23.32.csv` | 3 | 2 | 1 | 48 |
+| train | `driving_B_2019.12.17_07.32.39.csv` | 44 | 42 | 2 | 56 |
+| train | `driving_B_2020.01.16_07.26.43.csv` | 35 | 32 | 3 | 108 |
+| train | `driving_B_2020.01.16_09.56.56.csv` | 31 | 29 | 2 | 72 |
+| train | `driving_B_2020.01.16_12.10.03.csv` | 7 | 7 | 0 | 0 |
+| train | `driving_B_2020.02.13_13.03.24.csv` | 45 | 33 | 12 | 486 |
+| train | `driving_B_2020.02.13_15.02.01.csv` | 54 | 51 | 3 | 120 |
+| test | `driving_B_2020.02.14_07.29.00.csv` | 3 | 2 | 1 | 48 |
+| train | `driving_B_2020.02.14_09.38.22.csv` | 29 | 27 | 2 | 72 |
+| train | `driving_B_2020.02.14_12.58.17.csv` | 17 | 5 | 12 | 501 |
+| train | `driving_B_2020.02.27_17.30.15.csv` | 15 | 5 | 10 | 396 |
+| validation | `driving_B_2020.02.27_20.35.57.csv` | 3 | 1 | 2 | 60 |
+| train | `static_B_2019.12.16_13.40.04.csv` | 38 | 32 | 6 | 228 |
+| validation | `static_B_2020.01.16_10.43.34.csv` | 3 | 3 | 0 | 0 |
+| test | `static_B_2020.02.13_13.57.29.csv` | 3 | 2 | 1 | 48 |
+| train | `static_B_2020.02.14_13.21.26.csv` | 19 | 19 | 0 | 0 |
+| train | `static_B_2020.02.27_18.39.27.csv` | 111 | 111 | 0 | 0 |
+
+## Unsupported frozen windows
+
+| Window | Duration (s) | Failed cases |
+|---|---:|---:|
+| `train/driving_B_2019.12.16_12.27.05.csv#block-000@time-1320.000s` | 28.000 | 37 |
+| `train/driving_B_2019.12.17_07.32.39.csv#block-003@time-2194.000s` | 35.000 | 8 |
+| `train/driving_B_2019.12.17_07.32.39.csv#block-004@time-2597.000s` | 26.000 | 48 |
+| `train/driving_B_2020.01.16_07.26.43.csv#block-000@time-1920.000s` | 168.000 | 12 |
+| `train/driving_B_2020.01.16_07.26.43.csv#block-000@time-1980.000s` | 108.000 | 48 |
+| `train/driving_B_2020.01.16_07.26.43.csv#block-000@time-2040.000s` | 48.000 | 48 |
+| `train/driving_B_2020.01.16_09.56.56.csv#block-000@time-420.000s` | 91.000 | 24 |
+| `train/driving_B_2020.01.16_09.56.56.csv#block-000@time-480.000s` | 31.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-000@time-720.000s` | 150.000 | 3 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-000@time-780.000s` | 90.000 | 36 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-000@time-840.000s` | 30.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-003@time-2079.000s` | 31.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-004@time-2116.000s` | 42.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-005@time-2165.000s` | 87.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-005@time-2225.000s` | 27.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-007@time-2410.000s` | 256.000 | 24 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-007@time-2470.000s` | 196.000 | 39 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-007@time-2530.000s` | 136.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-007@time-2590.000s` | 76.000 | 48 |
+| `train/driving_B_2020.02.13_13.03.24.csv#block-007@time-2650.000s` | 16.000 | 48 |
+| `train/driving_B_2020.02.13_15.02.01.csv#block-000@time-3060.000s` | 74.000 | 24 |
+| `train/driving_B_2020.02.13_15.02.01.csv#block-000@time-3120.000s` | 14.000 | 48 |
+| `train/driving_B_2020.02.13_15.02.01.csv#block-001@time-3761.000s` | 9.000 | 48 |
+| `train/driving_B_2020.02.14_09.38.22.csv#block-000@time-1620.000s` | 92.000 | 24 |
+| `train/driving_B_2020.02.14_09.38.22.csv#block-000@time-1680.000s` | 32.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-000@time-60.000s` | 300.000 | 21 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-000@time-120.000s` | 240.000 | 24 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-000@time-180.000s` | 180.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-000@time-240.000s` | 120.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-000@time-300.000s` | 60.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-001@time-378.000s` | 151.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-001@time-438.000s` | 91.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-001@time-498.000s` | 31.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-002@time-776.000s` | 218.000 | 24 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-002@time-836.000s` | 158.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-002@time-896.000s` | 98.000 | 48 |
+| `train/driving_B_2020.02.14_12.58.17.csv#block-002@time-956.000s` | 38.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-001@time-8.000s` | 277.000 | 24 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-001@time-68.000s` | 217.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-001@time-128.000s` | 157.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-001@time-188.000s` | 97.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-001@time-248.000s` | 37.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-002@time-593.000s` | 292.000 | 12 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-002@time-653.000s` | 232.000 | 24 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-002@time-713.000s` | 172.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-002@time-773.000s` | 112.000 | 48 |
+| `train/driving_B_2020.02.27_17.30.15.csv#block-002@time-833.000s` | 52.000 | 48 |
+| `train/static_B_2019.12.16_13.40.04.csv#block-000@time-480.000s` | 108.000 | 24 |
+| `train/static_B_2019.12.16_13.40.04.csv#block-001@time-1195.000s` | 46.000 | 36 |
+| `train/static_B_2019.12.16_13.40.04.csv#block-002@time-1247.000s` | 16.000 | 48 |
+| `train/static_B_2019.12.16_13.40.04.csv#block-004@time-1298.000s` | 42.000 | 48 |
+| `train/static_B_2019.12.16_13.40.04.csv#block-005@time-2066.000s` | 100.000 | 24 |
+| `train/static_B_2019.12.16_13.40.04.csv#block-005@time-2126.000s` | 40.000 | 48 |
+| `validation/driving_B_2019.12.14_10.16.30.csv#block-002@time-974.000s` | 188.000 | 48 |
+| `validation/driving_B_2019.12.16_07.22.43.csv#block-002@time-2579.000s` | 17.000 | 48 |
+| `validation/driving_B_2020.02.27_20.35.57.csv#block-001@time-393.000s` | 455.000 | 12 |
+| `validation/driving_B_2020.02.27_20.35.57.csv#block-001@time-813.000s` | 35.000 | 48 |
+| `test/driving_B_2019.12.16_11.49.59.csv#block-000@time-360.000s` | 32.000 | 48 |
+| `test/driving_B_2019.12.16_14.23.32.csv#block-004@time-2913.000s` | 34.000 | 48 |
+| `test/driving_B_2020.02.14_07.29.00.csv#block-000@time-2220.000s` | 50.000 | 48 |
+| `test/static_B_2020.02.13_13.57.29.csv#block-000@time-3480.000s` | 17.000 | 48 |
+
+The JSON companion retains every case outcome and headroom value.
