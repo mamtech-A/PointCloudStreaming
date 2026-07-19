@@ -42,6 +42,12 @@ def _load_manifest_pool(pattern, required_frames):
         raise FileNotFoundError(f"no manifest matches {pattern}")
     pool = {}
     for path in paths:
+        sequence = _sequence_name(path)
+        if sequence in pool:
+            raise ValueError(
+                f"multiple manifests resolve to sequence {sequence!r}; "
+                "use an unambiguous --mpd pattern"
+            )
         frames = parse_mpd_xml(path)
         if required_frames and len(frames) < required_frames:
             raise ValueError(
@@ -50,7 +56,7 @@ def _load_manifest_pool(pattern, required_frames):
             )
         if required_frames:
             frames = frames[:required_frames]
-        pool[_sequence_name(path)] = frames
+        pool[sequence] = frames
     return pool, paths
 
 
@@ -68,13 +74,19 @@ def _csv_strings(value):
     return result
 
 
-def _source_commit():
+def _git_state():
     try:
-        return subprocess.check_output(
+        commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
         ).strip()
+        tracked_changes = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=PROJECT_ROOT,
+            text=True,
+        ).strip()
+        return commit, bool(tracked_changes)
     except (OSError, subprocess.CalledProcessError):
-        return None
+        return None, None
 
 
 def _default_sequences(protocol):
@@ -216,7 +228,21 @@ def main():
             os.path.relpath(path, PROJECT_ROOT): sha256_file(path)
             for path in manifest_paths
         },
+        "audit_implementation": {
+            path: sha256_file(_absolute(path))
+            for path in (
+                os.path.join("scripts", "audit_trace_windows.py"),
+                os.path.join("src", "trace_audit.py"),
+                os.path.join("src", "network_model", "trace.py"),
+                os.path.join("src", "network_model", "links.py"),
+                os.path.join("src", "network_model", "tcp_protocol.py"),
+                os.path.join("src", "network_model", "session.py"),
+                os.path.join("src", "network_model", "manifest.py"),
+                os.path.join("src", "rl", "env.py"),
+            )
+        },
     }
+    source_commit, tracked_files_dirty = _git_state()
     report = audit_protocol(
         protocol,
         trace_dir,
@@ -226,7 +252,8 @@ def main():
         sequences=sequences,
         jitter_seeds=jitter_seeds,
         segment_frames=args.segment_frames,
-        source_commit=_source_commit(),
+        source_commit=source_commit,
+        source_tracked_files_dirty=tracked_files_dirty,
         input_hashes=input_hashes,
         progress=progress,
     )

@@ -23,7 +23,8 @@ from src.trace_audit import (
     measured_end_time_s,
     read_trace_metadata,
     select_evenly_spaced_windows,
-    timestamp_grid_offsets,
+    slice_trace_at_time,
+    timestamp_grid_starts,
 )
 
 
@@ -93,8 +94,19 @@ def test_timestamp_grid_uses_seconds_not_row_positions():
     trace = BandwidthTrace(
         [1e6] * 5, sample_times_s=[0.0, 1.0, 61.0, 62.0, 121.0]
     )
-    # Targets 0, 60, 120 map to the first rows at/after those times.
-    assert timestamp_grid_offsets(trace, 60.0) == [0, 2, 4]
+    assert timestamp_grid_starts(trace, 60.0) == [0.0, 60.0, 120.0]
+
+
+def test_exact_time_slice_keeps_capacity_in_effect_before_next_row():
+    trace = BandwidthTrace(
+        [1e6, 2e6, 3e6], sample_times_s=[0.0, 1.0, 61.0]
+    )
+    window, source_index = slice_trace_at_time(trace, 60.0)
+    assert source_index == 1
+    assert window.capacity_at_time(0.0) == 2e6
+    assert window.capacity_at_time(0.999) == 2e6
+    assert window.capacity_at_time(1.0) == 3e6
+    assert measured_end_time_s(window) == 1.0
 
 
 def test_fast_case_is_eligible_and_slow_case_is_outage():
@@ -206,6 +218,17 @@ def test_trace_is_excluded_only_when_no_candidate_window_is_eligible():
         assert by_name[names["train"]]["outage_window_count"] == 1
         assert by_name[names["validation"]]["status"] == OUTAGE
         assert by_name[names["test"]]["status"] == OUTAGE
+        registered = (
+            report["registries"]["eligible_windows"]
+            + report["registries"]["outage_windows"]
+        )
+        assert registered
+        for window in registered:
+            assert window["status"] in (ELIGIBLE, OUTAGE)
+            assert window["reason"]
+            assert window["case_count"] == 4
+            assert len(window["case_evidence"]) == 4
+            assert "failure_count" in window
         after = {name: _digest(os.path.join(directory, name))
                  for name in names.values()}
         assert after == before
@@ -238,6 +261,42 @@ def test_invalid_or_backward_timestamps_are_rejected_explicitly():
             assert "move backwards" in str(exc)
         else:
             raise AssertionError("backward timestamp silently accepted")
+
+
+def test_duplicate_timestamps_are_disclosed_and_terminal_extrema_are_ignored():
+    header = ["Timestamp", "DL_bitrate", "State", "NetworkMode"]
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, "duplicates.csv")
+        with open(path, "w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(header)
+            writer.writerow(["2020.01.01_00.00.00", "1000", "D", "5G"])
+            writer.writerow(["2020.01.01_00.00.00", "2000", "D", "LTE"])
+            writer.writerow(["2020.01.01_00.00.02", "999999", "D", "5G"])
+        metadata, _ = read_trace_metadata(path)
+        assert metadata["timestamps_valid"] is True
+        assert metadata["duplicate_timestamp_count"] == 1
+        assert metadata["min_capacity_mbps"] == 1.0
+        assert metadata["max_capacity_mbps"] == 2.0
+
+
+def test_invalid_or_empty_audit_dimensions_are_rejected():
+    protocol = {"trace_split": {name: [f"{name}.csv"] for name in (
+        "train", "validation", "test"
+    )}}
+    pool = {"longdress": _frames(1)}
+    for kwargs in (
+        {"segment_frames": []},
+        {"segment_frames": [0]},
+        {"sequences": []},
+        {"jitter_seeds": []},
+    ):
+        try:
+            audit_protocol(protocol, ".", pool, **kwargs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid dimensions accepted: {kwargs}")
 
 
 def _run_all():
