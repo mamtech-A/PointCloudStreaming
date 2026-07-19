@@ -22,6 +22,7 @@ if PROJECT_ROOT not in sys.path:
 from src.experiment_protocol import load_protocol
 from src.network_model.manifest import parse_mpd_xml
 from src.trace_audit import audit_protocol, render_markdown_report, sha256_file
+from src.trace_gaps import DEFAULT_MAX_GAP_S
 
 
 def _absolute(path):
@@ -158,6 +159,11 @@ def main():
         help="seconds between candidate starts on the real timestamp axis",
     )
     parser.add_argument(
+        "--max-gap-s", type=float, default=DEFAULT_MAX_GAP_S,
+        help=("split before timestamp deltas above this value; "
+              f"default: {DEFAULT_MAX_GAP_S:g} s"),
+    )
+    parser.add_argument(
         "--selected-windows", type=int, default=0,
         help="eligible eval starts selected per trace; 0 uses the protocol count",
     )
@@ -193,6 +199,8 @@ def main():
         parser.error("--frames must be positive for a complete-session audit")
     if not args.grid_stride_s > 0:
         parser.error("--grid-stride-s must be positive")
+    if not args.max_gap_s > 0:
+        parser.error("--max-gap-s must be positive")
     if selected_windows <= 0:
         parser.error("--selected-windows must be positive")
     _preflight_outputs([args.json_out, args.markdown_out], args.overwrite)
@@ -220,6 +228,10 @@ def main():
         f"jitter_seeds={jitter_seeds} | grid={args.grid_stride_s:g}s",
         flush=True,
     )
+    print(
+        f"gap policy=split when timestamp delta > {args.max_gap_s:g}s",
+        flush=True,
+    )
     protocol_path = _absolute(args.protocol)
     input_hashes = {
         "protocol": {os.path.relpath(protocol_path, PROJECT_ROOT):
@@ -233,6 +245,7 @@ def main():
             for path in (
                 os.path.join("scripts", "audit_trace_windows.py"),
                 os.path.join("src", "trace_audit.py"),
+                os.path.join("src", "trace_gaps.py"),
                 os.path.join("src", "network_model", "trace.py"),
                 os.path.join("src", "network_model", "links.py"),
                 os.path.join("src", "network_model", "tcp_protocol.py"),
@@ -256,6 +269,7 @@ def main():
         source_tracked_files_dirty=tracked_files_dirty,
         input_hashes=input_hashes,
         progress=progress,
+        max_gap_s=args.max_gap_s,
     )
     json_text = json.dumps(report, indent=2, sort_keys=False) + "\n"
     markdown_text = render_markdown_report(report)

@@ -32,9 +32,15 @@ from .network_model.trace import (
     TIMESTAMP_FMT,
 )
 from .rl.env import StreamingEnv
+from .trace_gaps import (
+    DEFAULT_MAX_GAP_S,
+    block_for_source_index,
+    split_trace_at_gaps,
+    validate_gap_threshold,
+)
 
 
-AUDIT_SCHEMA_VERSION = 1
+AUDIT_SCHEMA_VERSION = 2
 ELIGIBLE = "eligible"
 OUTAGE = "outage"
 _TIME_EPSILON_S = 1e-9
@@ -547,7 +553,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                    sequences=None, jitter_seeds=(42, 43, 44),
                    segment_frames=(5, 8, 10, 15), source_commit=None,
                    source_tracked_files_dirty=None, input_hashes=None,
-                   progress=None):
+                   progress=None, max_gap_s=DEFAULT_MAX_GAP_S):
     """Audit every trace in all registered splits without changing any input."""
     sequences = (sorted(manifest_pool) if sequences is None else list(sequences))
     jitter_seeds = [int(seed) for seed in jitter_seeds]
@@ -566,6 +572,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
         raise ValueError("jitter_seeds contains duplicate values")
     if len(sequences) != len(set(sequences)):
         raise ValueError("sequences contains duplicate values")
+    max_gap_s = validate_gap_threshold(max_gap_s)
     segment_frames = sorted(set(segment_frames))
     missing = sorted(set(sequences) - set(manifest_pool))
     if missing:
@@ -601,45 +608,136 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
             path = os.path.join(os.fspath(trace_dir), filename)
             full_trace = BandwidthTrace.from_file(path)
             metadata, modes = read_trace_metadata(path, full_trace)
-            for mode, seconds in metadata["rat_duration_s"].items():
-                corpus_rat_duration[mode] += seconds
-            candidate_starts = timestamp_grid_starts(full_trace, grid_stride_s)
+            blocks = split_trace_at_gaps(full_trace, max_gap_s=max_gap_s)
+            raw_timestamp_span_s = metadata["duration_s"]
+            block_summaries = []
+            trace_rat_duration = defaultdict(float)
+            for block in blocks:
+                block_modes = modes[
+                    block.source_start_index:block.source_end_index + 1
+                ]
+                summary = _weighted_summary(block.trace, block_modes)
+                block_summaries.append(summary)
+                for mode, seconds in summary["rat_duration_s"].items():
+                    trace_rat_duration[mode] += seconds
+                    corpus_rat_duration[mode] += seconds
+            usable_duration_s = sum(
+                summary["duration_s"] for summary in block_summaries
+            )
+            metadata["raw_timestamp_span_s"] = raw_timestamp_span_s
+            metadata["duration_s"] = usable_duration_s
+            metadata["excluded_gap_duration_s"] = max(
+                0.0, raw_timestamp_span_s - usable_duration_s
+            )
+            metadata["rat_duration_s"] = dict(sorted(trace_rat_duration.items()))
+            metadata["rat_share"] = {
+                mode: (seconds / usable_duration_s if usable_duration_s else 0.0)
+                for mode, seconds in sorted(trace_rat_duration.items())
+            }
+            positive_summaries = [
+                summary for summary in block_summaries
+                if summary["duration_s"] > _TIME_EPSILON_S
+            ]
+            metadata["min_capacity_mbps"] = min(
+                (summary["min_capacity_mbps"] for summary in positive_summaries),
+                default=0.0,
+            )
+            metadata["mean_capacity_mbps"] = (
+                sum(summary["mean_capacity_mbps"] * summary["duration_s"]
+                    for summary in positive_summaries) / usable_duration_s
+                if usable_duration_s else 0.0
+            )
+            metadata["max_capacity_mbps"] = max(
+                (summary["max_capacity_mbps"] for summary in positive_summaries),
+                default=0.0,
+            )
+            metadata["timestamp_gap_policy"] = (
+                f"split before every consecutive timestamp delta > {max_gap_s:g} s"
+            )
+            candidate_count = sum(
+                len(timestamp_grid_starts(block.trace, grid_stride_s))
+                for block in blocks
+            )
             if progress:
-                progress(split, filename, len(candidate_starts))
+                progress(split, filename, candidate_count)
             windows = []
-            for start_time_s in candidate_starts:
-                window_trace, source_index = slice_trace_at_time(
-                    full_trace, start_time_s
+            block_records = []
+            for block, block_summary in zip(blocks, block_summaries):
+                block_windows = []
+                candidate_starts = timestamp_grid_starts(
+                    block.trace, grid_stride_s
                 )
-                window_summary = _weighted_summary(
-                    window_trace, modes[source_index:]
+                for local_start_s in candidate_starts:
+                    window_trace, block_source_index = slice_trace_at_time(
+                        block.trace, local_start_s
+                    )
+                    source_index = (
+                        block.source_start_index + block_source_index
+                    )
+                    global_start_s = block.global_start_time_s + local_start_s
+                    window_summary = _weighted_summary(
+                        window_trace,
+                        modes[source_index:block.source_end_index + 1],
+                    )
+                    result = audit_window(
+                        env_by_segment, window_trace, sequences, jitter_seeds
+                    )
+                    window_id = (
+                        f"{split}/{filename}#{block.block_id}"
+                        f"@time-{float(global_start_s):.3f}s"
+                    )
+                    window = {
+                        "id": window_id,
+                        "split": split,
+                        "trace": filename,
+                        "block_id": block.block_id,
+                        "block_index": block.block_index,
+                        "block_start_time_s": block.global_start_time_s,
+                        "block_end_time_s": block.global_end_time_s,
+                        "block_local_start_time_s": float(local_start_s),
+                        "source_sample_index": int(source_index),
+                        "start_time_s": float(global_start_s),
+                        **window_summary,
+                        **result,
+                    }
+                    window["reason"] = (
+                        "eligible" if result["status"] == ELIGIBLE
+                        else "no_measured_interval_after_start"
+                        if window_summary["duration_s"] <= 0
+                        else "vlow_exceeds_contiguous_block_end"
+                    )
+                    windows.append(window)
+                    block_windows.append(window)
+                    if result["status"] == ELIGIBLE:
+                        eligible_registry.append(window)
+                    else:
+                        outage_registry.append(window)
+                block_eligible_count = sum(
+                    row["status"] == ELIGIBLE for row in block_windows
                 )
-                result = audit_window(
-                    env_by_segment, window_trace, sequences, jitter_seeds
-                )
-                window_id = (
-                    f"{split}/{filename}@time-{float(start_time_s):.3f}s"
-                )
-                window = {
-                    "id": window_id,
-                    "split": split,
-                    "trace": filename,
-                    "source_sample_index": int(source_index),
-                    "start_time_s": float(start_time_s),
-                    **window_summary,
-                    **result,
-                }
-                window["reason"] = (
-                    "eligible" if result["status"] == ELIGIBLE
-                    else "no_measured_interval_after_start"
-                    if window_summary["duration_s"] <= 0
-                    else "vlow_exceeds_trace_end"
-                )
-                windows.append(window)
-                if result["status"] == ELIGIBLE:
-                    eligible_registry.append(window)
-                else:
-                    outage_registry.append(window)
+                block_records.append({
+                    "block_id": block.block_id,
+                    "block_index": block.block_index,
+                    "source_start_index": block.source_start_index,
+                    "source_end_index": block.source_end_index,
+                    "start_time_s": block.global_start_time_s,
+                    "end_time_s": block.global_end_time_s,
+                    "duration_s": block.duration_s,
+                    "gap_before_s": block.gap_before_s,
+                    "gap_after_s": block.gap_after_s,
+                    "candidate_window_count": len(block_windows),
+                    "eligible_window_count": block_eligible_count,
+                    "outage_window_count": (
+                        len(block_windows) - block_eligible_count
+                    ),
+                    "candidate_window_ids": [
+                        row["id"] for row in block_windows
+                    ],
+                    **{
+                        key: value for key, value in block_summary.items()
+                        if key != "duration_s"
+                    },
+                })
 
             eligible_count = sum(w["status"] == ELIGIBLE for w in windows)
             trace_status = ELIGIBLE if eligible_count else OUTAGE
@@ -652,6 +750,8 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                     "id": window["id"],
                     "split": split,
                     "trace": filename,
+                    "block_id": window["block_id"],
+                    "block_index": window["block_index"],
                     "source_sample_index": window["source_sample_index"],
                     "start_time_s": window["start_time_s"],
                     "measured_duration_s": window["duration_s"],
@@ -665,13 +765,34 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 for offset in evenly_spaced_offsets(
                         len(full_trace), selected_windows_per_trace,
                         min_tail_samples=120):
-                    legacy_trace = full_trace.slice_from(offset)
+                    block = block_for_source_index(blocks, offset)
+                    local_offset = offset - block.source_start_index
+                    local_start_s = block.trace.start_time_of_sample(
+                        local_offset
+                    )
+                    if local_start_s < measured_end_time_s(block.trace):
+                        legacy_trace, _ = slice_trace_at_time(
+                            block.trace, local_start_s
+                        )
+                    else:
+                        legacy_trace = BandwidthTrace(
+                            [block.trace.samples[local_offset]],
+                            name=block.trace.name,
+                            sample_times_s=[0.0],
+                        )
+                        legacy_trace._audit_measured_end_s = 0.0
                     legacy = {
                         "sample_offset": int(offset),
+                        "source_sample_index": int(offset),
+                        "block_id": block.block_id,
+                        "block_index": block.block_index,
                         "start_time_s": float(
-                            full_trace.start_time_of_sample(offset)
+                            block.global_start_time_s + local_start_s
                         ),
-                        **_weighted_summary(legacy_trace, modes[offset:]),
+                        **_weighted_summary(
+                            legacy_trace,
+                            modes[offset:block.source_end_index + 1],
+                        ),
                         **audit_window(
                             env_by_segment, legacy_trace, sequences,
                             jitter_seeds,
@@ -686,7 +807,7 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                         "eligible" if legacy["status"] == ELIGIBLE
                         else "no_measured_interval_after_start"
                         if legacy["duration_s"] <= 0
-                        else "vlow_exceeds_trace_end"
+                        else "vlow_exceeds_contiguous_block_end"
                     )
                     legacy_windows.append(legacy)
                     legacy_evaluation_windows.append(legacy)
@@ -700,6 +821,9 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 "selected_window_count": len(selected),
                 "selected_window_ids": selected_ids,
                 "candidate_window_ids": [window["id"] for window in windows],
+                "block_count": len(blocks),
+                "split_gap_count": max(0, len(blocks) - 1),
+                "blocks": block_records,
                 "legacy_120_sample_window_ids": [
                     window["id"] for window in legacy_windows
                 ],
@@ -757,6 +881,21 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
         "duplicate_timestamp_count": sum(
             row["duplicate_timestamp_count"] for row in trace_records
         ),
+        "contiguous_block_count": sum(
+            row["block_count"] for row in trace_records
+        ),
+        "split_gap_count": sum(
+            row["split_gap_count"] for row in trace_records
+        ),
+        "raw_timestamp_span_s": sum(
+            row["raw_timestamp_span_s"] for row in trace_records
+        ),
+        "usable_block_duration_s": sum(
+            row["duration_s"] for row in trace_records
+        ),
+        "excluded_gap_duration_s": sum(
+            row["excluded_gap_duration_s"] for row in trace_records
+        ),
         "corpus_rat_duration_s": dict(sorted(corpus_rat_duration.items())),
         "corpus_rat_share": {
             mode: (seconds / total_rat_s if total_rat_s else 0.0)
@@ -773,7 +912,16 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
         "protocol_digest": protocol_digest(protocol),
         "settings": {
             "candidate_method": "dense_exact_timestamp_grid",
+            "candidate_anchor": (
+                "block-local zero; each contiguous block restarts the exact "
+                "timestamp grid"
+            ),
             "candidate_grid_stride_s": float(grid_stride_s),
+            "maximum_contiguous_gap_s": float(max_gap_s),
+            "gap_split_rule": (
+                "split a parent trace before every consecutive timestamp "
+                f"delta greater than {max_gap_s:g} seconds"
+            ),
             "selected_windows_per_trace": int(selected_windows_per_trace),
             "legacy_comparison": (
                 "current evenly_spaced_offsets with min_tail_samples=120; "
@@ -795,10 +943,13 @@ def audit_protocol(protocol, trace_dir, manifest_pool, *, grid_stride_s=60.0,
                 "retain a trace when at least one candidate window is eligible"
             ),
             "terminal_capacity_policy": "finite; no final-sample clamping",
-            "between_sample_policy": "hold previous capacity until next timestamp",
+            "between_sample_policy": (
+                "within a contiguous block, hold the previous capacity until "
+                "the next timestamp"
+            ),
             "internal_gap_status": (
-                "reported but unresolved; registry must not be activated until "
-                "a maximum-gap or contiguous-block rule is approved"
+                "resolved by read-only contiguous-block splitting; no window "
+                "may cross a split gap"
             ),
             "final_sample_width_s": 0.0,
             "case_evidence_columns": [
@@ -845,8 +996,11 @@ def render_markdown_report(report):
         f"- Policy: {settings['policy']}.",
         f"- Required content: {', '.join(settings['required_sequences'])}.",
         f"- Candidate starts: a {settings['candidate_grid_stride_s']:g}-second "
-        "grid on each trace's real timestamp axis; no 120-row tail assumption "
-        "is used.",
+        "grid restarted inside each contiguous block; no 120-row tail "
+        "assumption is used.",
+        f"- Before window generation, each parent trace is split when a "
+        f"timestamp delta exceeds {settings['maximum_contiguous_gap_s']:g} s. "
+        "No candidate can cross such a gap.",
         f"- Feasibility is the intersection of segment sizes "
         f"{settings['segment_frames']} and jitter seeds "
         f"{settings['jitter_seeds']}.",
@@ -865,31 +1019,34 @@ def render_markdown_report(report):
         f"- Candidate windows: {summary['candidate_window_count']} total; "
         f"{summary['eligible_window_count']} eligible; "
         f"{summary['outage_window_count']} outages.",
+        f"- Gap split: {summary['split_gap_count']} discontinuities produce "
+        f"{summary['contiguous_block_count']} contiguous blocks; "
+        f"{summary['excluded_gap_duration_s']:.1f} s of unobserved intervals "
+        "are excluded from capacity integration.",
         f"- Old 120-row rule: {summary['legacy_evaluation_outage_count']}/"
         f"{summary['legacy_evaluation_window_count']} registered validation/test "
         "windows are outages under the strict test.",
         f"- Mobility: {summary['mobility_trace_count']}.",
         f"- Duration-weighted RAT composition: "
         f"{_rat_text(summary['corpus_rat_share'])}.",
-        f"- Timestamp-gap warning: "
+        f"- Timestamp inventory: "
         f"{summary['traces_with_timestamp_gaps_over_5s']} traces contain a gap "
         f">5 s; the largest is {summary['maximum_timestamp_gap_s']:.1f} s.",
         "",
-        "> **Audit caveat:** the current simulator holds the previous measured "
-        "capacity between timestamps. This report prevents all capacity use "
-        "after the final timestamp, but it does not resolve long internal gaps. "
-        "A maximum-gap/splitting rule must be approved before the registry is "
-        "activated.",
+        "Raw CSVs and their parent train/validation/test assignments remain "
+        "unchanged. Splitting is a read-only audit view; within a block, the "
+        "previous observation is held only until the next observed timestamp.",
         "",
         "## Per-trace results",
         "",
-        "| Split | Trace | Mobility | Duration (s) | RAT mix | Eligible | Selected | Decision |",
-        "|---|---|---:|---:|---|---:|---:|---|",
+        "| Split | Trace | Mobility | Blocks | Usable / raw span (s) | RAT mix | Eligible | Selected | Decision |",
+        "|---|---|---:|---:|---:|---|---:|---:|---|",
     ]
     for row in report["traces"]:
         lines.append(
             f"| {row['split']} | `{row['trace']}` | {row['mobility']} | "
-            f"{row['duration_s']:.1f} | {_rat_text(row['rat_share'])} | "
+            f"{row['block_count']} | {row['duration_s']:.1f} / "
+            f"{row['raw_timestamp_span_s']:.1f} | {_rat_text(row['rat_share'])} | "
             f"{row['eligible_window_count']}/{row['candidate_window_count']} | "
             f"{row['selected_window_count']} | "
             f"{row['status']} |"
@@ -898,24 +1055,26 @@ def render_markdown_report(report):
         "",
         "## Selected evaluation windows",
         "",
-        "| Window | Start (s) | Measured tail (s) |",
-        "|---|---:|---:|",
+        "| Window | Block | Global start (s) | Measured tail (s) |",
+        "|---|---|---:|---:|",
     ])
     for window in report["registries"]["selected_evaluation_windows"]:
         lines.append(
-            f"| `{window['id']}` | {window['start_time_s']:.1f} | "
+            f"| `{window['id']}` | {window['block_id']} | "
+            f"{window['start_time_s']:.1f} | "
             f"{window['measured_duration_s']:.1f} |"
         )
     lines.extend([
         "",
         "## Outage windows",
         "",
-        "| Window | Start (s) | Measured tail (s) | Reason | Failed cases |",
-        "|---|---:|---:|---|---:|",
+        "| Window | Block | Global start (s) | Measured tail (s) | Reason | Failed cases |",
+        "|---|---|---:|---:|---|---:|",
     ])
     for window in report["registries"]["outage_windows"]:
         lines.append(
-            f"| `{window['id']}` | {window['start_time_s']:.1f} | "
+            f"| `{window['id']}` | {window['block_id']} | "
+            f"{window['start_time_s']:.1f} | "
             f"{window['duration_s']:.1f} | {window['reason']} | "
             f"{window['failure_count']} |"
         )

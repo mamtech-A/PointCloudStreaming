@@ -234,6 +234,63 @@ def test_trace_is_excluded_only_when_no_candidate_window_is_eligible():
         assert after == before
 
 
+def test_protocol_windows_restart_inside_blocks_and_never_cross_gap():
+    with tempfile.TemporaryDirectory() as directory:
+        names = {
+            "train": "driving_train.csv",
+            "validation": "driving_validation.csv",
+            "test": "static_test.csv",
+        }
+        header = ["Timestamp", "DL_bitrate", "State", "NetworkMode"]
+        for name in names.values():
+            path = os.path.join(directory, name)
+            with open(path, "w", newline="", encoding="utf-8") as handle:
+                writer = csv.writer(handle)
+                writer.writerow(header)
+                for second in (0, 1, 2):
+                    writer.writerow([
+                        f"2020.01.01_00.00.{second:02d}", 10000, "D", "5G"
+                    ])
+                for second in (10, 11, 12):
+                    writer.writerow([
+                        f"2020.01.01_00.00.{second:02d}", 10000, "D", "5G"
+                    ])
+        protocol = {
+            "trace_split": {split: [name] for split, name in names.items()},
+            "evaluation": {
+                "validation": {"offsets_per_trace": 1},
+                "test": {"offsets_per_trace": 1},
+            },
+        }
+        pool = {sequence: _frames(1, 1000) for sequence in (
+            "longdress", "loot", "redandblack", "soldier"
+        )}
+        report = audit_protocol(
+            protocol, directory, pool, grid_stride_s=1.0,
+            selected_windows_per_trace=1, jitter_seeds=[42],
+            segment_frames=[1], max_gap_s=5.0,
+        )
+        assert report["summary"]["split_gap_count"] == 3
+        assert report["summary"]["contiguous_block_count"] == 6
+        for trace in report["traces"]:
+            assert trace["block_count"] == 2
+            assert trace["excluded_gap_duration_s"] == 8.0
+            assert [block["start_time_s"] for block in trace["blocks"]] == [
+                0.0, 10.0
+            ]
+        registered = (
+            report["registries"]["eligible_windows"]
+            + report["registries"]["outage_windows"]
+        )
+        assert {row["block_id"] for row in registered} == {
+            "block-000", "block-001"
+        }
+        for row in registered:
+            assert row["duration_s"] <= 2.0
+            assert row["block_start_time_s"] <= row["start_time_s"]
+            assert row["start_time_s"] <= row["block_end_time_s"]
+
+
 def test_invalid_or_backward_timestamps_are_rejected_explicitly():
     header = ["Timestamp", "DL_bitrate", "State", "NetworkMode"]
     with tempfile.TemporaryDirectory() as directory:
