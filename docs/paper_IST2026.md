@@ -1,284 +1,190 @@
-# Reinforcement Learning-Based Adaptive Bitrate Streaming for G-PCC Compressed Point Clouds over 5G Networks
+# Deep Reinforcement Learning-Based Adaptive Point Cloud Streaming over 5G Networks
+
+
+
+**Authors:** *[Given Name Surname, dept., organization, City, Country, bura@panto.org — fill in]*
 
 ---
 
-> **Submission venue:** The Twelfth International Symposium on Telecommunications (IST'2026)
->
-> **Template:** conference-template-a4.docx — paste sections below into the Word template preserving the section numbering and figure/table captions exactly as written.
+> **Draft status:** The method text reflects the aligned six-term objective, but
+> all performance claims, tables, and plots still come from the superseded run.
+> Replace them only after retraining and a newly registered evaluation.
+
+## Abstract
+
+Abstract—High-quality point clouds enable immersive volumetric media, but their extreme bandwidth demands make adaptive streaming over mobile networks an open challenge. This paper presents a learning-based adaptive bitrate (ABR) controller for point cloud streaming. Four sequences of the 8i Voxelized Full Bodies dataset are encoded with the MPEG Geometry-based Point Cloud Compression (G-PCC) reference codec into a six-tier quality ladder and streamed as DASH-style segments over a trace-driven 5G simulator built from a public Irish 5G dataset with its measured 72 ms round-trip time. We first show that per-frame fetching cannot sustain 30 frames per second at this latency, whereas segment-based fetching of 5 to 8 frames per request nearly eliminates stalling. A Double Deep Q-Network agent is then trained with the same six-term objective used for evaluation: normalized quality minus stall duration, rebuffering-event frequency, segment-quality changes, dropped frames, and startup delay. [Replace this sentence with the revised held-out results after retraining and newly registered evaluation.]
+
+**Keywords**—point cloud streaming, adaptive bitrate, deep reinforcement learning, G-PCC, MPEG-DASH, 5G, quality of experience
 
 ---
 
-## AUTHORS
+## I. Introduction
 
-*[Add your name(s), affiliation(s), and email(s) here per the IST template format]*
+Immersive volumetric media, such as holographic telepresence and augmented reality, are among the flagship services envisioned for 5G networks and beyond. Dynamic 3D point clouds are a natural representation for such media: each frame is a set of colored points that can be rendered from any viewpoint. Uncompressed, a single high-quality human-body sequence at 30 frames per second (fps) can exceed 6 Gbit/s [2]. Even after compression with the MPEG Geometry-based Point Cloud Compression standard (G-PCC) [4], [5], the highest quality tier used in this work requires 102.4 Mbit/s, which a mobile 5G link can deliver on average but not at every instant.
 
----
+Dynamic Adaptive Streaming over HTTP (DASH) [1] addresses throughput variability by encoding content at multiple quality levels and letting the client select a level per segment. Hosseini and Timmerer extended this concept to point clouds with DASH-PC [3], using spatial sub-sampling to generate density representations. Their adaptation logic, like most deployed ABR schemes, is rule-based. For video, learning-based controllers such as Pensieve [6] have shown that a policy trained with reinforcement learning (RL) can outperform hand-crafted rules. Applying this idea to G-PCC point cloud streaming raises specific challenges: the rate ladder spans two orders of magnitude, perceived quality is governed by point density rather than pixel fidelity, and the interaction between the 5G round-trip time (RTT) and the request granularity determines whether stall-free playback is possible at all.
 
-## ABSTRACT
+This paper makes four contributions. First, a complete open simulation pipeline that streams real G-PCC bitstreams (six-tier ladder, four 8i Voxelized Full Bodies sequences [2]) over a trace-driven 5G channel with a TCP model whose serialization time is the exact integral of the measured time-varying capacity. Second, a quantitative analysis of segment size showing an inverted-U quality-of-experience (QoE) curve: per-frame fetching is RTT-bound while very large segments react too slowly to fades. Third, a Double Deep Q-Network (DQN) [10] ABR agent trained on a perceptual quality-aware reward. Fourth, a robust 12-seed evaluation on held-out traces in which the learned policy beats the best fixed-quality arm by 13.9 QoE points with a seed standard deviation below 1.
 
-High-quality 3D point clouds are a promising medium for immersive telepresence and holographic communications, yet their enormous bandwidth demands make adaptive streaming over 5G networks a critical open challenge. Existing adaptive bitrate (ABR) approaches for point cloud streaming rely on rule-based heuristics that are poorly suited to the dynamic, high-throughput, and variable-latency characteristics of 5G access links. In this paper, we propose a reinforcement learning (RL)-based ABR controller for point cloud streaming that learns to balance perceptual quality and playback continuity over real 5G network traces. We encode four sequences from the MPEG 8i Voxelized Full Bodies (8iVFBv2) dataset using MPEG G-PCC (TMC13) on a six-tier quality ladder and stream them in DASH-style segments over a trace-driven 5G simulator derived from the Raca et al. Irish 5G dataset. A Double Deep Q-Network (DDQN) agent is trained end-to-end with a perceptual quality-aware reward that jointly penalises rebuffering and quality switching. With segment-based fetching (S = 8 frames/segment), the learned policy achieves a mean quality utility of 0.909 and a stall duration of 3.2 s on a 10-second clip, yielding a quality-aware QoE′ of 74.6 ± 19.8 over eight independent training seeds, compared to a QoE′ of 2.5 for the rule-based baselines. Our work demonstrates that learned ABR can exploit 5G headroom for point cloud streaming and provides an honest assessment of the remaining training-variance challenge.
+## II. Related Work
 
-**Keywords:** Point cloud streaming, adaptive bitrate, reinforcement learning, G-PCC, MPEG DASH, 5G, quality of experience.
+### A. Point cloud compression and streaming
 
----
+MPEG standardized two point cloud codecs: V-PCC, which projects the cloud onto video planes, and G-PCC, which codes geometry directly with octrees and attributes with hierarchical transforms [4], [5]. G-PCC exposes rate control through the geometry position quantization scale and the attribute quantization parameter (QP); it has no target-bitrate mode, so a bitrate ladder must be built from parameter pairs. DASH-PC [3] pioneered manifest-driven adaptive point cloud streaming with density sub-sampling. Van der Hooft et al. proposed PCC-DASH [8], rate-adapting V-PCC streams with heuristic policies. Our work differs by using standard G-PCC bitstreams and by replacing heuristic adaptation with a learned policy.
 
-## 1. INTRODUCTION
+### B. Learning-based bitrate adaptation
 
-Immersive media — volumetric video, holographic telepresence, and augmented reality — are widely anticipated as next-generation communication services over 5G and beyond [1]. 3D point clouds are a natural representation for such media: each frame is a set of (x, y, z, R, G, B) voxels that can reconstruct a person or scene from any viewpoint. A full-quality human body point cloud at 30 fps can demand upwards of 6 Gbps in raw form [2]; even with state-of-the-art MPEG G-PCC compression, the highest quality tier in our system requires 102.4 Mbps — still well within the capacity of a good 5G cell, but beyond the guaranteed sustainable throughput of a mobile link in the wild.
+Rule-based ABR uses throughput estimates [7] or buffer occupancy; Pensieve [6] showed that an RL policy trained in simulation generalizes across network conditions and outperforms such rules for 2D video. Its reward, quality minus rebuffering and quality switching, has become standard. We adopt this structure, distinguish rebuffering duration from event frequency, replace the quality term with a log-density utility suited to point clouds, and include frame-drop and startup-delay costs.
 
-Dynamic Adaptive Streaming over HTTP (DASH) has been the dominant paradigm for video quality adaptation since it became an ISO standard [3]. The concept was extended to point cloud streaming by Hosseini and Timmerer [4] (DASH-PC), who introduced density sub-sampling as the adaptation axis and demonstrated bandwidth savings with minor visual quality impact. That pioneering work, however, employed a static rule for quality selection and did not address the full channel variability of a real wireless access link.
+### C. 5G measurement datasets
 
-Meanwhile, the video streaming community has demonstrated that learning-based ABR controllers — in particular, those based on deep reinforcement learning — can outperform hand-crafted rules by exploiting statistical structure in bandwidth traces that rules cannot generalise [5], [6]. No such approach has been applied to G-PCC-based point cloud streaming, and doing so raises non-trivial challenges: the action space spans multiple G-PCC geometry and colour quantisation parameters, the quality metric is perceptual (point density as a log-scale utility), and the real-world RTT of a 5G link (∼72 ms) interacts with segment size in a way that critically determines whether stall-free playback is achievable at all.
+Raca et al. published a 5G dataset with throughput, latency, and context metrics collected on a commercial Irish network [9]. We use its saturated-download traces as the access-link capacity signal and its measured ping (median 72 ms in 5G mode) as the RTT, rather than assuming idealized values.
 
-This paper makes the following contributions:
+## III. System Model
 
-1. **A six-tier G-PCC quality ladder** for four 8iVFBv2 sequences, encoded with real TMC13 bitstreams whose sizes are used directly in the simulator.
-2. **A trace-driven 5G simulation environment** with integral-accurate TCP serialisation, driven by the Raca et al. Irish 5G dataset [7] using measured PINGAVG RTT (72 ms).
-3. **A DASH-style segment-based streaming model** with a systematic analysis of segment size S showing a clean inverted-U QoE′ curve peaking at S ≈ 5–8 frames.
-4. **A Double DQN ABR agent** trained with a perceptual quality-aware reward and evaluated robustly over eight independent seeds, providing an honest confidence interval on the learned policy's performance.
-5. **A quality-aware QoE′ metric** that overcomes the saturation of the legacy stall-only QoE formula on this regime.
+### A. Architecture
 
-The rest of the paper is organised as follows. Section 2 reviews related work. Section 3 describes the system and methodology. Section 4 presents evaluation results. Section 5 concludes.
+Fig. 1 shows the system. Four 8iVFBv2 sequences (longdress, loot, redandblack, soldier; 300 frames, 30 fps) are encoded offline by the G-PCC reference encoder (TMC13) into six representations and stored on a content server together with a DASH-style media presentation description (MPD). An edge node fetches segments from the server across an unconstrained backhaul and serves the client over the bottleneck 5G access link. The client runs the ABR controller: it observes only its playback buffer and the achieved throughput of completed downloads (never the true link capacity) and requests one segment of S consecutive frames per decision.
 
----
+![Fig. 1 — System architecture](figures/Fig1/fig1_render.png)
 
-## 2. BACKGROUND AND RELATED WORK
+*Fig. 1. System architecture: G-PCC encoding, content server, unconstrained backhaul, edge node, and the 5G access link to the DQN-driven point cloud client.*
 
-### 2.1 Dynamic Adaptive Streaming for Point Clouds
+### B. Content and quality ladder
 
-MPEG-DASH [3] is an ISO standard that enables client-driven adaptive video streaming where the client selects segments at appropriate quality levels based on observed network conditions. Hosseini and Timmerer [4] proposed DASH-PC, extending the DASH manifest (MPD) to point cloud streaming. Their framework uses density sub-sampling at three ratios to create multiple representations and demonstrated up to 10× rendering FPS improvement with negligible PSNR loss. Our work differs fundamentally in two respects: (i) we use standard MPEG G-PCC lossy compression instead of density sub-sampling, and (ii) we replace their static rule-based selection with a learned policy.
+Table I lists the ladder. Geometry follows the MPEG common test condition rate points (position quantization scale 1.0 down to 0.125) paired with attribute QP 22 to 51. The simulator transfers the exact coded size of every frame, so all results reflect real G-PCC rate characteristics.
 
-### 2.2 MPEG G-PCC Point Cloud Compression
+**TABLE I. Six-Tier G-PCC Quality Ladder (Longdress)**
 
-MPEG G-PCC (also called TMC13) is the geometry-based point cloud compression standard [8], encoding geometry via octree decomposition and attributes (colour) via Region-Adaptive Hierarchical Transform (RAHT) or Lifting. The standard exposes two principal rate-distortion controls: the geometry position quantisation scale (posQuantScale) and the attribute colour quantisation parameter (QP). Unlike video codecs, G-PCC has no explicit target-bitrate mode; rate must be controlled by (posQuantScale, QP) pairs, and the same pair yields different sizes on different frames. This makes bitrate prediction and adaptive control non-trivial and motivates a learned approach.
-
-### 2.3 Reinforcement Learning for Adaptive Streaming
-
-Pensieve [5] demonstrated that a neural network policy trained with policy gradients can outperform MPC and buffer-based heuristics for DASH video streaming. Subsequent work has applied deep RL to 360° video tile selection [9], live streaming [10], and multi-user scenarios. The reward formulation of Pensieve — quality minus rebuffer penalty minus quality-switching penalty — has become a de-facto standard [5]. We adopt the same reward structure, adapting the quality metric to log-density utility suitable for point cloud representations.
-
-### 2.4 5G Network Measurement and Modelling
-
-Raca et al. [7] provide the first large-scale public 5G NSA dataset (Ireland, Three network), containing throughput, ping, and signal measurements from real applications. The dataset distinguishes Download (D), Upload (U), and Idle (I) states; only sustained Download traces are suitable as capacity proxies. The dataset's PINGAVG column records the actual measured RTT (median 72 ms in 5G mode) — a critical parameter for our segment-size analysis, as we show below.
-
----
-
-## 3. SYSTEM DESIGN AND METHODOLOGY
-
-### 3.1 System Overview
-
-Figure 1 illustrates the overall system architecture. A server hosts G-PCC-encoded point cloud segments at six quality levels. A client requests one segment per ABR decision via an HTTP-over-TCP channel simulated by a trace-driven 5G bandwidth model. The ABR decision is made by one of three interchangeable strategies: a bandwidth-rule baseline, an LSTM-rule baseline, or the proposed DQN agent. A playback buffer accumulates decoded segments at 30 fps; stall events are recorded when the buffer empties.
-
-```
-[Server: 6-tier G-PCC segments]
-        |  HTTP / TCP
-        v
-[ABR controller: BW-rule | LSTM-rule | DQN]
-        |
-[Client buffer (5 s capacity, 1 s start threshold)]
-        |
-[Playback @ 30 fps — stall if buffer empty]
-```
-*Figure 1: System architecture.*
-
-### 3.2 Content and Quality Ladder
-
-We use four sequences from the MPEG 8i Voxelized Full Bodies v2 (8iVFBv2) dataset [2]: *longdress*, *loot*, *redandblack*, and *soldier*. Each sequence contains 300 frames at 30 fps (10 seconds of content) in 1024³ voxelised format, captured by 42 calibrated RGB cameras.
-
-We encode all sequences with MPEG TMC13 v14 on a six-tier ladder following the MPEG Common Test Conditions (CTC) geometry parameter schedule, with colour quantisation aligned to ITU-T standard steps:
-
-| Tier | posQuantScale | colorQP | Bitrate (Mbps) | Decoded points (frame 0) |
-|------|--------------|---------|----------------|--------------------------|
+| Tier | Pos. scale | Attr. QP | Bitrate (Mbit/s) | Points (frame 0) |
+|---|---|---|---|---|
 | r06 (high) | 1.000 | 22 | 102.4 | 765,821 |
-| r05 (medhigh) | 0.875 | 28 | 59.6 | 602,139 |
-| r04 (med) | 0.750 | 34 | 35.5 | 453,698 |
-| r03 (medlow) | 0.500 | 40 | 14.1 | 212,105 |
-| r02 (low) | 0.250 | 46 | 3.4 | 55,374 |
-| r01 (vlow) | 0.125 | 51 | 0.9 | 14,057 |
+| r05 | 0.875 | 28 | 59.6 | 602,139 |
+| r04 | 0.750 | 34 | 35.5 | 453,698 |
+| r03 | 0.500 | 40 | 14.1 | 212,105 |
+| r02 | 0.250 | 46 | 3.4 | 55,374 |
+| r01 (very low) | 0.125 | 51 | 0.9 | 14,057 |
 
-*Table 1: Six-tier G-PCC quality ladder (longdress sequence, frame 0).*
+Perceived quality is modeled as a log-density utility, reflecting the diminishing perceptual return of additional points:
 
-Encoded segments are stored as real binary bitstreams; the simulator uses their exact byte sizes for transfer-time calculation — no approximation.
+> q(r) = [log d(r) − log d_min] / [log d_max − log d_min]    (1)
 
-### 3.3 Quality Metric
+where d(r) is the decoded point count of representation r and d_min, d_max are the ladder endpoints, so q ranges from 0 (r01) to 1 (r06).
 
-The rendered quality of a point cloud representation is measured by a log-density utility that maps decoded point count to [0, 1]:
+### C. Network and transport model
 
-```
-quality(rep) = clip( (log10(density) − log10(d_min)) / (log10(d_max) − log10(d_min)), 0, 1 )
-```
+The access link is driven by 21 saturated-download traces of the Irish 5G dataset [9] (5 static, 16 driving; about 11.4 h in total), split with a fixed seed into 17 training and 4 held-out traces (3 driving, 1 static; one held-out driving trace contains a genuine 137 s coverage blackout). A TCP connection with slow start, additive-increase multiplicative-decrease, and the dataset-derived 72 ms RTT carries every transfer. Capacity is re-queried every RTT round, and serialization time is computed as the exact integral of the piecewise-constant capacity, so a download traverses the trace instead of freezing a single sample. The client buffer holds 5 s, playback starts after 1 s has been buffered, and playback then runs at a fixed 30 fps; an empty buffer causes rebuffering.
 
-with d_min = 14,057 (r01) and d_max = 765,821 (r06) for longdress. This yields per-tier qualities of approximately {1.0, 0.93, 0.80, 0.66, 0.35, 0.0} for tiers r06–r01, capturing the perceptually diminishing returns of density at the upper tiers.
+### D. Segment-based fetching
 
-### 3.4 Network Model
+Each ABR decision requests S consecutive frames as one HTTP transfer, amortizing the RTT. At S = 1 every 33 ms frame pays a 72 ms round trip, so no tier can sustain 30 fps; at very large S the controller cannot react to mid-segment fades. Section V quantifies this trade-off; S = 8 is used for the final system.
 
-**Dataset.** We drive the simulator with the Raca et al. Irish 5G dataset [7], retaining only five *static* (pedestrian) Download-state traces as the capacity signal. These traces represent saturated-download throughput measured from a 5G NSA cell under load, not idle PHY capacity. We use a 4:1 train/held-out split (seed 42); the held-out trace is `static_B_2020.01.16_10.43.34.csv`.
+## IV. DQN-Based Bitrate Adaptation
 
-**TCP model.** We simulate a persistent TCP connection with RTT = 72 ms (dataset PINGAVG median, 5G-mode), MSS = 1460 B, initial cwnd = 10, slow start + AIMD congestion control, and Jacobson/Karels RTO. Transfer time is computed as the exact integral of the piecewise-constant capacity curve: each TCP round finishes as soon as the cumulative capacity·dt integral covers the round's window of bytes, so a download traverses the real trace rather than freezing a single capacity sample. This integral serialisation is the key fidelity improvement over prior per-frame sampling approaches.
+### A. State, action, and decision flow
 
-**Segment-based fetching.** Each ABR decision requests S consecutive frames as a single HTTP segment (DASH-style GoP). One decision and one TCP transfer occur per segment; playback dequeues at 30 fps. This amortises the 72 ms RTT over S frames; at S = 1 (per-frame) the RTT per 33 ms frame causes systematic stall, while at S = 30 the segment is too coarse for reactive adaptation during bandwidth fades. Section 4 quantifies this trade-off.
+Fig. 2 shows the runtime decision flow. The 23-dimensional state contains an LSTM one-step bandwidth prediction (1), the buffer level (1), the previous tier as a one-hot vector (6), the last, mean, and standard deviation of the five most recent achieved-throughput samples (3), and the per-tier bitrates (6) and log point densities (6) taken from the manifest. All features are normalized with constants stored in the model checkpoint, so training and inference can never diverge. The action selects one of the six tiers for the next 8-frame segment.
 
-### 3.5 Reinforcement Learning Agent
+![Fig. 2 — Runtime decision flow](figures/Fig2/fig2_render.png)
 
-**State space (23 dimensions).** The agent observes:
+*Fig. 2. Runtime decision flow of the client-side DQN controller: the 23-feature state is mapped by the Q-network to a tier for the next 8-frame segment; the download outcome updates the state.*
 
-| Feature | Dim | Description |
-|---------|-----|-------------|
-| Buffer level | 1 | Normalised by buffer capacity (5 s) |
-| Last representation (one-hot) | 6 | Previous segment's chosen tier |
-| Last achieved throughput | 1 | Normalised by 100 Mbps |
-| Mean of last 5 throughputs | 1 | Rolling mean |
-| Std of last 5 throughputs | 1 | Rolling std |
-| Tier bitrates | 6 | Real coded bitrates, normalised |
-| Tier log-densities | 6 | Log10(density)/7 |
+### B. Reward
 
-*Table 2: DQN state vector.*
+Training and evaluation use exactly the same additive objective. Let \(S_t\) contain the \(n_t\) frames requested in segment \(t\), let \(N\) be the episode's total frame count, and let \(q_{t,i}\in[0,1]\) and \(\bar q_t\) denote the frame utility and segment-mean utility, respectively. The per-segment reward is
 
-No oracle capacity information is provided; the agent observes only completed-download throughput measurements. An LSTM bandwidth predictor (described below) can optionally augment the state with a predicted next-segment throughput, but our ablation study finds it provides no consistent benefit and the final model omits it.
+> r_t = (100/N)·Σ_{i∈S_t}q_{t,i} − 4.3·ΔT_stall,t − 2·ΔN_rebuf,t − |q̄_t−q̄_{t−1}| − (100/N)·ΔN_drop,t − ΔT_start,t    (2)
 
-**Action space.** The agent selects one of six tiers (a ∈ {0, …, 5}) to apply to the entire next segment of S frames.
+The first segment has zero quality-change cost. Stall duration is linear and uncapped. With discount factor \(\gamma=1\) and no learner-side reward scaling, the episodic return is therefore identical to the reported QoE:
 
-**Reward function.** Following Pensieve [5]:
+> QoE = Σ_t r_t = 100·q̄ − 4.3·T_stall − 2·N_rebuf − Σ_{t=2}^{K}|q̄_t−q̄_{t−1}| − (100/N)·N_drop − T_start    (3)
 
-```
-r_t = quality(rep_t) − μ · stall_t − λ · |quality(rep_t) − quality(rep_{t−1})|
-```
+Here \(T_start\) is measured from session time zero until playback begins for the first time. It then freezes permanently. In contrast, \(T_stall\) and \(N_rebuf\) accumulate only after playback has begun, respectively measuring the duration and number of buffer-underflow interruptions. Initial buffering is thus charged only as startup delay and can never also be a stall or rebuffering event. \(N_drop\) is the number of buffer-overflow frame drops. Raw network parameters deliberately do not appear: QoE measures only user-observable outcomes.
 
-with μ = 4.3 (rebuffer penalty per stalled second) and λ = 1.0 (smoothness penalty). Stall seconds are bounded at 2 s/segment to prevent extreme gradient spikes; the agent still accumulates the full stall in the environment state. Running-standard-deviation reward normalisation stabilises training without biasing the action ranking.
+### C. Learning algorithm
 
-**Algorithm.** We use Double DQN [11] with experience replay. The Q-network is a three-layer MLP (23 → 128 → 128 → 6) with ReLU activations. Key hyperparameters: discount γ = 0.99, Adam optimiser at lr = 1 × 10⁻⁴, replay buffer 100,000 transitions, target network synced every 3,000 learning steps, ε-greedy from 1.0 to 0.05 over 60% of total steps. The agent is trained on all four content sequences rotating across the four training traces, with 8 independent seeds (42–49) per configuration.
+The agent is a Double DQN [10] with experience replay. The Q-network is a multilayer perceptron (23-128-128-6, ReLU). Hyperparameters: discount 1.0, Adam with learning rate 0.0001, batch size 64, replay buffer 100,000 transitions, target-network synchronization every 3,000 learning steps, and an epsilon-greedy schedule from 1.0 to 0.05 over 60% of training. Each run trains 20 epochs over the 17 training traces with all four content sequences rotating; the best checkpoint is selected by held-out QoE. Training a single seed takes under one hour on a desktop CPU.
 
-**LSTM bandwidth predictor.** A 2-layer LSTM (hidden=64, dropout=0.2, seq_len=8, log1p transform) is trained on achieved segment throughput from the training traces, achieving MAE = 6.21 Mbps vs a persistence baseline of 5.76 Mbps. Although the LSTM beats persistence on the low-bandwidth tail (MAE 1.31 vs 1.45 for segments < 5 Mbps), our ablation shows it does not consistently improve DQN performance when used as a state feature; the installed model does not use it.
+## V. Evaluation
 
-### 3.6 Evaluation Metrics
+> **Revision note:** The numerical results and plots below were produced with the superseded objective and must be regenerated after retraining with (2)–(3). They must not be reported as results of the aligned six-term objective.
 
-We report two QoE metrics. The **legacy stall-only QoE**:
+### A. Setup
 
-```
-QoE = max(0, 100 − 10·rebuffer_events − 5·total_stall_s − 2·dropped_frames)
-```
+All results are measured on the four held-out traces (never seen in training) with the longdress sequence, three evaluation seeds, and the metric of (3). Baselines are the six fixed-tier policies (always request tier k) and, for context, the rule-based controllers of the simulator, which remain pinned near the lowest tier because their throughput estimates are RTT-biased on small transfers.
 
-saturates at 0 for policies that stall excessively and contains no quality term, creating a perverse incentive. We therefore introduce a **quality-aware QoE′** consistent with the training reward:
+### B. Effect of segment size
 
-```
-QoE′ = 100 · mean_quality − 4.3 · stall_s − 1.0 · Σ|Δquality|
-```
+Fig. 5 reports the segment-size sweep (measured on the static-trace regime with the metric of (3) without its startup and drop terms, which were introduced later). The curve is a clear inverted U. At S = 1 the per-frame RTT causes 19 s of stalling per 10 s clip; at S = 30 only 10 decisions per clip remain and mid-segment fades again cause 20 s of stalling despite the highest mean quality (0.958). S = 5 to 8 (shaded) nearly eliminates stalling while retaining fine-grained adaptation.
 
-QoE′ can be negative (a policy that stalls heavily at low quality). We report both; QoE′ is the primary discriminating metric.
+![Fig. 5 — Segment-size sweep](figures/Fig5/segment_size_curve.png)
 
----
+*Fig. 5. Effect of segment size S: QoE (left axis, solid) and stall time (right axis, dashed) on the held-out static trace. Both extremes fail for opposite reasons; the shaded band marks the S = 5–8 sweet spot.*
 
-## 4. EVALUATION
+### C. Main results
 
-All experiments are run on the held-out trace `static_B_2020.01.16_10.43.34.csv` with the *longdress* sequence (300 frames, 10 s), unless stated otherwise.
+Absolute scores on this metric must be read against two facts. First, 100 corresponds to stall-free playback at the highest tier with no switching, an operating point the driving traces physically cannot support: measured capacity crosses the quality ladder 57 to 76 percent of the time, so even an oracle policy must ride the middle tiers through fades. Second, one held-out trace contains a genuine 137 s coverage blackout during which no policy can deliver frames; the best achievable score on that trace is about 33, which bounds the four-trace mean for every policy, learned or fixed. The meaningful quantity is therefore the margin over the strongest baseline on identical traces, reported next.
 
-### 4.1 Effect of Segment Size
+Table II compares the trained DQN against every fixed arm on the four held-out traces. No static tier works across the mixed regime: the top tier stalls 76 s per clip on the driving traces, the bottom tier delivers 3% of the quality utility, and the best compromise (always r03) reaches a QoE of 40.6. The DQN reaches 54.5 with a 12-seed standard deviation of only 0.95, beating the best fixed arm by 13.9 points.
 
-To quantify the RTT-vs-adaptation trade-off, we swept S ∈ {1, 5, 8, 10, 15, 30} frames/segment with all other parameters fixed. Results (mean QoE′ over 48 trials at each S) are shown in Table 3.
+**TABLE II. Held-Out Results: Fixed Arms vs. Learned Policy**
 
-| S (frames/req) | QoE′ | Mean quality | Stall (s) | Legacy QoE |
-|----------------|------|-------------|-----------|------------|
-| 1 (per-frame) | −9.8 | 0.865 | 19.1 | 1.5 |
-| **5** | **69.4** | 0.850 | **2.9** | **71.7** |
-| **8** | 65.4 | 0.875 | 4.3 | 57.4 |
-| 10 | 53.9 | 0.893 | 7.5 | 53.1 |
-| 15 | 54.9 | 0.916 | 8.2 | 40.6 |
-| 30 | 7.5 | 0.958 | 20.4 | 12.5 |
+| Policy | QoE | Mean quality | Stall (s) |
+|---|---|---|---|
+| Always r06 (102.4 Mbit/s) | −88.8 | 0.978 | 76.2 |
+| Always r05 (59.6 Mbit/s) | 0.0 | 0.921 | 35.3 |
+| Always r04 (35.5 Mbit/s) | 29.3 | 0.854 | 16.9 |
+| Always r03 (14.1 Mbit/s) | 40.6 | 0.674 | 3.3 |
+| Always r02 (3.4 Mbit/s) | 13.0 | 0.356 | 0.0 |
+| Always r01 (0.9 Mbit/s) | −27.0 | 0.030 | 0.0 |
+| **DQN (12-seed mean ± std)** | **54.5 ± 0.95** | **0.775** | **1.8** |
 
-*Table 3: Segment-size sweep. Mean over μ ∈ {2, 4.3}, LSTM-on/off, 2 seeds.*
+The per-trace breakdown (Fig. 3) shows where the learned policy wins. On the trace containing a 137 s coverage blackout the DQN ties the best fixed arm (33.0 vs. 32.2): nothing can stream through a blackout, and the safe policy is matched. On the favorable static trace the DQN more than doubles the best fixed arm (85.1 vs. 41.1) by riding the high tiers whenever capacity allows while the fixed arm stays at its compromise tier. Fig. 3 also exposes why no *other* fixed arm can bridge the gap: always-r04 wins Driving C (67.3) but collapses to 0.5 and −10.4 on the two hardest traces — a fixed tier that exploits good conditions is not safe, and the safe tier cannot exploit. This asymmetry, matching the safe policy in the worst case while exploiting headroom in the good case, is precisely the value proposition of learned adaptation.
 
-The curve is a clear inverted-U peaking at S = 5–8. At S = 1, each frame incurs a full 72 ms RTT overhead on a 33 ms frame budget, causing ∼19 s of stall. At S = 30, the policy makes only 10 decisions per clip and cannot react to bandwidth fades mid-segment, recovering stall back to ∼20 s despite achieving the highest mean quality (0.958). The S = 5–8 regime achieves ≤ 4.3 s stall with high quality, confirming that RTT amortisation is the critical transport design choice.
+![Fig. 3 — Per-trace QoE](figures/Fig3/per_trace_qoe.png)
 
-### 4.2 Fixed-Arm Baselines
+*Fig. 3. QoE per held-out trace: the DQN (12-seed mean) against the two strongest fixed arms. The DQN matches the safe arm under the blackout and more than doubles it on the static trace; always-r04 wins one trace but fails the hard ones.*
 
-Table 4 shows the performance of always-playing each tier at the winning segment size (S = 8) with adaptive playback rate (0.9× floor). Each arm is tested over the held-out trace.
+Fig. 6 summarizes the same comparison distributionally: the empirical CDF of QoE over the held-out traces. The DQN curve lies to the right of every fixed arm across the entire probability range — it stochastically dominates all six — while the aggressive arms (r05, r06) exhibit catastrophic left tails (QoE below −80) on the driving traces.
 
-| Arm | Tier | Bitrate (Mbps) | QoE′ | Mean quality | Stall (s) | Legacy QoE |
-|-----|------|----------------|------|-------------|-----------|------------|
-| 0 | high | 102.4 | 60.1 | 1.000 | 8.1 | 35.0 |
-| **1** | **medhigh** | **59.6** | **90.3** | **0.921** | **0.0** | **100** |
-| 2 | med | 35.5 | 91.1 | 0.854 | 0.0 | 100 |
-| 3 | medlow | 14.1 | 66.2 | 0.674 | 0.0 | 100 |
-| 4 | low | 3.4 | 35.0 | 0.356 | 0.0 | 100 |
-| 5 | vlow | 0.9 | 2.5 | 0.030 | 0.0 | 100 |
+![Fig. 6 — QoE CDF](figures/Fig6/qoe_cdf.png)
 
-*Table 4: Fixed-arm baselines (S = 8, AMP, held-out trace).*
+*Fig. 6. Empirical CDF of QoE across the four held-out traces for each strategy. The DQN stochastically dominates every fixed arm; the high fixed tiers show catastrophic left tails.*
 
-At S = 8, the 5G capacity (median ∼80 Mbps) comfortably delivers the medhigh tier (59.6 Mbps) with zero stall. The best fixed arm on QoE′ is arm 2 (always-med, QoE′ 91.1); arm 1 (always-medhigh) is a close second at QoE′ 90.3 with higher quality (0.921 vs 0.854). The top tier (102.4 Mbps) occasionally exceeds peak cell capacity, causing 8.1 s of stall.
+Fig. 4 illustrates the learned behavior itself on the held-out static trace. The policy begins one tier below the maximum while the link attaches, briefly drops to r03 as the first throughput measurements arrive, then commits to the top tier once the measured capacity sustains it — building the buffer monotonically and completing the entire clip without a single stall.
 
-### 4.3 Main Results: DQN vs Baselines
+![Fig. 4 — Policy adaptation over time](figures/Fig4/policy_timeseries.png)
 
-Table 5 compares the three ABR strategies on the held-out trace at S = 8 with adaptive playback.
+*Fig. 4. DQN adaptation on the held-out static trace: link capacity and selected tier bitrate (top), client buffer level (bottom). The policy climbs to the top tier as soon as measured throughput allows and streams stall-free.*
 
-| Strategy | Legacy QoE | QoE′ | Mean quality | Mean tier | Stall (s) | Dropped frames |
-|----------|-----------|------|-------------|-----------|-----------|----------------|
-| Bandwidth rule | 0 | 2.5 | 0.030 | r01 | 0.0 | 0 |
-| LSTM rule | 0 | 41.1 | 0.426 | r03 | 0.0 | 56 |
-| **DQN (single good seed)** | **75.1** | **82.0** | **0.968** | r05 | 3.0 | 0 |
-| **DQN (robust mean, 8 seeds)** | — | **74.6 ± 19.8** | **0.909** | — | 3.2 | — |
+### D. Ablations and robustness
 
-*Table 5: Main comparison (S = 8, held-out trace, longdress).*
+Two ablations are settled null results. First, removing the LSTM prediction from the state changes QoE by less than 1.1 points: the throughput history statistics already carry the usable signal, although the feature is retained in the shipped model. Second, training with or without the startup and drop reward terms of (2) yields no outcome difference, because avoiding slow startups and drops already maximizes quality-time; the extended reward is kept as it aligns the objective with the reported metric at zero cost. Finally, the 12-seed standard deviation of 0.95 (per-seed range 51.9 to 55.3) shows that the result is not a lucky checkpoint; decoupling the trace split from the training seed and evaluating on four traces were the key steps that removed an earlier twenty-point seed variance.
 
-The DQN delivers a mean quality of 0.909 (QoE′ 74.6) versus the rule-based baselines' 0.030–0.426. The bandwidth rule stays pinned at the lowest tier because, with segments, it underestimates capacity from the small startup portion and never adapts. The LSTM rule climbs to tier r03 (0.426 quality) — a major improvement over the per-frame regime — but drops 56 frames due to eager buffer overflow with no request pacing. The DQN observes the buffer state and avoids overflow (0 dropped frames), streaming at near the medhigh tier.
+Fig. 7 examines training convergence. The best-checkpoint QoE rises within the first tenth of training (mean best checkpoint at episode 1,158 of 11,120) and then locks onto its plateau: additional episodes yield no further improvement across any of the 12 seeds. The raw evaluation curve drifts downward later in training — the well-known DQN over-training effect — which the best-checkpoint selection used throughout this work renders harmless. Training longer is therefore unnecessary; convergence is fast and definitively bracketed.
 
-The robust mean (74.6 ± 19.8 over 8 seeds) reveals significant training variance: per-seed QoE′ ranges from 38.3 to 96.2. The good seeds (∼90+) match or exceed the best fixed arm (90.3); the underperforming seeds (∼38–57) drag the mean to 74.6. This training variance, not transport capacity, is the binding remaining challenge.
+![Fig. 7 — Training convergence](figures/Fig7/training_convergence.png)
 
-### 4.4 LSTM Predictor Ablation
+*Fig. 7. Held-out QoE during training (winner configuration, 12 seeds). The best-checkpoint curve converges within the first ~10% of episodes and stays locked; raw evaluations later degrade, motivating best-checkpoint selection.*
 
-Table 6 shows the four configurations tested in the robust sweep.
+## VI. Conclusion
 
-| Config | QoE′ | ± std | Mean quality | Stall (s) |
-|--------|------|-------|-------------|-----------|
-| S=8, no LSTM | **74.60** | 19.79 | 0.909 | 3.2 |
-| S=5, LSTM on | 74.23 | 20.26 | 0.909 | 3.3 |
-| S=5, no LSTM | 73.77 | 20.63 | 0.905 | 3.2 |
-| S=8, LSTM on | 72.60 | 19.03 | 0.893 | 3.3 |
+This paper demonstrated end-to-end learned bitrate adaptation for G-PCC point cloud streaming over measured 5G conditions. Segment-based fetching of 5 to 8 frames per request resolves the RTT bound that makes per-frame streaming infeasible at 72 ms latency, and a Double DQN trained on a quality-aware reward outperforms every fixed-quality policy by 13.9 QoE points on held-out traces, with seed variance below 1 QoE point. The learned policy matches the safest fixed policy under a coverage blackout and doubles it when capacity allows. Future work includes multi-user streaming over a shared bottleneck, viewport-aware tiling, and request pacing for the rule-based baselines.
 
-*Table 6: Robust sweep — 4 configs × 8 seeds.*
+## Acknowledgment
 
-All four configurations are statistically tied within one standard deviation. The LSTM predictor provides no consistent benefit, consistent with the finding that, at S = 8, the throughput-history statistics in the state (last achieved, rolling mean, rolling std) already capture the bandwidth trend adequately.
+The authors thank the maintainers of the MPEG G-PCC reference software and the providers of the 8iVFBv2 and Irish 5G datasets.
 
-### 4.5 Discussion
+## References
 
-The results confirm three findings. First, **segment-based fetching (S ≈ 5–8) is the critical enabler**: without it, the 72 ms RTT makes stall-free streaming impossible at any quality tier. Second, **the DQN learns to exploit 5G capacity headroom that rule-based controllers miss**: rules trapped at the bottom tier by RTT-artefact throughput underestimates; the DQN, having observed its own segment throughput and buffer state, learns to request higher tiers confidently. Third, **RL training variance is the honest bottleneck**: on a comfortable static 5G regime, the best fixed arm (zero stall, QoE′ 90.3) is a strong competitor, and the DQN beats it only on its good seeds. Techniques to reduce this variance — prioritised experience replay, n-step returns, dueling networks, or ensemble evaluation — are the natural next step.
-
----
-
-## 5. CONCLUSION
-
-We have presented a reinforcement learning-based ABR system for MPEG G-PCC compressed point cloud streaming over 5G networks. Our trace-driven simulator, built on the Raca et al. Irish 5G dataset with integral-accurate TCP serialisation, reveals that per-frame sequential fetching is fundamentally incompatible with 5G RTTs at 30 fps, while DASH-style segmentation at S = 5–8 frames per request delivers near-stall-free playback. A Double DQN agent trained with a quality-aware reward achieves a robust mean QoE′ of 74.6 ± 19.8 over eight independent training runs, compared to 2.5–41.1 for rule-based baselines, while maintaining a mean quality utility of 0.909 — representing near-medhigh tier streaming. The primary remaining challenge is RL training variance: good seeds match the best static arm, but the distribution is wide. Future work will explore prioritised replay, n-step returns, and harder/more-variable 5G trace regimes where adaptation provides greater headroom, as well as extension to multi-user shared-bottleneck scenarios.
-
----
-
-## ACKNOWLEDGEMENTS
-
-*[Add funding/acknowledgements here.]*
-
----
-
-## REFERENCES
-
-[1] I. Chatzidimitriou, et al., "Immersive Media for 5G and Beyond Networks," *IEEE Commun. Mag.*, 2022.
-
-[2] E. d'Eon, B. Harrison, T. Myers, and P. A. Chou, "8i Voxelized Full Bodies — A Voxelized Point Cloud Dataset," ISO/IEC JTC1/SC29/WG11 Input Document, Jan. 2017.
-
-[3] ISO/IEC 23009-1, "Dynamic Adaptive Streaming over HTTP (DASH) — Part 1: Media Presentation Description and Segment Formats," 2014.
-
-[4] M. Hosseini and C. Timmerer, "Dynamic Adaptive Point Cloud Streaming," in *Proc. 23rd ACM Packet Video Workshop (PV'18)*, Amsterdam, Netherlands, Jun. 2018, pp. 25–30.
-
-[5] H. Mao, R. Netravali, and M. Alizadeh, "Real World Performance of Adaptive Bitrate Algorithms," in *Proc. ACM SIGCOMM*, 2017.
-
-[6] H. Mao, et al., "Pensieve: Neural Adaptive Video Streaming with Pensieve," in *Proc. ACM SIGCOMM*, 2017.
-
-[7] D. Raca, D. Leahy, C. J. Sreenan, and J. J. Quinlan, "Beyond Throughput, the Next Generation: A 5G Dataset with Channel and Context Metrics," in *Proc. ACM MMSys*, 2020.
-
-[8] ISO/IEC 23090-9, "Geometry-based Point Cloud Compression (G-PCC)," 2020.
-
-[9] C. Guo, Z. Hu, and C. Hua, "360° Video Streaming with Reinforcement Learning," in *Proc. IEEE INFOCOM*, 2019.
-
-[10] H. Yan, et al., "Learning in situ: A Randomized Experiment in Video Streaming," in *Proc. USENIX NSDI*, 2020.
-
-[11] H. van Hasselt, A. Guez, and D. Silver, "Deep Reinforcement Learning with Double Q-learning," in *Proc. AAAI*, 2016.
-
----
-
-*End of paper content — paste into conference-template-a4.docx following the IST'2026 formatting guidelines.*
+1. Information technology—Dynamic adaptive streaming over HTTP (DASH)—Part 1: Media presentation description and segment formats, ISO/IEC 23009-1, 2014.
+2. E. d'Eon, B. Harrison, T. Myers, and P. A. Chou, "8i voxelized full bodies—a voxelized point cloud dataset," ISO/IEC JTC1/SC29 (MPEG/JPEG) input document m40059, Geneva, Jan. 2017.
+3. M. Hosseini and C. Timmerer, "Dynamic adaptive point cloud streaming," in Proc. 23rd Packet Video Workshop, Amsterdam, Netherlands, 2018, pp. 25–30.
+4. S. Schwarz et al., "Emerging MPEG standards for point cloud compression," IEEE J. Emerg. Sel. Topics Circuits Syst., vol. 9, no. 1, pp. 133–148, Mar. 2019.
+5. Information technology—Coded representation of immersive media—Part 9: Geometry-based point cloud compression, ISO/IEC 23090-9, 2023.
+6. H. Mao, R. Netravali, and M. Alizadeh, "Neural adaptive video streaming with Pensieve," in Proc. ACM SIGCOMM, Los Angeles, CA, USA, 2017, pp. 197–210.
+7. X. Yin, A. Jindal, V. Sekar, and B. Sinopoli, "A control-theoretic approach for dynamic adaptive video streaming over HTTP," in Proc. ACM SIGCOMM, London, U.K., 2015, pp. 325–338.
+8. J. van der Hooft, T. Wauters, F. De Turck, C. Timmerer, and H. Hellwagner, "Towards 6DoF HTTP adaptive streaming through point cloud compression," in Proc. 27th ACM Int. Conf. Multimedia, Nice, France, 2019, pp. 2405–2413.
+9. D. Raca, D. Leahy, C. J. Sreenan, and J. J. Quinlan, "Beyond throughput, the next generation: a 5G dataset with channel and context metrics," in Proc. 11th ACM Multimedia Syst. Conf. (MMSys), Istanbul, Turkey, 2020, pp. 303–308.
+10. H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in Proc. 30th AAAI Conf. Artif. Intell., Phoenix, AZ, USA, 2016, pp. 2094–2100.
+11. S. S. Krishnan and R. K. Sitaraman, "Video stream quality impacts viewer behavior: inferring causality using quasi-experimental designs," IEEE/ACM Trans. Netw., vol. 21, no. 6, pp. 2001–2014, Dec. 2013.

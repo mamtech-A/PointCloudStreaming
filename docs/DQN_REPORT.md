@@ -1,5 +1,12 @@
 # DQN ABR Agent — Complete Technical Report
 
+> **Superseded objective (2026-07-18).** Every checkpoint and numerical result in
+> this development-history report predates the canonical six-term reward/QoE in
+> `src/rl/reward.py`. Adaptive slowdown, capped stall costs, reward normalization,
+> and the former reward/QoE scaling are no longer part of the active method. Do
+> not reuse these numbers for the revised paper; retraining and a new registered
+> evaluation are required.
+
 > **Development-history report, not the final IST-2026 evaluation.** Round-4
 > checkpoints were selected and reported on the same four held-out traces.
 > Those traces are validation in the clean protocol. Use

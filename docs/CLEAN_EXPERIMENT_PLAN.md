@@ -3,9 +3,12 @@
 ## What is frozen before final test
 
 - Segment size: 8 frames/request.
-- Reward: bounded stall term, new-stall event penalty, startup and drop terms.
+- Reward = QoE: 100/N-scaled quality, linear stall duration, rebuffer-event
+  count, segment-quality change, 100/N-scaled frame drops, and startup delay.
+- Startup ends at first playback; stall duration and rebuffer events begin only
+  afterward, so the temporal terms are disjoint.
+- Discount factor 1.0 and no learner-side reward scaling.
 - Double-DQN architecture and optimizer settings from Round 4.
-- Adaptive playback floor: 0.9.
 - Twelve training seeds.
 - One preregistered feature ablation: DQN with versus without LSTM prediction.
 - Trace partitions and final-test cases in `configs/experiment_protocol.json`.
@@ -57,8 +60,8 @@ additional traces or use a preregistered nested grouped cross-validation study.
   client adaptation, and RTT/segment interaction—not “first RL point-cloud ABR.”
 - Replace “perceptual quality” with “normalized log-density utility/proxy” unless
   a validated objective/perceptual metric is added.
-- Make the reward equation match `src/rl/reward.py`, including event, startup,
-  and drop terms.
+- State explicitly that the undiscounted reward sum equals QoE and define startup
+  separately from post-start stall duration and rebuffer-event count.
 - Describe the complete observable client state and say that no oracle future
   capacity is exposed.
 - Qualify RTT conclusions as applying to the implemented sequential request
