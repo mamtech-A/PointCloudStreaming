@@ -1,0 +1,3 @@
+[2026-07-20 00:04:50 UTC] pipeline start | config=configs/training.json smoke=False jobs=4 segments=[5, 8, 10, 15] config_digest=f7af2fd8e9aaaf81 skip=none run_test=True
+[2026-07-20 00:04:50 UTC] START generate_lstm_data[S=5]: C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\gen_lstm_dataset.py --offsets 8 --protocol configs/experiment_protocol.json --segment-frames 5 --out-dir C:\Users\Nima\PointCloudStreaming\data/lstm_achieved_request_pacing_s5 --trace-registry configs/trace_window_registry.json (log: 10_gen_lstm_s5.log)
+[2026-07-20 00:04:51 UTC] FAIL  generate_lstm_data[S=5] (rc=1) after 0.0 min; see C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_000450_wide\10_gen_lstm_s5.log

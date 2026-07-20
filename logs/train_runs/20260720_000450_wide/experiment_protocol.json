@@ -1,0 +1,50 @@
+{
+  "protocol_version": 1,
+  "name": "ist2026_clean_final_evaluation",
+  "notes": [
+    "The validation split is the four-trace held-out set used during the earlier Round-4 development and is therefore not an untouched test set.",
+    "The final test split was sampled once from the former training pool with seed 2026 after removing validation traces: three driving traces and one static trace.",
+    "Do not change model, reward, checkpoint, or baseline settings after inspecting final-test results. Any later change requires a newly registered test split."
+  ],
+  "trace_split": {
+    "train": [
+      "driving_B_2019.12.16_12.27.05.csv",
+      "driving_B_2019.12.17_07.32.39.csv",
+      "driving_B_2020.01.16_07.26.43.csv",
+      "driving_B_2020.01.16_09.56.56.csv",
+      "driving_B_2020.01.16_12.10.03.csv",
+      "driving_B_2020.02.13_13.03.24.csv",
+      "driving_B_2020.02.13_15.02.01.csv",
+      "driving_B_2020.02.14_09.38.22.csv",
+      "driving_B_2020.02.14_12.58.17.csv",
+      "driving_B_2020.02.27_17.30.15.csv",
+      "static_B_2019.12.16_13.40.04.csv",
+      "static_B_2020.02.14_13.21.26.csv",
+      "static_B_2020.02.27_18.39.27.csv"
+    ],
+    "validation": [
+      "driving_B_2019.12.14_10.16.30.csv",
+      "driving_B_2019.12.16_07.22.43.csv",
+      "driving_B_2020.02.27_20.35.57.csv",
+      "static_B_2020.01.16_10.43.34.csv"
+    ],
+    "test": [
+      "driving_B_2019.12.16_11.49.59.csv",
+      "driving_B_2019.12.16_14.23.32.csv",
+      "driving_B_2020.02.14_07.29.00.csv",
+      "static_B_2020.02.13_13.57.29.csv"
+    ]
+  },
+  "evaluation": {
+    "validation": {
+      "sequences": ["longdress", "loot", "redandblack", "soldier"],
+      "offsets_per_trace": 3,
+      "jitter_seeds": [42, 43, 44]
+    },
+    "test": {
+      "sequences": ["longdress", "loot", "redandblack", "soldier"],
+      "offsets_per_trace": 3,
+      "jitter_seeds": [42, 43, 44]
+    }
+  }
+}

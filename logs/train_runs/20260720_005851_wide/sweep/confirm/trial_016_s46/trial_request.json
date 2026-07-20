@@ -1,0 +1,74 @@
+{
+  "trial": 16,
+  "seed": 46,
+  "argv": [
+    "--batch-size",
+    "64",
+    "--coverage-stride",
+    "60",
+    "--early-stop-patience",
+    "3",
+    "--epochs",
+    "8",
+    "--eps-decay-frac",
+    "0.5",
+    "--eval-every",
+    "400",
+    "--eval-offsets",
+    "3",
+    "--eval-seeds",
+    "42,43,44",
+    "--eval-sequences",
+    "longdress,loot,redandblack,soldier",
+    "--gamma",
+    "1.0",
+    "--hidden",
+    "256",
+    "--lam",
+    "1.0",
+    "--lr",
+    "0.0003",
+    "--mu",
+    "4.3",
+    "--protocol",
+    "configs/experiment_protocol.json",
+    "--reward-spec",
+    "{\"rebuffer_weight\": 2.0, \"startup_weight\": 1.0}",
+    "--seed",
+    "46",
+    "--segment-frames",
+    "15",
+    "--select-by",
+    "qoe_quality",
+    "--target-update",
+    "6000",
+    "--torch-threads",
+    "2",
+    "--trace-registry",
+    "configs/trace_window_registry.json",
+    "--lstm",
+    "C:\\Users\\Nima\\PointCloudStreaming\\models/bandwidth_lstm_request_pacing_s15.pkl"
+  ],
+  "provenance": {
+    "experiment_config_digest": "f7af2fd8e9aaaf81",
+    "training_code_digest": "e2bfaa7d3d3c2c8d",
+    "input_files": {
+      "--protocol": {
+        "path": "configs\\experiment_protocol.json",
+        "sha256": "1149e7807d7ace3f"
+      },
+      "--trace-registry": {
+        "path": "configs\\trace_window_registry.json",
+        "sha256": "d77f7f7e70055a49"
+      },
+      "--lstm": {
+        "path": "models\\bandwidth_lstm_request_pacing_s15.pkl",
+        "sha256": "559a32a6fc6c5502"
+      },
+      "--lstm-metadata": {
+        "path": "models\\bandwidth_lstm_request_pacing_s15_split.json",
+        "sha256": "53e413ab44f75d91"
+      }
+    }
+  }
+}

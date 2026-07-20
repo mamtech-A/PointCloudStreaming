@@ -1,0 +1,65 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\train_model.py --transform log1p --out C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p.pkl --sequence-length 8 --epochs 50 --test-size 0.2 --bandwidth-dir C:\Users\Nima\PointCloudStreaming\data/lstm_achieved_request_pacing_s8 --split-from C:\Users\Nima\PointCloudStreaming\data/lstm_achieved_request_pacing_s8\split.json --no-tune --hidden 128 --layers 2 --dropout 0.1 --lr 0.0005
+================================================================================
+🤖 LSTM Bandwidth Prediction Model Training
+================================================================================
+📋 Explicit split from C:\Users\Nima\PointCloudStreaming\data/lstm_achieved_request_pacing_s8\split.json: 5820 train / 720 validation files
+
+📁 Found 6540 bandwidth trace files
+📂 Output directory: C:\Users\Nima\PointCloudStreaming\models
+🔧 Hyperparameter tuning: Disabled
+📊 Sequence length: 8
+🧪 File-level test split: 0.20
+🎲 Split random seed: 42
+
+================================================================================
+Training Process:
+  1. Load and prepare dataset
+  2. Split files into train/test sets (file-level)
+  3. Train model with default hyperparameters
+  5. Save trained model and best model
+================================================================================
+
+Loading bandwidth traces from C:\Users\Nima\PointCloudStreaming\data/lstm_achieved_request_pacing_s8...
+Dataset size: 196200 sequences
+Bandwidth range: 0.03 - 452.12 Mbps
+Mean bandwidth: 23.86 Mbps, Std: 40.25 Mbps
+File-level split (80/20): 5820 train files, 720 test files
+
+Training final model...
+Epoch 10/50 - Train Loss: 0.053779, Test Loss: 0.049890
+Epoch 20/50 - Train Loss: 0.046431, Test Loss: 0.054001
+Early stopping at epoch 24 (no improvement for 15 epochs)
+Loaded best model from epoch 9 with test loss: 0.049315
+
+Final Test Metrics:
+  MAE: 4.4506 Mbps  (persistence baseline: 7.4193)
+  MAPE: 22.65%  (persistence baseline: 34.52%)
+  RMSE: 11.8855 Mbps  (persistence baseline: 22.3302)
+  Low-bw (<5 Mbps, 47% of test) MAE: 0.6102  (persistence: 1.0720)
+  Directional accuracy: 0.653
+
+Saving model to C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p.pkl...
+Best model saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p_best.pkl
+Split metadata saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p_split.json
+
+Sample predictions:
+  Actual: 3.39 Mbps, Predicted: 3.65 Mbps
+  Actual: 3.08 Mbps, Predicted: 3.54 Mbps
+  Actual: 3.22 Mbps, Predicted: 3.38 Mbps
+  Actual: 3.30 Mbps, Predicted: 3.34 Mbps
+  Actual: 3.51 Mbps, Predicted: 3.37 Mbps
+
+================================================================================
+✅ Training complete!
+📦 Model saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p.pkl
+📦 Best model saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p_best.pkl
+🧾 Split metadata saved to: C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p_split.json
+
+Next steps:
+  1. Run the system with LSTM prediction:
+     python3 run_lstm.py
+  2. Or compare with baseline (no LSTM):
+     python3 run.py
+  3. Use a test-only simulation trace from:
+     C:\Users\Nima\PointCloudStreaming\logs\train_runs\20260720_005851_wide\lstm\s8\bandwidth_lstm_log1p_split.json -> test_files
+================================================================================

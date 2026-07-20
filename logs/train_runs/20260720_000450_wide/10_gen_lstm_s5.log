@@ -1,0 +1,16 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\gen_lstm_dataset.py --offsets 8 --protocol configs/experiment_protocol.json --segment-frames 5 --out-dir C:\Users\Nima\PointCloudStreaming\data/lstm_achieved_request_pacing_s5 --trace-registry configs/trace_window_registry.json
+Traceback (most recent call last):
+  File "C:\Users\Nima\PointCloudStreaming\scripts\gen_lstm_dataset.py", line 290, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Nima\PointCloudStreaming\scripts\gen_lstm_dataset.py", line 189, in main
+    registry = load_trace_registry(
+        registry_path, protocol, args.trace_dir, verify_hashes=True
+    )
+  File "C:\Users\Nima\PointCloudStreaming\src\trace_registry.py", line 219, in load_trace_registry
+    return TraceWindowRegistry(
+        path, protocol, trace_dir, verify_hashes, allow_candidate_registry
+    )
+  File "C:\Users\Nima\PointCloudStreaming\src\trace_registry.py", line 59, in __init__
+    raise ValueError("trace-window registry/source audit hash mismatch")
+ValueError: trace-window registry/source audit hash mismatch

@@ -1,0 +1,27 @@
+# C:\Users\Nima\AppData\Local\Programs\Python\Python313\python.exe -u scripts\evaluate_experiment.py --protocol configs/experiment_protocol.json --trace-registry configs/trace_window_registry.json --sweep-results C:\Users\Nima\PointCloudStreaming\models/dqn_sweep_results_qoe_v4_request_pacing.json --baseline-config C:\Users\Nima\PointCloudStreaming\models/baseline_config_qoe_v4_request_pacing.json --lstm C:\Users\Nima\PointCloudStreaming\models/bandwidth_lstm_request_pacing_s10.pkl --strategies dqn,fixed,buffer,mpc --out C:\Users\Nima\PointCloudStreaming\models/final_test_results_qoe_v4_request_pacing.json --experiment-config-digest f7af2fd8e9aaaf81 --split test --max-frames 0
+================================================================================================
+REGISTERED EVALUATION | split=test | protocol=4071599372abeb61
+traces=4 sequences=['longdress', 'loot', 'redandblack', 'soldier'] offsets/trace=3 jitter_seeds=[42, 43, 44] segment_frames=10
+trace_registry=8297ac83fa031471 (finite blocks, macro trace)
+================================================================================================
+DQN seed 42: qoe_quality=49.152 stall=1.545s
+DQN seed 43: qoe_quality=51.021 stall=0.858s
+DQN seed 44: qoe_quality=47.919 stall=1.047s
+DQN seed 45: qoe_quality=49.443 stall=1.421s
+DQN seed 46: qoe_quality=48.989 stall=1.534s
+DQN seed 47: qoe_quality=50.576 stall=1.353s
+DQN seed 48: qoe_quality=50.229 stall=1.360s
+DQN seed 49: qoe_quality=51.043 stall=0.670s
+DQN seed 50: qoe_quality=49.307 stall=1.025s
+DQN seed 51: qoe_quality=51.055 stall=0.624s
+DQN seed 52: qoe_quality=50.019 stall=1.116s
+DQN seed 53: qoe_quality=50.595 stall=0.731s
+fixed_arm_0: qoe_quality=-78.866
+fixed_arm_1: qoe_quality=-24.754
+fixed_arm_2: qoe_quality=5.394
+fixed_arm_3: qoe_quality=31.412
+fixed_arm_4: qoe_quality=22.802
+fixed_arm_5: qoe_quality=-2.431
+buffer: qoe_quality=45.692 stall=0.241s
+mpc: qoe_quality=45.797 stall=0.282s
+saved case-level results: C:\Users\Nima\PointCloudStreaming\models/final_test_results_qoe_v4_request_pacing.json
