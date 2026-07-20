@@ -24,3 +24,6 @@ reports/*_audit.json
 reports/trace_window_registry_all_candidates.json
 reports/high_tier_candidate_audit.json
 !reports/trace_gap_audit.json
+
+# Linked worktree directories (git-managed, never commit)
+.worktrees/
