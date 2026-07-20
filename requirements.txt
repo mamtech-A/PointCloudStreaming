@@ -1,0 +1,12 @@
+# Python dependencies for PointCloudStreaming.
+# Install:  python -m pip install -r requirements.txt
+#
+# Version floors are the first releases with CPython 3.13 wheels (the fast-PC
+# interpreter). On Python 3.10-3.12 these floors are also satisfied by current
+# releases, so the same file works everywhere. Training/eval are CPU-only — the
+# default (CPU) torch wheel is sufficient; no CUDA build required.
+
+torch>=2.6           # first torch with cp313 wheels (Jan 2025)
+numpy>=2.1           # cp313 support
+pandas>=2.2.3        # cp313 support (used by prepare_5g_traces.py)
+scikit-learn>=1.6    # cp313 support (train_test_split in the LSTM trainer)

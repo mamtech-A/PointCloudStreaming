@@ -1,0 +1,1421 @@
+{
+  "objective_version": "five_term_equal_reward_qoe_v4_request_pacing",
+  "protocol_digest": "4071599372abeb61",
+  "trace_registry_id": "8297ac83fa031471",
+  "experiment_config_digest": "f7af2fd8e9aaaf81",
+  "training_code_digest": "e2bfaa7d3d3c2c8d",
+  "select_by": "qoe_quality",
+  "selection_split": "validation",
+  "search_mode": "stratified_random",
+  "seeds": [
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "screen_seeds": [
+    42,
+    43,
+    44
+  ],
+  "confirm_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "confirmation_selection_seeds": [
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "base_args": {
+    "protocol": "configs/experiment_protocol.json",
+    "trace-registry": "configs/trace_window_registry.json",
+    "epochs": 8,
+    "coverage-stride": 60,
+    "eval-every": 400,
+    "early-stop-patience": 3,
+    "gamma": 1.0,
+    "torch-threads": 2,
+    "mu": 4.3,
+    "lam": 1.0,
+    "select-by": "qoe_quality",
+    "eval-seeds": "42,43,44",
+    "eval-offsets": 3,
+    "eval-sequences": "longdress,loot,redandblack,soldier",
+    "reward-spec": {
+      "rebuffer_weight": 2.0,
+      "startup_weight": 1.0
+    }
+  },
+  "screening_base_args": {
+    "protocol": "configs/experiment_protocol.json",
+    "trace-registry": "configs/trace_window_registry.json",
+    "epochs": 3,
+    "coverage-stride": 60,
+    "eval-every": 400,
+    "early-stop-patience": 0,
+    "gamma": 1.0,
+    "torch-threads": 2,
+    "mu": 4.3,
+    "lam": 1.0,
+    "select-by": "qoe_quality",
+    "eval-seeds": "42,43,44",
+    "eval-offsets": 3,
+    "eval-sequences": "longdress,loot,redandblack,soldier",
+    "reward-spec": {
+      "rebuffer_weight": 2.0,
+      "startup_weight": 1.0
+    }
+  },
+  "lstm_template": "C:\\Users\\Nima\\PointCloudStreaming\\models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+  "sweep_dir": "logs\\train_runs\\20260720_005851_wide\\sweep",
+  "n_configs": 20,
+  "screening_ranking": [
+    {
+      "trial": 11,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "target-update": 6000,
+        "segment-frames": 10
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 49.51269194622148,
+        "qoe": 49.5126919462215,
+        "qoe_quality": 49.5126919462215,
+        "mean_quality": 0.615767694680068,
+        "stall_s": 0.8131768726369081,
+        "steps_run_mean": 37440.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 37440,
+          "43": 37440,
+          "44": 37440
+        },
+        "qoe_quality_std": 0.5838104407978322,
+        "qoe_quality_per_seed": {
+          "42": 50.25262420321063,
+          "43": 49.459943625356104,
+          "44": 48.82550801009775
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.658633348995934,
+          "driving_B_2019.12.16_07.22.43.csv": 37.238144761760964,
+          "driving_B_2020.02.27_20.35.57.csv": 38.65423303904138,
+          "static_B_2020.01.16_10.43.34.csv": 86.49975663508769
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_011_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_011_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_011_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 9,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 3000,
+        "segment-frames": 8
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 49.132165279917565,
+        "qoe": 49.13216527991758,
+        "qoe_quality": 49.13216527991758,
+        "mean_quality": 0.6177370885167671,
+        "stall_s": 0.7867153693150764,
+        "steps_run_mean": 47424.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 47424,
+          "43": 47424,
+          "44": 47424
+        },
+        "qoe_quality_std": 0.5158082620539571,
+        "qoe_quality_per_seed": {
+          "42": 49.48865657820764,
+          "43": 49.50507542588613,
+          "44": 48.402763835658966
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 34.88745561389728,
+          "driving_B_2019.12.16_07.22.43.csv": 36.20032373660927,
+          "driving_B_2020.02.27_20.35.57.csv": 38.1472091060111,
+          "static_B_2020.01.16_10.43.34.csv": 87.29367266315266
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_009_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_009_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_009_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 16,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "target-update": 6000,
+        "segment-frames": 15
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 49.11644148629616,
+        "qoe": 49.11644148629617,
+        "qoe_quality": 49.11644148629617,
+        "mean_quality": 0.6053878273417143,
+        "stall_s": 0.6546595299655728,
+        "steps_run_mean": 24960.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 24960,
+          "43": 24960,
+          "44": 24960
+        },
+        "qoe_quality_std": 0.4316278800953263,
+        "qoe_quality_per_seed": {
+          "42": 49.081825854428786,
+          "43": 48.60596595763078,
+          "44": 49.661532646828945
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 36.10072680153648,
+          "driving_B_2019.12.16_07.22.43.csv": 37.61339485594695,
+          "driving_B_2020.02.27_20.35.57.csv": 39.12766566557036,
+          "static_B_2020.01.16_10.43.34.csv": 83.62397862213088
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_016_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_016_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_016_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 14,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 3000,
+        "segment-frames": 10
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 48.8006237657983,
+        "qoe": 48.80062376579831,
+        "qoe_quality": 48.80062376579831,
+        "mean_quality": 0.6030783265253725,
+        "stall_s": 0.6143687543651238,
+        "steps_run_mean": 37440.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 37440,
+          "43": 37440,
+          "44": 37440
+        },
+        "qoe_quality_std": 0.08558586424824242,
+        "qoe_quality_per_seed": {
+          "42": 48.81842801710161,
+          "43": 48.688041040633905,
+          "44": 48.89540223965942
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.606253870117094,
+          "driving_B_2019.12.16_07.22.43.csv": 36.091462172367756,
+          "driving_B_2020.02.27_20.35.57.csv": 37.72230216593518,
+          "static_B_2020.01.16_10.43.34.csv": 85.78247685477322
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_014_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_014_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_014_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 6,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "target-update": 6000,
+        "segment-frames": 8
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 48.64562440449904,
+        "qoe": 48.645624404499046,
+        "qoe_quality": 48.645624404499046,
+        "mean_quality": 0.5980317900546259,
+        "stall_s": 0.7990351955527943,
+        "steps_run_mean": 47424.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 47424,
+          "43": 47424,
+          "44": 47424
+        },
+        "qoe_quality_std": 0.3937335005054813,
+        "qoe_quality_per_seed": {
+          "42": 48.97868746016705,
+          "43": 48.86553932165098,
+          "44": 48.09264643167911
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 34.500193979022846,
+          "driving_B_2019.12.16_07.22.43.csv": 36.643868266321256,
+          "driving_B_2020.02.27_20.35.57.csv": 36.07161987329784,
+          "static_B_2020.01.16_10.43.34.csv": 87.36681549935423
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_006_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_006_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_006_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 19,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 3000,
+        "segment-frames": 15
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 47.73814623279417,
+        "qoe": 47.73814623279418,
+        "qoe_quality": 47.73814623279418,
+        "mean_quality": 0.6145148211062642,
+        "stall_s": 0.8706424669066967,
+        "steps_run_mean": 24960.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 24960,
+          "43": 24960,
+          "44": 24960
+        },
+        "qoe_quality_std": 0.37947205913208343,
+        "qoe_quality_per_seed": {
+          "42": 48.27121263137215,
+          "43": 47.4179592682762,
+          "44": 47.52526679873419
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.49057926071634,
+          "driving_B_2019.12.16_07.22.43.csv": 36.189659283027794,
+          "driving_B_2020.02.27_20.35.57.csv": 35.38782404375712,
+          "static_B_2020.01.16_10.43.34.csv": 83.88452234367547
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_019_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_019_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_019_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 5,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.6,
+        "hidden": 128,
+        "lr": 0.0001,
+        "target-update": 3000,
+        "segment-frames": 8
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 47.23002416267732,
+        "qoe": 47.230024162677324,
+        "qoe_quality": 47.230024162677324,
+        "mean_quality": 0.6073161627583065,
+        "stall_s": 1.3417566892473827,
+        "steps_run_mean": 47424.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 47424,
+          "43": 47424,
+          "44": 47424
+        },
+        "qoe_quality_std": 0.37258063180893897,
+        "qoe_quality_per_seed": {
+          "42": 47.31656439846698,
+          "43": 47.63687356390028,
+          "44": 46.73663452566471
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 32.11828600704441,
+          "driving_B_2019.12.16_07.22.43.csv": 37.21001932338827,
+          "driving_B_2020.02.27_20.35.57.csv": 33.33105379300654,
+          "static_B_2020.01.16_10.43.34.csv": 86.26073752727007
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_005_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_005_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_005_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 10,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.6,
+        "hidden": 128,
+        "lr": 0.0001,
+        "target-update": 3000,
+        "segment-frames": 10
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 46.602711446111265,
+        "qoe": 46.60271144611128,
+        "qoe_quality": 46.60271144611128,
+        "mean_quality": 0.6110374644074887,
+        "stall_s": 1.4889119474472965,
+        "steps_run_mean": 37440.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 37440,
+          "43": 37440,
+          "44": 37440
+        },
+        "qoe_quality_std": 0.20843007538665986,
+        "qoe_quality_per_seed": {
+          "42": 46.61604866784555,
+          "43": 46.34103061323147,
+          "44": 46.851055057256815
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 32.14174687820031,
+          "driving_B_2019.12.16_07.22.43.csv": 37.18778753070533,
+          "driving_B_2020.02.27_20.35.57.csv": 32.138519547753006,
+          "static_B_2020.01.16_10.43.34.csv": 84.94279182778646
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_010_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_010_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_010_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 13,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 5e-05,
+        "target-update": 1500,
+        "segment-frames": 10
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 46.401328310181384,
+        "qoe": 46.401328310181384,
+        "qoe_quality": 46.401328310181384,
+        "mean_quality": 0.5821038951364796,
+        "stall_s": 1.2207449709052547,
+        "steps_run_mean": 37440.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 37440,
+          "43": 37440,
+          "44": 37440
+        },
+        "qoe_quality_std": 0.21838433310878358,
+        "qoe_quality_per_seed": {
+          "42": 46.314357493359125,
+          "43": 46.188172659548954,
+          "44": 46.70145477763609
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 33.674162049609606,
+          "driving_B_2019.12.16_07.22.43.csv": 38.43232329734794,
+          "driving_B_2020.02.27_20.35.57.csv": 32.4317860991544,
+          "static_B_2020.01.16_10.43.34.csv": 81.0670417946136
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_013_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_013_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_013_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 18,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 5e-05,
+        "target-update": 1500,
+        "segment-frames": 15
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 46.323183592179255,
+        "qoe": 46.32318359217927,
+        "qoe_quality": 46.32318359217927,
+        "mean_quality": 0.5739670360663056,
+        "stall_s": 1.0121387594358564,
+        "steps_run_mean": 24960.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 24960,
+          "43": 24960,
+          "44": 24960
+        },
+        "qoe_quality_std": 0.14814876642443192,
+        "qoe_quality_per_seed": {
+          "42": 46.3737057835845,
+          "43": 46.47401257746172,
+          "44": 46.12183241549157
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.03284503906772,
+          "driving_B_2019.12.16_07.22.43.csv": 37.815743021917704,
+          "driving_B_2020.02.27_20.35.57.csv": 35.60624935304133,
+          "static_B_2020.01.16_10.43.34.csv": 76.83789695469031
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_018_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_018_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_018_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 0,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.6,
+        "hidden": 128,
+        "lr": 0.0001,
+        "target-update": 3000,
+        "segment-frames": 5
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 45.84637574256118,
+        "qoe": 45.84637574256117,
+        "qoe_quality": 45.84637574256117,
+        "mean_quality": 0.5855272989733544,
+        "stall_s": 1.2454991573257737,
+        "steps_run_mean": 74880.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 74880,
+          "43": 74880,
+          "44": 74880
+        },
+        "qoe_quality_std": 0.7070397174871444,
+        "qoe_quality_per_seed": {
+          "42": 45.027449720976776,
+          "43": 45.758970690850425,
+          "44": 46.7527068158563
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 30.75037039851001,
+          "driving_B_2019.12.16_07.22.43.csv": 36.41602836079005,
+          "driving_B_2020.02.27_20.35.57.csv": 34.20743140781962,
+          "static_B_2020.01.16_10.43.34.csv": 82.01167280312497
+        }
+      },
+      "checkpoints": {
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_000_s43\\abr_dqn.pkl",
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_000_s42\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_000_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 1,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "target-update": 6000,
+        "segment-frames": 5
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 45.840895354491785,
+        "qoe": 45.840895354491785,
+        "qoe_quality": 45.840895354491785,
+        "mean_quality": 0.5917197243588457,
+        "stall_s": 1.2752765624206377,
+        "steps_run_mean": 74880.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 74880,
+          "43": 74880,
+          "44": 74880
+        },
+        "qoe_quality_std": 1.1515316981869048,
+        "qoe_quality_per_seed": {
+          "42": 45.81314741462564,
+          "43": 47.26489712599772,
+          "44": 44.444641522851995
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 31.37214055839297,
+          "driving_B_2019.12.16_07.22.43.csv": 34.11607720784978,
+          "driving_B_2020.02.27_20.35.57.csv": 30.259234345854768,
+          "static_B_2020.01.16_10.43.34.csv": 87.61612930586962
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_001_s42\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_001_s44\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_001_s43\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 15,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.6,
+        "hidden": 128,
+        "lr": 0.0001,
+        "target-update": 3000,
+        "segment-frames": 15
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 45.67981562454173,
+        "qoe": 45.67981562454173,
+        "qoe_quality": 45.67981562454173,
+        "mean_quality": 0.6060737908741861,
+        "stall_s": 1.456488742239238,
+        "steps_run_mean": 24960.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 24960,
+          "43": 24960,
+          "44": 24960
+        },
+        "qoe_quality_std": 0.9898934210645356,
+        "qoe_quality_per_seed": {
+          "42": 46.84158695956578,
+          "43": 44.42250627217117,
+          "44": 45.77535364188826
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 34.69845300518018,
+          "driving_B_2019.12.16_07.22.43.csv": 37.21568216682334,
+          "driving_B_2020.02.27_20.35.57.csv": 27.424021422492256,
+          "static_B_2020.01.16_10.43.34.csv": 83.38110590367117
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_015_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_015_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_015_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 12,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.7,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 1500,
+        "segment-frames": 10
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 45.38242109612613,
+        "qoe": 45.38242109612614,
+        "qoe_quality": 45.38242109612614,
+        "mean_quality": 0.6037520071021928,
+        "stall_s": 1.430370364965837,
+        "steps_run_mean": 37440.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 37440,
+          "43": 37440,
+          "44": 37440
+        },
+        "qoe_quality_std": 1.4648317889809281,
+        "qoe_quality_per_seed": {
+          "42": 46.078482529349834,
+          "43": 46.72413063052849,
+          "44": 43.34465012850009
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 32.68193241906682,
+          "driving_B_2019.12.16_07.22.43.csv": 35.12580723136525,
+          "driving_B_2020.02.27_20.35.57.csv": 29.16014660371032,
+          "static_B_2020.01.16_10.43.34.csv": 84.56179813036216
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_012_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_012_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_012_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 17,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.7,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 1500,
+        "segment-frames": 15
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 45.01841436763713,
+        "qoe": 45.01841436763713,
+        "qoe_quality": 45.01841436763713,
+        "mean_quality": 0.617703010536864,
+        "stall_s": 1.5097905403472882,
+        "steps_run_mean": 24960.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 24960,
+          "43": 24960,
+          "44": 24960
+        },
+        "qoe_quality_std": 0.5819885543111283,
+        "qoe_quality_per_seed": {
+          "42": 45.648885105075585,
+          "43": 45.16137764901315,
+          "44": 44.24498034882267
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 32.6785695828924,
+          "driving_B_2019.12.16_07.22.43.csv": 34.40206460634783,
+          "driving_B_2020.02.27_20.35.57.csv": 29.716397441248315,
+          "static_B_2020.01.16_10.43.34.csv": 83.27662584005999
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_017_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_017_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_017_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 8,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 5e-05,
+        "target-update": 1500,
+        "segment-frames": 8
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 44.50727002471106,
+        "qoe": 44.50727002471106,
+        "qoe_quality": 44.50727002471106,
+        "mean_quality": 0.5743859359758502,
+        "stall_s": 1.41924770649206,
+        "steps_run_mean": 47424.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 47424,
+          "43": 47424,
+          "44": 47424
+        },
+        "qoe_quality_std": 2.58176334842133,
+        "qoe_quality_per_seed": {
+          "42": 46.34726489234497,
+          "43": 40.85614331050692,
+          "44": 46.3184018712813
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 31.410052929037818,
+          "driving_B_2019.12.16_07.22.43.csv": 37.153295443641724,
+          "driving_B_2020.02.27_20.35.57.csv": 26.201336874205882,
+          "static_B_2020.01.16_10.43.34.csv": 83.26439485195884
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_008_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_008_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_008_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 3,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 5e-05,
+        "target-update": 1500,
+        "segment-frames": 5
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 43.956370114795696,
+        "qoe": 43.956370114795675,
+        "qoe_quality": 43.956370114795675,
+        "mean_quality": 0.573709467592172,
+        "stall_s": 1.4970120225515933,
+        "steps_run_mean": 74880.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 74880,
+          "43": 74880,
+          "44": 74880
+        },
+        "qoe_quality_std": 0.22305623957323564,
+        "qoe_quality_per_seed": {
+          "42": 43.717385403738184,
+          "43": 44.25417640676632,
+          "44": 43.897548533882535
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 28.630261601622845,
+          "driving_B_2019.12.16_07.22.43.csv": 35.89130433686537,
+          "driving_B_2020.02.27_20.35.57.csv": 30.36142908086568,
+          "static_B_2020.01.16_10.43.34.csv": 80.94248543982881
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_003_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_003_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_003_s44\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 7,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.7,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 1500,
+        "segment-frames": 8
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 43.90983428962286,
+        "qoe": 43.90983428962286,
+        "qoe_quality": 43.90983428962286,
+        "mean_quality": 0.5894663366508158,
+        "stall_s": 1.2744770642509755,
+        "steps_run_mean": 47424.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 47424,
+          "43": 47424,
+          "44": 47424
+        },
+        "qoe_quality_std": 2.220848418747182,
+        "qoe_quality_per_seed": {
+          "42": 41.56307513432819,
+          "43": 46.890917562254046,
+          "44": 43.275510172286346
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 30.287658097135193,
+          "driving_B_2019.12.16_07.22.43.csv": 30.776857496665002,
+          "driving_B_2020.02.27_20.35.57.csv": 30.28046714170922,
+          "static_B_2020.01.16_10.43.34.csv": 84.29435442298202
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_007_s42\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_007_s44\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_007_s43\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 4,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 3000,
+        "segment-frames": 5
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 42.72580607154756,
+        "qoe": 42.725806071547545,
+        "qoe_quality": 42.725806071547545,
+        "mean_quality": 0.5649647414880112,
+        "stall_s": 0.8726124824860554,
+        "steps_run_mean": 74880.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 74880,
+          "43": 74880,
+          "44": 74880
+        },
+        "qoe_quality_std": 1.0623665018077812,
+        "qoe_quality_per_seed": {
+          "42": 43.310777508736,
+          "43": 41.234867104177965,
+          "44": 43.63177360172868
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 27.142841975462137,
+          "driving_B_2019.12.16_07.22.43.csv": 31.149056571362703,
+          "driving_B_2020.02.27_20.35.57.csv": 28.830321811629705,
+          "static_B_2020.01.16_10.43.34.csv": 83.78100392773565
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_004_s42\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_004_s44\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_004_s43\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 2,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.7,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 1500,
+        "segment-frames": 5
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 38.2043043585875,
+        "qoe": 38.2043043585875,
+        "qoe_quality": 38.2043043585875,
+        "mean_quality": 0.5028651137684502,
+        "stall_s": 0.617486333053953,
+        "steps_run_mean": 74880.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 74880,
+          "43": 74880,
+          "44": 74880
+        },
+        "qoe_quality_std": 3.8765364247340925,
+        "qoe_quality_per_seed": {
+          "42": 43.44054018558853,
+          "43": 34.17988713432189,
+          "44": 36.99248575585208
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 26.751921286834573,
+          "driving_B_2019.12.16_07.22.43.csv": 28.575592984335042,
+          "driving_B_2020.02.27_20.35.57.csv": 25.43984612070021,
+          "static_B_2020.01.16_10.43.34.csv": 72.04985704248018
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_002_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_002_s43\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\screen\\trial_002_s44\\abr_dqn.pkl"
+      }
+    }
+  ],
+  "confirmed_config_trials": [
+    0,
+    9,
+    11,
+    16
+  ],
+  "ranking": [
+    {
+      "trial": 11,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "target-update": 6000,
+        "segment-frames": 10
+      },
+      "seeds": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "metrics": {
+        "reward": 48.93308169324021,
+        "qoe": 48.93308169324022,
+        "qoe_quality": 48.93308169324022,
+        "mean_quality": 0.616963989775653,
+        "stall_s": 1.0693268305921102,
+        "steps_run_mean": 76000.0,
+        "episodes_run_mean": 2533.3333333333335,
+        "steps_run_per_seed": {
+          "45": 72000,
+          "46": 72000,
+          "47": 60000,
+          "48": 60000,
+          "49": 84000,
+          "50": 72000,
+          "51": 96000,
+          "52": 84000,
+          "53": 84000
+        },
+        "qoe_quality_std": 0.5188836213365957,
+        "qoe_quality_per_seed": {
+          "45": 49.44778060638103,
+          "46": 49.19852411132072,
+          "47": 49.112292551693606,
+          "48": 48.52562035826003,
+          "49": 49.85163191033449,
+          "50": 48.150106512235425,
+          "51": 48.290936247502955,
+          "52": 48.81172088211154,
+          "53": 49.009122059322166
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.39808535045851,
+          "driving_B_2019.12.16_07.22.43.csv": 37.05370271733349,
+          "driving_B_2020.02.27_20.35.57.csv": 36.442155714258256,
+          "static_B_2020.01.16_10.43.34.csv": 86.8383829909106
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s43\\abr_dqn.pkl",
+        "45": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s45\\abr_dqn.pkl",
+        "46": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s46\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s44\\abr_dqn.pkl",
+        "47": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s47\\abr_dqn.pkl",
+        "48": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s48\\abr_dqn.pkl",
+        "50": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s50\\abr_dqn.pkl",
+        "49": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s49\\abr_dqn.pkl",
+        "51": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s51\\abr_dqn.pkl",
+        "52": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s52\\abr_dqn.pkl",
+        "53": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_011_s53\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 16,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "target-update": 6000,
+        "segment-frames": 15
+      },
+      "seeds": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "metrics": {
+        "reward": 47.92941732607872,
+        "qoe": 47.92941732607872,
+        "qoe_quality": 47.92941732607872,
+        "mean_quality": 0.6206652560014876,
+        "stall_s": 1.070840837404056,
+        "steps_run_mean": 57777.77777777778,
+        "episodes_run_mean": 2888.8888888888887,
+        "steps_run_per_seed": {
+          "45": 56000,
+          "46": 48000,
+          "47": 56000,
+          "48": 56000,
+          "49": 56000,
+          "50": 64000,
+          "51": 64000,
+          "52": 56000,
+          "53": 64000
+        },
+        "qoe_quality_std": 0.41498863132267677,
+        "qoe_quality_per_seed": {
+          "45": 48.58734800658057,
+          "46": 48.29546764876937,
+          "47": 47.33164818124511,
+          "48": 48.336013469269744,
+          "49": 48.05521642906443,
+          "50": 47.825956646784576,
+          "51": 47.566661978404746,
+          "52": 47.98412096352435,
+          "53": 47.38232261106561
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.198915225410424,
+          "driving_B_2019.12.16_07.22.43.csv": 36.633051406177565,
+          "driving_B_2020.02.27_20.35.57.csv": 35.98423962578352,
+          "static_B_2020.01.16_10.43.34.csv": 83.90146304694338
+        }
+      },
+      "checkpoints": {
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s43\\abr_dqn.pkl",
+        "45": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s45\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s44\\abr_dqn.pkl",
+        "46": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s46\\abr_dqn.pkl",
+        "47": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s47\\abr_dqn.pkl",
+        "48": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s48\\abr_dqn.pkl",
+        "49": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s49\\abr_dqn.pkl",
+        "50": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s50\\abr_dqn.pkl",
+        "52": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s52\\abr_dqn.pkl",
+        "51": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s51\\abr_dqn.pkl",
+        "53": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_016_s53\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 9,
+      "config": {
+        "batch-size": 128,
+        "eps-decay-frac": 0.5,
+        "hidden": 128,
+        "lr": 0.0003,
+        "target-update": 3000,
+        "segment-frames": 8
+      },
+      "seeds": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "metrics": {
+        "reward": 46.86209071550152,
+        "qoe": 46.86209071550152,
+        "qoe_quality": 46.86209071550152,
+        "mean_quality": 0.5933235859368989,
+        "stall_s": 1.2034325829012356,
+        "steps_run_mean": 74311.11111111111,
+        "episodes_run_mean": 1955.5555555555557,
+        "steps_run_per_seed": {
+          "45": 60800,
+          "46": 60800,
+          "47": 91200,
+          "48": 60800,
+          "49": 76000,
+          "50": 60800,
+          "51": 91200,
+          "52": 76000,
+          "53": 91200
+        },
+        "qoe_quality_std": 1.2891809737987874,
+        "qoe_quality_per_seed": {
+          "45": 45.167811324410366,
+          "46": 46.26761936248924,
+          "47": 49.08732274953016,
+          "48": 45.83467734024741,
+          "49": 46.99183752432232,
+          "50": 45.633777876309495,
+          "51": 46.39902341909706,
+          "52": 47.704325936162675,
+          "53": 48.672420906944986
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 32.34070030490284,
+          "driving_B_2019.12.16_07.22.43.csv": 36.458857532454694,
+          "driving_B_2020.02.27_20.35.57.csv": 32.3679491672124,
+          "static_B_2020.01.16_10.43.34.csv": 86.28085585743617
+        }
+      },
+      "checkpoints": {
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s43\\abr_dqn.pkl",
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s42\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s44\\abr_dqn.pkl",
+        "45": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s45\\abr_dqn.pkl",
+        "46": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s46\\abr_dqn.pkl",
+        "48": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s48\\abr_dqn.pkl",
+        "47": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s47\\abr_dqn.pkl",
+        "50": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s50\\abr_dqn.pkl",
+        "49": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s49\\abr_dqn.pkl",
+        "51": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s51\\abr_dqn.pkl",
+        "52": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s52\\abr_dqn.pkl",
+        "53": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_009_s53\\abr_dqn.pkl"
+      }
+    },
+    {
+      "trial": 0,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.6,
+        "hidden": 128,
+        "lr": 0.0001,
+        "target-update": 3000,
+        "segment-frames": 5
+      },
+      "seeds": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "metrics": {
+        "reward": 44.779813572045356,
+        "qoe": 44.77981357204534,
+        "qoe_quality": 44.77981357204534,
+        "mean_quality": 0.5816518055043478,
+        "stall_s": 1.3447096240048275,
+        "steps_run_mean": 106666.66666666667,
+        "episodes_run_mean": 1777.7777777777778,
+        "steps_run_per_seed": {
+          "45": 96000,
+          "46": 96000,
+          "47": 96000,
+          "48": 96000,
+          "49": 96000,
+          "50": 168000,
+          "51": 96000,
+          "52": 120000,
+          "53": 96000
+        },
+        "qoe_quality_std": 0.7103711983696251,
+        "qoe_quality_per_seed": {
+          "45": 44.15044734479862,
+          "46": 44.682639329686666,
+          "47": 45.902759793317685,
+          "48": 44.74629617793423,
+          "49": 43.800979505377825,
+          "50": 45.431373567594704,
+          "51": 43.849935654458235,
+          "52": 45.563691302086525,
+          "53": 44.8901994731536
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 29.197304704451184,
+          "driving_B_2019.12.16_07.22.43.csv": 35.52776506691819,
+          "driving_B_2020.02.27_20.35.57.csv": 32.703414448189235,
+          "static_B_2020.01.16_10.43.34.csv": 81.69077006862277
+        }
+      },
+      "checkpoints": {
+        "44": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s44\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s43\\abr_dqn.pkl",
+        "45": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s45\\abr_dqn.pkl",
+        "42": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s42\\abr_dqn.pkl",
+        "46": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s46\\abr_dqn.pkl",
+        "49": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s49\\abr_dqn.pkl",
+        "47": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s47\\abr_dqn.pkl",
+        "48": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s48\\abr_dqn.pkl",
+        "51": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s51\\abr_dqn.pkl",
+        "53": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s53\\abr_dqn.pkl",
+        "52": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s52\\abr_dqn.pkl",
+        "50": "logs\\train_runs\\20260720_005851_wide\\sweep\\confirm\\trial_000_s50\\abr_dqn.pkl"
+      }
+    }
+  ],
+  "pareto_front_trials": [
+    11,
+    16
+  ],
+  "winner": {
+    "trial": 11,
+    "config": {
+      "batch-size": 64,
+      "eps-decay-frac": 0.5,
+      "hidden": 256,
+      "lr": 0.0003,
+      "target-update": 6000,
+      "segment-frames": 10
+    },
+    "seed": 53,
+    "seed_role": "closest_to_validation_mean",
+    "seeds": [
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+    ],
+    "checkpoint_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+    ],
+    "metrics": {
+      "reward": 48.93308169324021,
+      "qoe": 48.93308169324022,
+      "qoe_quality": 48.93308169324022,
+      "mean_quality": 0.616963989775653,
+      "stall_s": 1.0693268305921102,
+      "steps_run_mean": 76000.0,
+      "episodes_run_mean": 2533.3333333333335,
+      "steps_run_per_seed": {
+        "45": 72000,
+        "46": 72000,
+        "47": 60000,
+        "48": 60000,
+        "49": 84000,
+        "50": 72000,
+        "51": 96000,
+        "52": 84000,
+        "53": 84000
+      },
+      "qoe_quality_std": 0.5188836213365957,
+      "qoe_quality_per_seed": {
+        "45": 49.44778060638103,
+        "46": 49.19852411132072,
+        "47": 49.112292551693606,
+        "48": 48.52562035826003,
+        "49": 49.85163191033449,
+        "50": 48.150106512235425,
+        "51": 48.290936247502955,
+        "52": 48.81172088211154,
+        "53": 49.009122059322166
+      },
+      "qoe_quality_per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": 35.39808535045851,
+        "driving_B_2019.12.16_07.22.43.csv": 37.05370271733349,
+        "driving_B_2020.02.27_20.35.57.csv": 36.442155714258256,
+        "static_B_2020.01.16_10.43.34.csv": 86.8383829909106
+      }
+    },
+    "checkpoint": "models\\abr_dqn_qoe_v4_request_pacing.pkl"
+  }
+}

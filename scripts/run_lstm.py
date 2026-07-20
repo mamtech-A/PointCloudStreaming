@@ -1,0 +1,58 @@
+import os
+import sys
+
+# Project root on sys.path so `from src.network_model import ...` resolves.
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Make emoji-rich status prints safe under non-UTF-8 consoles (e.g. cp1256 on redirect).
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
+from src.network_model import Server, EdgeNodeLSTM, User, Topology, Simulator, DEFAULT_TCP_PARAMS
+from src.network_model.trace import BandwidthTrace
+
+# Default paths: real G-PCC coded manifest + an UNSEEN test-split 5G trace.
+mpd_path = os.path.join(project_root, "manifests", "mpd_gpcc_longdress.xml")
+bandwidth_log_path = os.path.join(project_root, "bandwidth_5g",
+                                  "static_B_2020.01.16_10.43.34.csv")
+lstm_model_path = os.path.join(project_root, "models", "bandwidth_lstm.pkl")
+
+# TCP / buffer defaults (RTT is dataset-derived — see DEFAULT_TCP_PARAMS)
+tcp_params = dict(DEFAULT_TCP_PARAMS)
+
+# DASH-style segments: frames fetched per request (1 = legacy per-frame).
+# Matches the round-3 sweep winner S=8 (S=5..8 are statistically tied;
+# see DQN_REPORT §10.8). Override freely — the policy generalizes across S.
+segment_frames = 8
+
+target_fps = 30.0  # 300 frames @ 30 fps = 10 s clip; each frame = 1/30 s of playback
+buffer_capacity_s = 5.0
+min_buffer_s = 1.0
+
+# Build the topology: Server -> EdgeNode (LSTM-driven ABR) -> one User.
+# EdgeNodeLSTM is a back-compat factory returning an EdgeNode whose policy is LSTMABR.
+server = Server(base_url="http://localhost/")
+topo = Topology(server)
+edge = EdgeNodeLSTM(server, tcp_params=tcp_params, lstm_model_path=lstm_model_path,
+                    use_prediction=True, edge_id="edge-1")
+topo.add_edge(edge)
+
+user = User("User", target_fps=target_fps, buffer_capacity_s=buffer_capacity_s,
+            min_buffer_s=min_buffer_s)
+topo.add_user(user, edge, trace=BandwidthTrace.from_file(bandwidth_log_path))
+
+sim = Simulator(topo)
+
+print("=" * 100)
+print("🤖 LSTM-rule ABR — bandwidth prediction drives tier selection (rule, not learned)")
+print(f"   LSTM   : {os.path.basename(lstm_model_path)}")
+print(f"   Content: longdress · 300 frames @30fps · 6-tier G-PCC ladder")
+print(f"   Network: {os.path.basename(bandwidth_log_path)} (unseen test) · "
+      f"{segment_frames}-frame segments")
+print("=" * 100)
+
+sim.run(mpd_path=mpd_path, run_label="lstm", segment_frames=segment_frames)
