@@ -19,6 +19,7 @@ from src.high_tier_audit import (
 )
 from src.network_model.finite_trace import FiniteTraceWindow
 from src.network_model.trace import BandwidthTrace
+from src.provenance import sha256_file
 from src.rl.env import StreamingEnv
 
 
@@ -162,11 +163,7 @@ def test_checked_in_full_audit_matches_the_frozen_registry():
     assert report["summary"]["failed_case_count"] == 0
     assert report["summary"]["minimum_successful_headroom_s"] >= 5.0
     for relative_path, expected_hash in report["input_hashes"]["implementation"].items():
-        digest = hashlib.sha256()
-        with open(os.path.join(ROOT, relative_path), "rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        assert digest.hexdigest() == expected_hash
+        assert sha256_file(os.path.join(ROOT, relative_path)) == expected_hash
     for window in report["windows"]:
         assert window["case_count"] == 48
         assert len(window["cases"]) == 48

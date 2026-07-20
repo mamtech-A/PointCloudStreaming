@@ -17,6 +17,7 @@ if PROJECT_ROOT not in sys.path:
 from src.experiment_protocol import load_protocol, protocol_digest
 from src.high_tier_audit import SUPPORTED as HIGH_SUPPORTED
 from src.high_tier_audit import UNSUPPORTED as HIGH_UNSUPPORTED
+from src.provenance import sha256_file
 from src.trace_registry import load_trace_registry
 from src.trace_audit import select_evenly_spaced_windows
 
@@ -26,14 +27,6 @@ WINDOW_FIELDS = (
     "block_start_time_s", "block_end_time_s", "block_local_start_time_s",
     "source_sample_index", "start_time_s", "duration_s",
 )
-
-
-def sha256_file(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def compact_window(window):

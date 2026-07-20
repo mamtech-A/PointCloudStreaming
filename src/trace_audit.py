@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import bisect
 import csv
-import hashlib
 import os
 import random
 from collections import defaultdict
@@ -24,6 +23,7 @@ from datetime import datetime, timezone
 import numpy as np
 
 from .experiment_protocol import evenly_spaced_offsets, protocol_digest
+from .provenance import sha256_file
 from .network_model import DEFAULT_TCP_PARAMS
 from .network_model.manifest import canonical_tier_name
 from .network_model.manifest import coded_size_bytes
@@ -143,14 +143,6 @@ def select_evenly_spaced_windows(windows, count):
             window.get("source_sample_index", window.get("sample_offset", -1)),
         ),
     )
-
-
-def sha256_file(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _kept_trace_rows(csv_path, state_filter="D"):

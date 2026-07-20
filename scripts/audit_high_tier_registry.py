@@ -302,6 +302,9 @@ def main():
             },
             "implementation": {
                 "scripts/audit_high_tier_registry.py": sha256_file(__file__),
+                "src/provenance.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "provenance.py")
+                ),
                 "src/high_tier_audit.py": sha256_file(
                     os.path.join(PROJECT_ROOT, "src", "high_tier_audit.py")
                 ),

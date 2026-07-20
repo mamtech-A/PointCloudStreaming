@@ -11,16 +11,9 @@ from collections import defaultdict
 from .experiment_protocol import protocol_digest
 from .network_model.finite_trace import FiniteTraceWindow, measured_end_time_s
 from .network_model.trace import BandwidthTrace
+from .provenance import sha256_file
 from .trace_audit import slice_trace_at_time
 from .trace_gaps import split_trace_at_gaps
-
-
-def sha256_file(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 class TraceWindowRegistry:

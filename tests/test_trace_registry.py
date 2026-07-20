@@ -23,6 +23,7 @@ from src.network_model.finite_trace import (
     TraceWindowExhausted,
 )
 from src.network_model.trace import BandwidthTrace
+from src.provenance import sha256_file
 from src.rl.env import StreamingEnv
 from src.trace_registry import load_trace_registry
 
@@ -59,6 +60,15 @@ def _frames(count):
             _rep(1, "vlow", 100),
         ],
     } for index in range(count)]
+
+
+def test_provenance_hash_ignores_checkout_line_endings(tmp_path):
+    lf_path = tmp_path / "lf.json"
+    crlf_path = tmp_path / "crlf.json"
+    logical_lines = [b'{"registry": 1}', b'{"window": 2}', b""]
+    lf_path.write_bytes(b"\n".join(logical_lines))
+    crlf_path.write_bytes(b"\r\n".join(logical_lines))
+    assert sha256_file(lf_path) == sha256_file(crlf_path)
 
 
 def test_checked_in_registry_has_expected_frozen_counts():

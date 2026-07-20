@@ -260,6 +260,7 @@ def main():
             path: sha256_file(_absolute(path))
             for path in (
                 os.path.join("scripts", "audit_trace_windows.py"),
+                os.path.join("src", "provenance.py"),
                 os.path.join("src", "trace_audit.py"),
                 os.path.join("src", "trace_gaps.py"),
                 os.path.join("src", "network_model", "trace.py"),

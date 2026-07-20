@@ -141,6 +141,9 @@ def main():
             },
             "implementation": {
                 "scripts/audit_trace_gaps.py": sha256_file(__file__),
+                "src/provenance.py": sha256_file(
+                    os.path.join(PROJECT_ROOT, "src", "provenance.py")
+                ),
                 "src/trace_gaps.py": sha256_file(
                     os.path.join(PROJECT_ROOT, "src", "trace_gaps.py")
                 ),
