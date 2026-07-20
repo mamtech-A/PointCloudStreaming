@@ -1,32 +1,33 @@
 {
   "schema_version": 3,
   "audit_type": "read_only_trace_window_feasibility",
-  "generated_at_utc": "2026-07-19T23:12:01.033988+00:00",
-  "source_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
+  "generated_at_utc": "2026-07-20T00:20:06.466239+00:00",
+  "source_commit": "b268de13dbcb78000395b43a04f852f3d9592503",
   "source_tracked_files_dirty": false,
   "input_hashes": {
     "protocol": {
-      "configs\\experiment_protocol.json": "1149e7807d7ace3fa962c2a353f734c3003c86ea245eb0b6dd994792c5db6a98"
+      "configs\\experiment_protocol.json": "f4243f6ca92bb5c4a05918c7884b2121a876e6e575aa5b693e77655a26c2e113"
     },
     "manifests": {
-      "manifests\\mpd_gpcc_longdress.xml": "a961073f3ba39197fbe0a3a45c8ba2bd442df86a1464f80d006479a7aeb523fd",
-      "manifests\\mpd_gpcc_loot.xml": "bce2f2287193e6822d1119be6235aadc7c4057b2864e82230e5887c1f7b92b25",
-      "manifests\\mpd_gpcc_redandblack.xml": "cc97a091ed1505b3937dcc58a693a6deb78a4c5ddd81a16ad49c821899299fa1",
-      "manifests\\mpd_gpcc_soldier.xml": "8ed4847f90c2450ccc5d53e9b4ff707d403024469e4321935b37cfcc4422916d"
+      "manifests\\mpd_gpcc_longdress.xml": "72912ace306517730a2f49779934f1291a19ffefe1787c2e8506422272d8769f",
+      "manifests\\mpd_gpcc_loot.xml": "28f3c1ec3931000fbedd1e5720ef12fbb8f9660faa0d15a890932fc81fc233b1",
+      "manifests\\mpd_gpcc_redandblack.xml": "58c68c76a9bd398161f01e515a3d536a8455983b5b22e927bbf27b0ae9280e22",
+      "manifests\\mpd_gpcc_soldier.xml": "1e3be8915a08fbf1be87b38dbb8c626196f5da7565bfe3c80ab45a80bba356ae"
     },
     "audit_implementation": {
-      "scripts\\audit_trace_windows.py": "e5fb8b3a1e2eefb0ea29ab90ffe1121162f224a7885f1e7d5e7052ae57a95ae8",
-      "src\\trace_audit.py": "09c343f823f69f1ce3cfad4c84c8a4a706a2e8324b0090b7c8f426354b1b101a",
+      "scripts\\audit_trace_windows.py": "c799d956cdbde1911c6e79f45019731cde897db678fab7ba1c04aa93bfdcac58",
+      "src\\provenance.py": "7c9dae9c60cdabe8d2686c3358e24b3391d3dd362c5fa1bfacb10da554560df4",
+      "src\\trace_audit.py": "4d5424fab227d34b6b7d085ed57262911b85fefda521846698074cc8fbd86dd3",
       "src\\trace_gaps.py": "c12c65643e597e3245357377b2fb7ed686196faae3c2942f4e58591caf9553c2",
-      "src\\network_model\\trace.py": "fafb193643814f7e55f4ed3f26cc26c698524a587506def8c5e570d88e961de3",
-      "src\\network_model\\buffer.py": "5be532c58aebc0b7b1c8d62c3da2b06a20246d205189f4da2f8d42fbb050e7aa",
+      "src\\network_model\\trace.py": "782cc0b5ebe2ee3356ff6f2d95ce20d3e676b413b55ab7269886fdab16a985fd",
+      "src\\network_model\\buffer.py": "10150fb8cdaf83abc971f1401927534691e5a2cb5df7cc6aabfc428212acb71e",
       "src\\network_model\\finite_trace.py": "27c24ac345e170f8311ec96421343e647e0be01762b50f21ded257489ddb7541",
-      "src\\network_model\\links.py": "61a2f5028db748b70c4eb81035f2acb47d58393db73fd4cb8a1a380857ece7ea",
-      "src\\network_model\\tcp_protocol.py": "33155c41d6b88129ba48fa7a294fbe1c7ea6fc215262d99b6f7d648d6f32bd4a",
-      "src\\network_model\\session.py": "2eb78a151bd045d9c971ad4d20f8bfb919c51d08845a3e4dbecaf4364b76db58",
-      "src\\network_model\\manifest.py": "bbf29bb4c3bb890c4dc970104a8bb801a72bf97356f999177e93b49e3d87b226",
-      "src\\rl\\env.py": "5cbe8c9cefc38a6af7cf58c2db0cbbe3235bd4ab86da769ba6097894bfaef8e0",
-      "src\\rl\\reward.py": "a5e544a2421ef69e68a4b1242a304646658c5097c5d1cabdc4ac32bfd97c2e95"
+      "src\\network_model\\links.py": "253181c0837d5cadd7cb96a6fbbb73f914a820634593c28871191dea1cd3902c",
+      "src\\network_model\\tcp_protocol.py": "a902df2c37a6b04c3350cd7395295b9889d87a41e319bba940a25a4216880eb7",
+      "src\\network_model\\session.py": "e9fc64bd1ad6f404dd933ae396dc5eace3bd4153ae5275a01fd29d34ee29fde5",
+      "src\\network_model\\manifest.py": "234558e368da148eb93b6e03390e6c129d3c3ea81d8d871782e9246f05e8e35b",
+      "src\\rl\\env.py": "653947eb76663a046d5f113619d09ec95e6a11178f40737b15be2b31f4d5fa85",
+      "src\\rl\\reward.py": "39773d67a6c6bfe36395d2e2732dde1995ac6b4d50b6dbb81f003766e7885599"
     }
   },
   "protocol_digest": "4071599372abeb61",
@@ -476894,7 +476895,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.16_12.27.05",
       "last_timestamp": "2019.12.16_12.49.33",
-      "sha256": "1edc01b5f22cc1949bf8b590ec108960ef780b185d0221fd655c3e6a8bd7f9f7",
+      "sha256": "61d906306f7b5a938574c1a9a955ea79d2b88383afc1ac35ea44b88d58eb810e",
       "raw_timestamp_span_s": 1348.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -477160,7 +477161,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.17_07.32.39",
       "last_timestamp": "2019.12.17_08.16.22",
-      "sha256": "a21e9ebed5c43f249160186ac9b7bc2049db357ae8cd4f6e25658580264534ac",
+      "sha256": "d1896617274b5b85fc9112cd9bbf50cdbdc44f11b49835bc604ffa61bb211904",
       "raw_timestamp_span_s": 2623.0,
       "excluded_gap_duration_s": 39.0
     },
@@ -477304,7 +477305,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.01.16_07.26.44",
       "last_timestamp": "2020.01.16_08.01.32",
-      "sha256": "6eeafd624b94a3ed581f0986570ee519ad626844469e38e73ce0dcf7a70f7093",
+      "sha256": "e79d742a0581bb083df92ef6ddae5d4b40220e3e86d35eba85caccd81e9ad9c7",
       "raw_timestamp_span_s": 2088.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -477467,7 +477468,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.01.16_09.56.56",
       "last_timestamp": "2020.01.16_10.27.20",
-      "sha256": "77433caa5b5ccc3337452975dbeaba441913f0631ddfa543b2132e2fd4d0b1e1",
+      "sha256": "fe3a73cf7a5949b2e67f289751464c67d549022d47096d6380cf691473d754c0",
       "raw_timestamp_span_s": 1824.0,
       "excluded_gap_duration_s": 8.0
     },
@@ -477551,7 +477552,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.01.16_12.10.03",
       "last_timestamp": "2020.01.16_12.16.24",
-      "sha256": "364bfd48a7985edcedb9582034ec6d0bd330c174ceec0dfa0438cb96c4ad1c10",
+      "sha256": "1d1c0f160374c3d68e12f12b0f636134e2c802060f4f53b715ad23f8e382cb20",
       "raw_timestamp_span_s": 381.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -477900,7 +477901,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.13_13.03.24",
       "last_timestamp": "2020.02.13_13.47.50",
-      "sha256": "852b0c73e50c1bb8dcaf7623e721ef0070ca984559531e305882433d4507846e",
+      "sha256": "4ece2d21ba4b0a34832339172df9cc817ec2a0f9a04fb488e1179e2d1207841e",
       "raw_timestamp_span_s": 2666.0,
       "excluded_gap_duration_s": 87.0
     },
@@ -478113,7 +478114,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.13_15.02.05",
       "last_timestamp": "2020.02.13_16.04.55",
-      "sha256": "be391b960dbcc39282cb98de6b0e2a6351c578c2d4ec6c0381994695a2b3da07",
+      "sha256": "561813d59fee03b62d702d664c67b9d0eca7f0ae8d9f0db88892d87eb3e064fa",
       "raw_timestamp_span_s": 3770.0,
       "excluded_gap_duration_s": 627.0
     },
@@ -478245,7 +478246,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.14_09.38.28",
       "last_timestamp": "2020.02.14_10.07.00",
-      "sha256": "12ced0a7aa51c36302333b91c154ab5c3bd3fda086cfc84e10648c282fa6c2a0",
+      "sha256": "21da11f79c4c12ccd6f7a25a49d01097ef715e466fcdc79ca5fcfe975e7a130f",
       "raw_timestamp_span_s": 1712.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -478411,7 +478412,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.14_12.58.17",
       "last_timestamp": "2020.02.14_13.14.51",
-      "sha256": "8f5013e5a422dab2659a1e720df4a478e286afe8b199f70e67e3a806741e5b8c",
+      "sha256": "0f0caf69739d2dd25988d256769be38db1e8d143a8525c292d41a4bcfd7eda91",
       "raw_timestamp_span_s": 994.0,
       "excluded_gap_duration_s": 25.0
     },
@@ -478571,7 +478572,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.27_17.30.15",
       "last_timestamp": "2020.02.27_17.45.00",
-      "sha256": "38e1eeae47cd72c2cda8e11fa91afe78aa5bd9938603b20cd9fb10a8d9c4f59d",
+      "sha256": "c964e5d81894f7eb97d3bbf84fa3b3e15442f9bb7bb1cd0bc9fc4ee7d65c6888",
       "raw_timestamp_span_s": 885.0,
       "excluded_gap_duration_s": 14.0
     },
@@ -478871,7 +478872,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.16_13.40.04",
       "last_timestamp": "2019.12.16_14.18.05",
-      "sha256": "97aaceb32eddb53144470712187f1df76a81ec68e090d2c18a13d1e7e0c67bf0",
+      "sha256": "3d41c10752fd6585dfd0ba8298bbcb252473a7b6ef7c40e5f770cf48761c0c91",
       "raw_timestamp_span_s": 2281.0,
       "excluded_gap_duration_s": 42.0
     },
@@ -478979,7 +478980,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.14_13.21.26",
       "last_timestamp": "2020.02.14_13.39.47",
-      "sha256": "982cafc0b483c9a9ff4c9144631a4a95be29e3c77f69628834165cddb97693f2",
+      "sha256": "c8c4c2a51b5dfbf1b8ebe242df84a28e25a699673b69d6574f4b9afbffe564d5",
       "raw_timestamp_span_s": 1101.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -479298,7 +479299,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.27_18.39.27",
       "last_timestamp": "2020.02.27_20.30.20",
-      "sha256": "b25e1f3118c28e3ac66903df6185b46ee4d158605a6c1cd6835d1ba70af16a03",
+      "sha256": "d3278a5788408c52970adfeb791d90506d93cfac520e0ca57441cdd3236e9825",
       "raw_timestamp_span_s": 6653.0,
       "excluded_gap_duration_s": 11.0
     },
@@ -479474,7 +479475,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.14_10.16.30",
       "last_timestamp": "2019.12.14_10.35.52",
-      "sha256": "8377236fa3289385c88c03e03270b1669ceab97596d85cdc7848593cefe9797d",
+      "sha256": "7a3397b2e0694f9e058a04f1d692a88f1effbe39f77c7825073c7336144f6a9a",
       "raw_timestamp_span_s": 1162.0,
       "excluded_gap_duration_s": 13.0
     },
@@ -479700,7 +479701,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.16_07.22.43",
       "last_timestamp": "2019.12.16_08.05.59",
-      "sha256": "9bcceb2c0ee9b93530980f3432bd344c8467534e31167196d7268f9b8e6ea335",
+      "sha256": "2f0a032109a0ef80548043a91c0c9e69ad50e0d4dff67c94b9b562d63f3e57fa",
       "raw_timestamp_span_s": 2596.0,
       "excluded_gap_duration_s": 30.0
     },
@@ -479835,7 +479836,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.27_20.35.57",
       "last_timestamp": "2020.02.27_20.50.05",
-      "sha256": "54a708e81bad4f166870aafa30876b42a7fcb582d4af058dff75d7b876674b7c",
+      "sha256": "b04973323c5ec41af4561c594d4de091d14bc3fe35a55b1d6159e1b01182d582",
       "raw_timestamp_span_s": 848.0,
       "excluded_gap_duration_s": 9.0
     },
@@ -480064,7 +480065,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.01.16_10.43.39",
       "last_timestamp": "2020.01.16_11.44.53",
-      "sha256": "ac0cc0eac033b7ffa8f3cecf58327a5f19da8328cd76e85485be60603eb2ec60",
+      "sha256": "7bdbe21a04b1d6bae58b19ccff50be126e11748ad8525e1d0fff42e1f831c0a6",
       "raw_timestamp_span_s": 3674.0,
       "excluded_gap_duration_s": 8.0
     },
@@ -480160,7 +480161,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.16_11.49.59",
       "last_timestamp": "2019.12.16_11.56.31",
-      "sha256": "12873a8a1ee2bbdc2185deba2eaca7e829d4c02bf93aa01838e16344df924057",
+      "sha256": "091c375996d9095c1b815fb2395f67a70442be3b8a3039274043eb26b2d7f6a5",
       "raw_timestamp_span_s": 392.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -480444,7 +480445,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2019.12.16_14.23.32",
       "last_timestamp": "2019.12.16_15.12.39",
-      "sha256": "e501cdcd53ca343d8472add595bc3158f939fdccfb06f0014010b6952cdf0756",
+      "sha256": "cc5efe3cb1ba51a10a3a24c371a931cbd26b9516567fcb8218be540e2fc631f5",
       "raw_timestamp_span_s": 2947.0,
       "excluded_gap_duration_s": 43.0
     },
@@ -480606,7 +480607,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.14_07.29.00",
       "last_timestamp": "2020.02.14_08.06.50",
-      "sha256": "c7893d178427f8c63ee2052bb8854258a0279c517a9f4a2dc922abcc3e7ec4ff",
+      "sha256": "465d8b186b1481155dd1b02d9f7bd7b9e0d03b360f8590f4a71904e9ef1f8d42",
       "raw_timestamp_span_s": 2270.0,
       "excluded_gap_duration_s": 0.0
     },
@@ -480802,7 +480803,7 @@
       "final_sample_width_policy": "no capacity inferred after final timestamp",
       "first_timestamp": "2020.02.13_13.57.29",
       "last_timestamp": "2020.02.13_14.55.46",
-      "sha256": "21937d7cc8822bd71b1c5fa8e4ebbd7bc2a539c0cc6155279654ade8e0716def",
+      "sha256": "3004dcee393a10f840d5554bd123de5432d635e9d2bcc53d7f1ce7ffb87d596d",
       "raw_timestamp_span_s": 3497.0,
       "excluded_gap_duration_s": 0.0
     }

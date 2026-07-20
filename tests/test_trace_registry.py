@@ -71,9 +71,40 @@ def test_provenance_hash_ignores_checkout_line_endings(tmp_path):
     assert sha256_file(lf_path) == sha256_file(crlf_path)
 
 
+def test_registry_loads_from_mixed_line_ending_checkout(tmp_path):
+    """Reproduce cross-PC Git checkout conversion across the full hash chain."""
+    checkout = tmp_path / "checkout"
+
+    def copy_text(relative_path, newline):
+        source = os.path.join(ROOT, relative_path)
+        target = checkout / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(source, "rb") as handle:
+            logical = handle.read().replace(b"\r\n", b"\n").replace(
+                b"\r", b"\n"
+            )
+        target.write_bytes(logical.replace(b"\n", newline))
+
+    copy_text("configs/trace_window_registry.json", b"\r\n")
+    copy_text("reports/trace_window_audit.json", b"\r\n")
+    copy_text("reports/high_tier_candidate_audit.json", b"\r\n")
+    for filename in os.listdir(TRACE_DIR):
+        if filename.lower().endswith(".csv"):
+            copy_text(f"bandwidth_5g/{filename}", b"\n")
+
+    protocol = load_protocol(PROTOCOL_PATH, str(checkout / "bandwidth_5g"))
+    registry = load_trace_registry(
+        str(checkout / "configs" / "trace_window_registry.json"),
+        protocol,
+        str(checkout / "bandwidth_5g"),
+        verify_hashes=True,
+    )
+    assert registry.registry_id == "8297ac83fa031471"
+
+
 def test_checked_in_registry_has_expected_frozen_counts():
     protocol, registry = _registry()
-    assert registry.registry_id == "223c00899f3e86f8"
+    assert registry.registry_id == "8297ac83fa031471"
     assert registry.data["registry_type"] == "gap_split_finite_high_supported_windows"
     assert registry.settings()["minimum_maximum_tier_headroom_s"] == 5.0
     assert len(registry.windows("train")) == 413

@@ -13,7 +13,7 @@ This read-only audit covers the frozen production registry and does not modify t
 
 ## Summary
 
-- Registry: `223c00899f3e86f8`.
+- Registry: `8297ac83fa031471`.
 - Windows: 437 total; 437 High-supported; 0 unsupported.
 - Cases: 20976 total; 0 require unobserved capacity.
 - Minimum successful headroom: 5.118 s.

@@ -1,33 +1,34 @@
 {
   "schema_version": 1,
   "audit_type": "read_only_static_high_frozen_registry_headroom",
-  "generated_at_utc": "2026-07-19T23:41:05.023563+00:00",
-  "source_commit": "a7e253f62f74d7cfa420d14ecba49e7362190093",
+  "generated_at_utc": "2026-07-20T00:46:27.893431+00:00",
+  "source_commit": "b268de13dbcb78000395b43a04f852f3d9592503",
   "protocol": "configs/experiment_protocol.json",
   "protocol_digest": "4071599372abeb61",
   "trace_registry": "configs/trace_window_registry.json",
-  "trace_registry_id": "223c00899f3e86f8",
+  "trace_registry_id": "8297ac83fa031471",
   "input_hashes": {
-    "protocol": "1149e7807d7ace3fa962c2a353f734c3003c86ea245eb0b6dd994792c5db6a98",
-    "registry": "4a461094aba36153034d7f3823bdbcf8c56833083bd91eb5f5b5f90c8e6cc208",
+    "protocol": "f4243f6ca92bb5c4a05918c7884b2121a876e6e575aa5b693e77655a26c2e113",
+    "registry": "d4090e404d12b0f6d926fec1427228fb8841c9d4b73871ba3c2d6937057543a9",
     "manifests": {
-      "manifests/mpd_gpcc_longdress.xml": "a961073f3ba39197fbe0a3a45c8ba2bd442df86a1464f80d006479a7aeb523fd",
-      "manifests/mpd_gpcc_loot.xml": "bce2f2287193e6822d1119be6235aadc7c4057b2864e82230e5887c1f7b92b25",
-      "manifests/mpd_gpcc_redandblack.xml": "cc97a091ed1505b3937dcc58a693a6deb78a4c5ddd81a16ad49c821899299fa1",
-      "manifests/mpd_gpcc_soldier.xml": "8ed4847f90c2450ccc5d53e9b4ff707d403024469e4321935b37cfcc4422916d"
+      "manifests/mpd_gpcc_longdress.xml": "72912ace306517730a2f49779934f1291a19ffefe1787c2e8506422272d8769f",
+      "manifests/mpd_gpcc_loot.xml": "28f3c1ec3931000fbedd1e5720ef12fbb8f9660faa0d15a890932fc81fc233b1",
+      "manifests/mpd_gpcc_redandblack.xml": "58c68c76a9bd398161f01e515a3d536a8455983b5b22e927bbf27b0ae9280e22",
+      "manifests/mpd_gpcc_soldier.xml": "1e3be8915a08fbf1be87b38dbb8c626196f5da7565bfe3c80ab45a80bba356ae"
     },
     "implementation": {
-      "scripts/audit_high_tier_registry.py": "741cb031d013b163d01177b518524bb379bac592c94a38caf15316dcd5f61678",
+      "scripts/audit_high_tier_registry.py": "c758eb1522ef7ac7521680ca6e25c37ad797a4a748dd8517c8bae490538ede8e",
+      "src/provenance.py": "7c9dae9c60cdabe8d2686c3358e24b3391d3dd362c5fa1bfacb10da554560df4",
       "src/high_tier_audit.py": "bf650cd1b987f21ee8cbfe0985b2e7d517a165d6e26c11caa0f1a3104b45e694",
-      "src/network_model/buffer.py": "5be532c58aebc0b7b1c8d62c3da2b06a20246d205189f4da2f8d42fbb050e7aa",
+      "src/network_model/buffer.py": "10150fb8cdaf83abc971f1401927534691e5a2cb5df7cc6aabfc428212acb71e",
       "src/network_model/finite_trace.py": "27c24ac345e170f8311ec96421343e647e0be01762b50f21ded257489ddb7541",
-      "src/network_model/links.py": "61a2f5028db748b70c4eb81035f2acb47d58393db73fd4cb8a1a380857ece7ea",
-      "src/network_model/manifest.py": "bbf29bb4c3bb890c4dc970104a8bb801a72bf97356f999177e93b49e3d87b226",
-      "src/network_model/session.py": "2eb78a151bd045d9c971ad4d20f8bfb919c51d08845a3e4dbecaf4364b76db58",
-      "src/network_model/tcp_protocol.py": "33155c41d6b88129ba48fa7a294fbe1c7ea6fc215262d99b6f7d648d6f32bd4a",
-      "src/rl/env.py": "5cbe8c9cefc38a6af7cf58c2db0cbbe3235bd4ab86da769ba6097894bfaef8e0",
-      "src/rl/reward.py": "a5e544a2421ef69e68a4b1242a304646658c5097c5d1cabdc4ac32bfd97c2e95",
-      "src/trace_registry.py": "b70012e5966f8d6f80b0b768a1d0a9edbf20cc4b59192c460e74846e589400e2"
+      "src/network_model/links.py": "253181c0837d5cadd7cb96a6fbbb73f914a820634593c28871191dea1cd3902c",
+      "src/network_model/manifest.py": "234558e368da148eb93b6e03390e6c129d3c3ea81d8d871782e9246f05e8e35b",
+      "src/network_model/session.py": "e9fc64bd1ad6f404dd933ae396dc5eace3bd4153ae5275a01fd29d34ee29fde5",
+      "src/network_model/tcp_protocol.py": "a902df2c37a6b04c3350cd7395295b9889d87a41e319bba940a25a4216880eb7",
+      "src/rl/env.py": "653947eb76663a046d5f113619d09ec95e6a11178f40737b15be2b31f4d5fa85",
+      "src/rl/reward.py": "39773d67a6c6bfe36395d2e2732dde1995ac6b4d50b6dbb81f003766e7885599",
+      "src/trace_registry.py": "717fcfab566eabba92c91e6deeb7dc6b007fb18dfc359531fb87300523078aeb"
     }
   },
   "settings": {
@@ -321505,5 +321506,5 @@
       ]
     }
   ],
-  "audit_id": "786e482ed1ffd588"
+  "audit_id": "fef92c53d649de16"
 }
