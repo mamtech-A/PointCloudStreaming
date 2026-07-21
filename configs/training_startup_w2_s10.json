@@ -1,0 +1,90 @@
+{
+  "_comment": "Controlled startup-delay sensitivity experiment. It reuses the exact registered train/validation/test trace split, frozen trace windows, S=10 LSTM, and winning DQN hyperparameters from qoe_v4_request_pacing. Only startup_weight changes from 1.0 to 2.0. The fixed test split was previously inspected and is retained by author decision; it is not described as untouched.",
+  "protocol": "configs/experiment_protocol.json",
+  "trace_registry": "configs/trace_window_registry.json",
+
+  "artifacts": {
+    "tag": "qoe_v4_startup_w2_s10",
+    "lstm_model_template": "models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+    "dqn_model": "models/abr_dqn_qoe_v4_startup_w2_s10.pkl",
+    "sweep_results": "models/dqn_sweep_results_qoe_v4_startup_w2_s10.json",
+    "baseline_config": "models/baseline_config_qoe_v4_startup_w2_s10.json",
+    "final_results": "models/final_test_results_qoe_v4_startup_w2_s10.json",
+    "training_summary": "models/TRAINING_SUMMARY_qoe_v4_startup_w2_s10.md"
+  },
+
+  "lstm": {
+    "signal": "achieved",
+    "data_dir_template": "data/lstm_achieved_request_pacing_s{segment_frames}",
+    "segment_frames": [10],
+    "gen_args": {
+      "offsets": 8,
+      "protocol": "configs/experiment_protocol.json"
+    },
+    "transforms": ["log1p"],
+    "tune": false,
+    "fixed_hyperparameters": {
+      "hidden": 128,
+      "layers": 2,
+      "dropout": 0.1,
+      "lr": 0.0005
+    },
+    "sequence_length": 8,
+    "epochs": 50,
+    "select_metric": "low_bw_mae",
+    "_selection_note": "The previously trained S=10 predictor is reused. Reward weights do not change its inputs, targets, segment cadence, protocol, or split. Invoke the pipeline with --skip-stages gen,lstm."
+  },
+
+  "dqn_sweep": {
+    "mode": "grid",
+    "screen_seeds": [42, 43, 44],
+    "confirm_seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "confirmation_selection_seeds": [45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "confirm_top_k": 1,
+    "screen_overrides": {
+      "epochs": 3,
+      "early-stop-patience": 0
+    },
+    "base_args": {
+      "protocol": "configs/experiment_protocol.json",
+      "trace-registry": "configs/trace_window_registry.json",
+      "epochs": 8,
+      "coverage-stride": 60,
+      "eval-every": 400,
+      "early-stop-patience": 3,
+      "gamma": 1.0,
+      "torch-threads": 2,
+      "mu": 4.3,
+      "lam": 1.0,
+      "select-by": "qoe_quality",
+      "eval-seeds": "42,43,44",
+      "eval-offsets": 3,
+      "eval-sequences": "longdress,loot,redandblack,soldier",
+      "reward-spec": {
+        "rebuffer_weight": 2.0,
+        "startup_weight": 2.0
+      }
+    },
+    "axes": {
+      "segment-frames": [10],
+      "lr": [0.0003],
+      "hidden": [256],
+      "batch-size": [64],
+      "target-update": [6000],
+      "eps-decay-frac": [0.5]
+    },
+    "_selection_note": "This is not a new hyperparameter search. It retrains the previously selected S=10 configuration under startup_weight=2.0. Seeds 45-53 remain the checkpoint-selection seeds; seeds 42-44 are retained for paired final aggregation."
+  },
+
+  "baselines": {
+    "families": "fixed,buffer,mpc",
+    "_selection_note": "All baselines are retuned on the unchanged validation split under the same startup_weight=2.0 objective."
+  },
+
+  "final_eval": {
+    "split": "test",
+    "max_frames": 0,
+    "strategies": "dqn,fixed,buffer,mpc",
+    "_note": "After the weight-2 method is frozen on validation, evaluate it on the exact same previously inspected fixed test traces and windows used by qoe_v4_request_pacing."
+  }
+}

@@ -73,6 +73,10 @@ def main():
     parser.add_argument("--lstm", default="")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--experiment-config-digest", default="")
+    parser.add_argument(
+        "--reward-spec", default="",
+        help="JSON reward overrides shared with the frozen DQN objective",
+    )
     parser.add_argument("--max-frames", type=int, default=0)
     parser.add_argument("--offsets", type=int, default=0)
     parser.add_argument("--eval-seeds", default="")
@@ -116,6 +120,8 @@ def main():
     )
 
     reward_spec = dict(DEFAULT_REWARD_SPEC)
+    if args.reward_spec:
+        reward_spec.update(json.loads(args.reward_spec))
     env = StreamingEnv(
         pool, lstm_predictor=None,
         tcp_params={**DEFAULT_TCP_PARAMS, "log_packets": False},

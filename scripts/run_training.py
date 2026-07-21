@@ -159,14 +159,21 @@ def validate_search_config(cfg):
         raise ValueError(
             f"LSTM/DQN segment search mismatch: {lstm_segments} != {dqn_segments}"
         )
-    if lstm_segments != [5, 8, 10, 15]:
-        raise ValueError("the requested segment search must be exactly [5, 8, 10, 15]")
+    if (
+        not lstm_segments
+        or any(value <= 0 for value in lstm_segments)
+        or len(set(lstm_segments)) != len(lstm_segments)
+    ):
+        raise ValueError("segment_frames must contain unique positive integers")
     base = cfg["dqn_sweep"].get("base_args", {})
     if float(base.get("gamma", 1.0)) != 1.0:
         raise ValueError("gamma must be 1 so optimized return equals reported QoE")
     if cfg.get("final_eval", {}).get("split", "test") != "test":
         raise ValueError("the full final evaluation must use the registered test split")
-    if cfg["dqn_sweep"].get("stratify_by") != "segment-frames":
+    if (
+        cfg["dqn_sweep"].get("mode") == "stratified_random"
+        and cfg["dqn_sweep"].get("stratify_by") != "segment-frames"
+    ):
         raise ValueError("the wide search must be stratified by segment-frames")
     return lstm_segments
 
@@ -226,6 +233,15 @@ def main():
     )
     runner = Runner(run_dir)
     artifacts = artifact_set(cfg, run_dir, args.smoke)
+    if args.smoke and "lstm" in skip:
+        configured_template = cfg.get("artifacts", {}).get(
+            "lstm_model_template",
+            "models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+        )
+        artifacts["lstm_model_template"] = (
+            configured_template if os.path.isabs(configured_template)
+            else os.path.join(project_root, configured_template)
+        )
     lstm_cfg = cfg["lstm"]
     protocol_rel = cfg.get("protocol", os.path.join("configs", "experiment_protocol.json"))
     registry_rel = cfg.get(
@@ -362,6 +378,15 @@ def main():
             "artifact tag/run directory"
         )
     winner_config = sweep["winner"]["config"]
+    winner_reward_override = dict(
+        sweep.get("base_args", {}).get("reward-spec", {})
+    )
+    winner_reward_override.update(winner_config.get("reward-spec", {}))
+    for key in ("mu", "lam"):
+        if key in sweep.get("base_args", {}):
+            winner_reward_override[key] = sweep["base_args"][key]
+        if key in winner_config:
+            winner_reward_override[key] = winner_config[key]
     winner_segment = int(
         winner_config.get(
             "segment-frames", sweep.get("base_args", {}).get("segment-frames", -1)
@@ -410,6 +435,11 @@ def main():
             "--out", artifacts["baseline_config"],
             "--experiment-config-digest", config_digest,
         )
+        if winner_reward_override:
+            command += [
+                "--reward-spec",
+                json.dumps(winner_reward_override, sort_keys=True),
+            ]
         if args.smoke:
             command += [
                 "--quick", "--max-frames", 40, "--offsets", 1,

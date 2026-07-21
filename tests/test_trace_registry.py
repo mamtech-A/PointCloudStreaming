@@ -1,6 +1,7 @@
 """Production guards for frozen gap-split training/evaluation windows."""
 
 import json
+import hashlib
 import os
 import random
 import sys
@@ -71,8 +72,8 @@ def test_provenance_hash_ignores_checkout_line_endings(tmp_path):
     assert sha256_file(lf_path) == sha256_file(crlf_path)
 
 
-def test_registry_loads_from_mixed_line_ending_checkout(tmp_path):
-    """Reproduce cross-PC Git checkout conversion across the full hash chain."""
+def test_registry_loads_without_raw_audits_from_mixed_line_ending_checkout(tmp_path):
+    """A clean cross-PC clone needs only the signed registry and raw traces."""
     checkout = tmp_path / "checkout"
 
     def copy_text(relative_path, newline):
@@ -86,8 +87,6 @@ def test_registry_loads_from_mixed_line_ending_checkout(tmp_path):
         target.write_bytes(logical.replace(b"\n", newline))
 
     copy_text("configs/trace_window_registry.json", b"\r\n")
-    copy_text("reports/trace_window_audit.json", b"\r\n")
-    copy_text("reports/high_tier_candidate_audit.json", b"\r\n")
     for filename in os.listdir(TRACE_DIR):
         if filename.lower().endswith(".csv"):
             copy_text(f"bandwidth_5g/{filename}", b"\n")
@@ -133,11 +132,20 @@ def test_training_epoch_samples_every_parent_equally():
     assert all(window["id"] in eligible_ids for _path, window in episodes)
 
 
-def test_all_candidate_registry_is_audit_only():
+def test_all_candidate_registry_is_audit_only(tmp_path):
     protocol = load_protocol(PROTOCOL_PATH, TRACE_DIR)
-    candidate_path = os.path.join(
-        ROOT, "reports", "trace_window_registry_all_candidates.json"
-    )
+    with open(REGISTRY_PATH, encoding="utf-8") as handle:
+        payload = json.load(handle)
+    payload["registry_type"] = "candidate_high_tier_audit_windows"
+    unsigned = dict(payload)
+    unsigned.pop("registry_id", None)
+    canonical = json.dumps(unsigned, sort_keys=True, separators=(",", ":"))
+    payload["registry_id"] = hashlib.sha256(
+        canonical.encode("utf-8")
+    ).hexdigest()[:16]
+    candidate_path = tmp_path / "configs" / "candidate_registry.json"
+    candidate_path.parent.mkdir(parents=True)
+    candidate_path.write_text(json.dumps(payload), encoding="utf-8")
     try:
         load_trace_registry(
             candidate_path, protocol, TRACE_DIR, verify_hashes=True
@@ -147,11 +155,11 @@ def test_all_candidate_registry_is_audit_only():
     else:
         raise AssertionError("candidate registry was accepted for experiments")
     candidate = load_trace_registry(
-        candidate_path, protocol, TRACE_DIR, verify_hashes=True,
+        str(candidate_path), protocol, TRACE_DIR, verify_hashes=True,
         allow_candidate_registry=True,
     )
     assert sum(len(candidate.windows(split)) for split in
-               ("train", "validation", "test")) == 759
+               ("train", "validation", "test")) == 437
 
 
 def test_registry_materializes_finite_block_local_windows():

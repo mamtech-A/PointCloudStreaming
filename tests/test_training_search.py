@@ -89,6 +89,36 @@ def test_lstm_and_dqn_search_use_the_same_requested_segment_values():
     assert search["confirmation_selection_seeds"] == list(range(45, 54))
 
 
+def test_startup_weight_experiment_changes_only_the_intended_training_choices():
+    original = load(os.path.join("configs", "training.json"))
+    experiment = load(os.path.join("configs", "training_startup_w2_s10.json"))
+
+    assert run_training.validate_search_config(experiment) == [10]
+    assert experiment["protocol"] == original["protocol"]
+    assert experiment["trace_registry"] == original["trace_registry"]
+    assert experiment["lstm"]["segment_frames"] == [10]
+    assert experiment["artifacts"]["lstm_model_template"] == (
+        original["artifacts"]["lstm_model_template"]
+    )
+
+    search = experiment["dqn_sweep"]
+    assert sweep.expand_trials(search) == [{
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "segment-frames": 10,
+        "target-update": 6000,
+    }]
+    assert search["base_args"]["reward-spec"] == {
+        "rebuffer_weight": 2.0,
+        "startup_weight": 2.0,
+    }
+    assert search["confirmation_selection_seeds"] == list(range(45, 54))
+    for key in ("split", "max_frames", "strategies"):
+        assert experiment["final_eval"][key] == original["final_eval"][key]
+
+
 def test_lstm_windows_are_deterministic_and_time_spread():
     rows = [
         {"id": f"w{index}", "start_time_s": float(index * 10),

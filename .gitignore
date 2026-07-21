@@ -27,3 +27,7 @@ reports/high_tier_candidate_audit.json
 
 # Linked worktree directories (git-managed, never commit)
 .worktrees/
+
+# Transient Microsoft Word lock/recovery files.
+~$*.docx
+~WRL*.tmp
