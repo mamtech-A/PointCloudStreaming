@@ -119,6 +119,62 @@ def test_startup_weight_experiment_changes_only_the_intended_training_choices():
         assert experiment["final_eval"][key] == original["final_eval"][key]
 
 
+def test_compact_validation_history_preserves_figure_metrics(tmp_path):
+    path = tmp_path / "history.json"
+    path.write_text(json.dumps({
+        "episode_reward": [1.0, 2.0],
+        "validation": [{
+            "episode": 400,
+            "reward": 42.0,
+            "qoe": 42.0,
+            "qoe_quality": 42.0,
+            "mean_quality": 0.6,
+            "stall_s": 1.2,
+            "rebuffer_events": 0.5,
+            "quality_change": 1.1,
+            "startup_s": 2.3,
+            "request_pacing_s": 0.1,
+            "per_trace": {"large": "intentionally omitted"},
+        }],
+    }), encoding="utf-8")
+
+    compact = sweep.compact_validation_history({"history": str(path)})
+    assert compact == [{
+        "episode": 400,
+        "reward": 42.0,
+        "qoe": 42.0,
+        "qoe_quality": 42.0,
+        "mean_quality": 0.6,
+        "stall_s": 1.2,
+        "rebuffer_events": 0.5,
+        "quality_change": 1.1,
+        "startup_s": 2.3,
+        "request_pacing_s": 0.1,
+    }]
+
+
+def test_weight_15_experiment_reuses_the_weight_2_s10_design():
+    weight_15 = load(os.path.join("configs", "training_startup_w15_s10.json"))
+    weight_2 = load(os.path.join("configs", "training_startup_w2_s10.json"))
+
+    assert run_training.validate_search_config(weight_15) == [10]
+    assert weight_15["protocol"] == weight_2["protocol"]
+    assert weight_15["trace_registry"] == weight_2["trace_registry"]
+    for key, value in weight_2["lstm"].items():
+        if not key.startswith("_"):
+            assert weight_15["lstm"][key] == value
+    assert weight_15["dqn_sweep"]["axes"] == weight_2["dqn_sweep"]["axes"]
+    assert weight_15["dqn_sweep"]["confirm_seeds"] == (
+        weight_2["dqn_sweep"]["confirm_seeds"]
+    )
+    assert weight_15["dqn_sweep"]["base_args"]["reward-spec"] == {
+        "rebuffer_weight": 2.0,
+        "startup_weight": 1.5,
+    }
+    for key in ("split", "max_frames", "strategies"):
+        assert weight_15["final_eval"][key] == weight_2["final_eval"][key]
+
+
 def test_lstm_windows_are_deterministic_and_time_spread():
     rows = [
         {"id": f"w{index}", "start_time_s": float(index * 10),

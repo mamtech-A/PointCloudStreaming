@@ -117,6 +117,38 @@ def trial_provenance(argv, config_digest, code_digest):
     }
 
 
+def compact_validation_history(summary):
+    """Load the small validation curve needed for convergence figures.
+
+    Raw trial logs and episode-level CSVs stay under the ignored run directory.
+    The returned records are deliberately limited to the validation metrics
+    used by the paper's convergence plot.
+    """
+    path = summary.get('history')
+    if not path or not os.path.isfile(path):
+        raise FileNotFoundError(
+            f"winner validation history is missing: {path!r}"
+        )
+    with open(path, encoding='utf-8') as handle:
+        history = json.load(handle)
+    rows = history.get('validation')
+    if not isinstance(rows, list) or not rows:
+        raise ValueError(f"winner validation history is empty: {path}")
+    keys = (
+        'episode', 'reward', 'qoe', 'qoe_quality', 'mean_quality', 'stall_s',
+        'rebuffer_events', 'quality_change', 'startup_s', 'request_pacing_s',
+    )
+    compact = []
+    for row in rows:
+        missing = [key for key in keys if key not in row]
+        if missing:
+            raise ValueError(
+                f"winner validation history lacks {missing}: {path}"
+            )
+        compact.append({key: row[key] for key in keys})
+    return compact
+
+
 def expand_trials(cfg, smoke=False):
     axes = cfg.get('axes', {})
     names = sorted(axes)
@@ -190,14 +222,17 @@ def aggregate_trials(combos, results, indices, select_by, metric_seeds=None):
         if not per_seed:
             continue
         bests = [s['best'] or s['final'] for s in per_seed.values()]
+        metrics = (
+            'reward', 'qoe', 'qoe_quality', 'mean_quality', 'stall_s',
+            'rebuffer_events', 'quality_change', 'startup_s', 'request_pacing_s',
+        )
         for best in bests:
-            for metric in ('reward', 'qoe', 'qoe_quality', 'mean_quality', 'stall_s'):
+            for metric in metrics:
                 if not math.isfinite(float(best[metric])):
                     raise ValueError(
                         f"non-finite {metric} in trial {idx}: {best[metric]}"
                     )
-        agg = {k: sum(b[k] for b in bests) / len(bests)
-               for k in ('reward', 'qoe', 'qoe_quality', 'mean_quality', 'stall_s')}
+        agg = {k: sum(b[k] for b in bests) / len(bests) for k in metrics}
         steps = [int(summary.get('steps_run', 0)) for summary in per_seed.values()]
         episodes = [int(summary.get('episodes_run', 0)) for summary in per_seed.values()]
         agg['steps_run_mean'] = sum(steps) / len(steps)
@@ -483,6 +518,13 @@ def main():
         shutil.copyfile(best_src,
                         os.path.join(project_root, args.out.replace('.pkl', '_best.pkl')))
 
+    winner_validation_history = {
+        str(seed): compact_validation_history(
+            final_results[winner['trial']][seed]
+        )
+        for seed in sorted(final_results[winner['trial']])
+    }
+
     payload = {
         'objective_version': final_results[winner['trial']][representative_seed].get(
             'objective_version'),
@@ -512,6 +554,7 @@ def main():
                    'seeds': winner['seeds'],
                    'checkpoint_seeds': sorted(final_results[winner['trial']]),
                    'metrics': winner['metrics'],
+                   'validation_history_per_seed': winner_validation_history,
                    'checkpoint': os.path.relpath(
                        os.path.abspath(args.out), project_root)},
     }

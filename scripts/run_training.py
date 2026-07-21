@@ -533,6 +533,10 @@ def main():
         f"- winner config: `{json.dumps(winner_config, sort_keys=True)}`",
         f"- validation {select_by}: {winner_metrics[select_by]:.3f} +/- "
         f"{winner_metrics.get(f'{select_by}_std', 0.0):.3f}",
+        f"- validation behavior: quality={winner_metrics['mean_quality']:.3f}, "
+        f"stall={winner_metrics['stall_s']:.3f} s, "
+        f"startup={winner_metrics.get('startup_s', float('nan')):.3f} s, "
+        f"rebuffer events={winner_metrics.get('rebuffer_events', float('nan')):.3f}",
         f"- mean training steps per confirmed seed: "
         f"{winner_metrics.get('steps_run_mean', 0):.0f}",
         "", "## Frozen evaluation", "",
@@ -560,6 +564,8 @@ def main():
     lines += [
         "", "## Evidence", "",
         f"- DQN sweep: `{relative(artifacts['sweep_results'])}`",
+        "- winner convergence: embedded in the DQN sweep artifact under "
+        "`winner.validation_history_per_seed`",
         f"- baseline tuning: `{relative(artifacts['baseline_config'])}`",
         f"- stage/trial logs: `{relative(run_dir)}`", "",
     ]
