@@ -1,0 +1,1180 @@
+{
+  "objective_version": "five_term_equal_reward_qoe_v4_request_pacing",
+  "protocol_digest": "4071599372abeb61",
+  "trace_registry_id": "8297ac83fa031471",
+  "experiment_config_digest": "6775697dada8a106",
+  "training_code_digest": "722e7184f26b97b8",
+  "select_by": "qoe_quality",
+  "selection_split": "validation",
+  "search_mode": "grid",
+  "seeds": [
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "screen_seeds": [
+    42,
+    43,
+    44
+  ],
+  "confirm_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "confirmation_selection_seeds": [
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "base_args": {
+    "protocol": "configs/experiment_protocol.json",
+    "trace-registry": "configs/trace_window_registry.json",
+    "epochs": 8,
+    "coverage-stride": 60,
+    "eval-every": 400,
+    "early-stop-patience": 3,
+    "gamma": 1.0,
+    "torch-threads": 2,
+    "mu": 4.3,
+    "lam": 1.0,
+    "select-by": "qoe_quality",
+    "eval-seeds": "42,43,44",
+    "eval-offsets": 3,
+    "eval-sequences": "longdress,loot,redandblack,soldier",
+    "reward-spec": {
+      "rebuffer_weight": 2.0,
+      "startup_weight": 1.5
+    }
+  },
+  "screening_base_args": {
+    "protocol": "configs/experiment_protocol.json",
+    "trace-registry": "configs/trace_window_registry.json",
+    "epochs": 3,
+    "coverage-stride": 60,
+    "eval-every": 400,
+    "early-stop-patience": 0,
+    "gamma": 1.0,
+    "torch-threads": 2,
+    "mu": 4.3,
+    "lam": 1.0,
+    "select-by": "qoe_quality",
+    "eval-seeds": "42,43,44",
+    "eval-offsets": 3,
+    "eval-sequences": "longdress,loot,redandblack,soldier",
+    "reward-spec": {
+      "rebuffer_weight": 2.0,
+      "startup_weight": 1.5
+    }
+  },
+  "lstm_template": "C:\\Users\\Nima\\PointCloudStreaming\\models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+  "sweep_dir": "logs\\train_runs\\20260721_222523_wide\\sweep",
+  "n_configs": 1,
+  "screening_ranking": [
+    {
+      "trial": 0,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "segment-frames": 10,
+        "target-update": 6000
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "metrics": {
+        "reward": 46.388324323563126,
+        "qoe": 46.38832432356313,
+        "qoe_quality": 46.38832432356313,
+        "mean_quality": 0.5991812041786231,
+        "stall_s": 1.035595976919166,
+        "rebuffer_events": 0.5023148148148148,
+        "quality_change": 1.321499101179646,
+        "startup_s": 4.5004031084916605,
+        "request_pacing_s": 0.10068053479983789,
+        "steps_run_mean": 37440.0,
+        "episodes_run_mean": 1248.0,
+        "steps_run_per_seed": {
+          "42": 37440,
+          "43": 37440,
+          "44": 37440
+        },
+        "qoe_quality_std": 0.19796341457714892,
+        "qoe_quality_per_seed": {
+          "42": 46.622635475780655,
+          "43": 46.13847367133457,
+          "44": 46.40386382357417
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 35.99852274508468,
+          "driving_B_2019.12.16_07.22.43.csv": 36.32702694366683,
+          "driving_B_2020.02.27_20.35.57.csv": 28.380502614872395,
+          "static_B_2020.01.16_10.43.34.csv": 84.84724499062861
+        }
+      },
+      "checkpoints": {
+        "44": "logs\\train_runs\\20260721_222523_wide\\sweep\\screen\\trial_000_s44\\abr_dqn.pkl",
+        "42": "logs\\train_runs\\20260721_222523_wide\\sweep\\screen\\trial_000_s42\\abr_dqn.pkl",
+        "43": "logs\\train_runs\\20260721_222523_wide\\sweep\\screen\\trial_000_s43\\abr_dqn.pkl"
+      }
+    }
+  ],
+  "confirmed_config_trials": [
+    0
+  ],
+  "ranking": [
+    {
+      "trial": 0,
+      "config": {
+        "batch-size": 64,
+        "eps-decay-frac": 0.5,
+        "hidden": 256,
+        "lr": 0.0003,
+        "segment-frames": 10,
+        "target-update": 6000
+      },
+      "seeds": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "metrics": {
+        "reward": 45.53440022699588,
+        "qoe": 45.534400226995885,
+        "qoe_quality": 45.534400226995885,
+        "mean_quality": 0.5941581411874766,
+        "stall_s": 1.077399575342074,
+        "rebuffer_events": 0.5046296296296297,
+        "quality_change": 1.4015131719582619,
+        "startup_s": 4.55854885770888,
+        "request_pacing_s": 0.1004728920104648,
+        "steps_run_mean": 68000.0,
+        "episodes_run_mean": 2266.6666666666665,
+        "steps_run_per_seed": {
+          "45": 84000,
+          "46": 72000,
+          "47": 72000,
+          "48": 60000,
+          "49": 48000,
+          "50": 72000,
+          "51": 60000,
+          "52": 84000,
+          "53": 60000
+        },
+        "qoe_quality_std": 0.2869064532311776,
+        "qoe_quality_per_seed": {
+          "45": 45.53632422307496,
+          "46": 46.06248535734028,
+          "47": 45.44323924608541,
+          "48": 45.68997965047769,
+          "49": 45.11835655660049,
+          "50": 45.441484656116366,
+          "51": 45.10972720314184,
+          "52": 45.77415312363877,
+          "53": 45.63385202648716
+        },
+        "qoe_quality_per_trace": {
+          "driving_B_2019.12.14_10.16.30.csv": 34.83973323134263,
+          "driving_B_2019.12.16_07.22.43.csv": 35.58176965152489,
+          "driving_B_2020.02.27_20.35.57.csv": 27.239377528025873,
+          "static_B_2020.01.16_10.43.34.csv": 84.47672049709016
+        }
+      },
+      "checkpoints": {
+        "43": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s43\\abr_dqn.pkl",
+        "42": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s42\\abr_dqn.pkl",
+        "45": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s45\\abr_dqn.pkl",
+        "44": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s44\\abr_dqn.pkl",
+        "46": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s46\\abr_dqn.pkl",
+        "47": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s47\\abr_dqn.pkl",
+        "49": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s49\\abr_dqn.pkl",
+        "48": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s48\\abr_dqn.pkl",
+        "50": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s50\\abr_dqn.pkl",
+        "51": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s51\\abr_dqn.pkl",
+        "53": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s53\\abr_dqn.pkl",
+        "52": "logs\\train_runs\\20260721_222523_wide\\sweep\\confirm\\trial_000_s52\\abr_dqn.pkl"
+      }
+    }
+  ],
+  "pareto_front_trials": [
+    0
+  ],
+  "winner": {
+    "trial": 0,
+    "config": {
+      "batch-size": 64,
+      "eps-decay-frac": 0.5,
+      "hidden": 256,
+      "lr": 0.0003,
+      "segment-frames": 10,
+      "target-update": 6000
+    },
+    "seed": 45,
+    "seed_role": "closest_to_validation_mean",
+    "seeds": [
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+    ],
+    "checkpoint_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+    ],
+    "metrics": {
+      "reward": 45.53440022699588,
+      "qoe": 45.534400226995885,
+      "qoe_quality": 45.534400226995885,
+      "mean_quality": 0.5941581411874766,
+      "stall_s": 1.077399575342074,
+      "rebuffer_events": 0.5046296296296297,
+      "quality_change": 1.4015131719582619,
+      "startup_s": 4.55854885770888,
+      "request_pacing_s": 0.1004728920104648,
+      "steps_run_mean": 68000.0,
+      "episodes_run_mean": 2266.6666666666665,
+      "steps_run_per_seed": {
+        "45": 84000,
+        "46": 72000,
+        "47": 72000,
+        "48": 60000,
+        "49": 48000,
+        "50": 72000,
+        "51": 60000,
+        "52": 84000,
+        "53": 60000
+      },
+      "qoe_quality_std": 0.2869064532311776,
+      "qoe_quality_per_seed": {
+        "45": 45.53632422307496,
+        "46": 46.06248535734028,
+        "47": 45.44323924608541,
+        "48": 45.68997965047769,
+        "49": 45.11835655660049,
+        "50": 45.441484656116366,
+        "51": 45.10972720314184,
+        "52": 45.77415312363877,
+        "53": 45.63385202648716
+      },
+      "qoe_quality_per_trace": {
+        "driving_B_2019.12.14_10.16.30.csv": 34.83973323134263,
+        "driving_B_2019.12.16_07.22.43.csv": 35.58176965152489,
+        "driving_B_2020.02.27_20.35.57.csv": 27.239377528025873,
+        "static_B_2020.01.16_10.43.34.csv": 84.47672049709016
+      }
+    },
+    "validation_history_per_seed": {
+      "42": [
+        {
+          "episode": 400,
+          "reward": 42.69568729344288,
+          "qoe": 42.69568729344289,
+          "qoe_quality": 42.69568729344289,
+          "mean_quality": 0.6329360612583909,
+          "stall_s": 2.378973051179715,
+          "rebuffer_events": 1.2569444444444444,
+          "quality_change": 0.9656266367520112,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09678362348602931
+        },
+        {
+          "episode": 800,
+          "reward": 44.05461093285103,
+          "qoe": 44.054610932851034,
+          "qoe_quality": 44.054610932851034,
+          "mean_quality": 0.5924924816150122,
+          "stall_s": 1.377060401951216,
+          "rebuffer_events": 0.638888888888889,
+          "quality_change": 1.1066805357996565,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.1017851359426884
+        },
+        {
+          "episode": 1200,
+          "reward": 45.148680656234504,
+          "qoe": 45.14868065623451,
+          "qoe_quality": 45.14868065623451,
+          "mean_quality": 0.6033482279650149,
+          "stall_s": 1.3354153282521124,
+          "rebuffer_events": 0.5972222222222222,
+          "quality_change": 1.36059259765592,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09265975455449658
+        },
+        {
+          "episode": 1600,
+          "reward": 42.788162303133944,
+          "qoe": 42.78816230313396,
+          "qoe_quality": 42.78816230313396,
+          "mean_quality": 0.5632028581488071,
+          "stall_s": 1.0175870094723294,
+          "rebuffer_events": 0.4791666666666667,
+          "quality_change": 1.3093468509998742,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10652364949551549
+        },
+        {
+          "episode": 2000,
+          "reward": 39.70312576316893,
+          "qoe": 39.70312576316894,
+          "qoe_quality": 39.70312576316894,
+          "mean_quality": 0.55738024122119,
+          "stall_s": 0.9915096828119666,
+          "rebuffer_events": 0.611111111111111,
+          "quality_change": 3.4092973684340144,
+          "startup_s": 4.7599247548015775,
+          "request_pacing_s": 0.1406046025683622
+        },
+        {
+          "episode": 2400,
+          "reward": 40.581163512618815,
+          "qoe": 40.58116351261883,
+          "qoe_quality": 40.58116351261883,
+          "mean_quality": 0.5504883586753461,
+          "stall_s": 0.9384415152283281,
+          "rebuffer_events": 0.3958333333333333,
+          "quality_change": 2.70479644640227,
+          "startup_s": 4.623940484243354,
+          "request_pacing_s": 0.11220149034422233
+        }
+      ],
+      "43": [
+        {
+          "episode": 400,
+          "reward": 45.533406687542424,
+          "qoe": 45.533406687542424,
+          "qoe_quality": 45.533406687542424,
+          "mean_quality": 0.6045734744578339,
+          "stall_s": 1.3405758758904287,
+          "rebuffer_events": 0.6041666666666666,
+          "quality_change": 1.0623119718962735,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.1057769378112287
+        },
+        {
+          "episode": 800,
+          "reward": 45.87059933300314,
+          "qoe": 45.87059933300314,
+          "qoe_quality": 45.87059933300314,
+          "mean_quality": 0.6143249844597644,
+          "stall_s": 1.3768847511044835,
+          "rebuffer_events": 0.6805555555555556,
+          "quality_change": 1.3913643854303683,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.0929939982011822
+        },
+        {
+          "episode": 1200,
+          "reward": 44.09302395129642,
+          "qoe": 44.09302395129644,
+          "qoe_quality": 44.09302395129644,
+          "mean_quality": 0.5810551878061332,
+          "stall_s": 1.1810885299765383,
+          "rebuffer_events": 0.5277777777777778,
+          "quality_change": 1.4028380563833327,
+          "startup_s": 4.31694702565258,
+          "request_pacing_s": 0.09843340468852044
+        },
+        {
+          "episode": 1600,
+          "reward": 39.302924187507784,
+          "qoe": 39.30292418750779,
+          "qoe_quality": 39.30292418750779,
+          "mean_quality": 0.5040134412660779,
+          "stall_s": 0.7326641689744724,
+          "rebuffer_events": 0.2569444444444444,
+          "quality_change": 1.220691022819287,
+          "startup_s": 4.1422560672010675,
+          "request_pacing_s": 0.23759753597521474
+        },
+        {
+          "episode": 2000,
+          "reward": 45.6160955482952,
+          "qoe": 45.616095548295206,
+          "qoe_quality": 45.616095548295206,
+          "mean_quality": 0.5930090534978091,
+          "stall_s": 0.9473889751135753,
+          "rebuffer_events": 0.4583333333333333,
+          "quality_change": 1.805551355148129,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.0942001453803005
+        }
+      ],
+      "44": [
+        {
+          "episode": 400,
+          "reward": 44.008731218472946,
+          "qoe": 44.00873121847296,
+          "qoe_quality": 44.00873121847296,
+          "mean_quality": 0.6083175748749976,
+          "stall_s": 1.723549861924196,
+          "rebuffer_events": 0.7291666666666666,
+          "quality_change": 1.0646093427369017,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10658274695961856
+        },
+        {
+          "episode": 800,
+          "reward": 43.155875273137596,
+          "qoe": 43.15587527313761,
+          "qoe_quality": 43.15587527313761,
+          "mean_quality": 0.5851342191868139,
+          "stall_s": 1.448233823234981,
+          "rebuffer_events": 0.5763888888888888,
+          "quality_change": 1.0885442411730466,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.11060653488908465
+        },
+        {
+          "episode": 1200,
+          "reward": 45.64830796012741,
+          "qoe": 45.648307960127426,
+          "qoe_quality": 45.648307960127426,
+          "mean_quality": 0.5948577125721304,
+          "stall_s": 1.0385978119412274,
+          "rebuffer_events": 0.5138888888888888,
+          "quality_change": 1.4548957412780363,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09316375647874457
+        },
+        {
+          "episode": 1600,
+          "reward": 40.81366471919503,
+          "qoe": 40.81366471919503,
+          "qoe_quality": 40.81366471919503,
+          "mean_quality": 0.5218644597883858,
+          "stall_s": 0.6031165658645328,
+          "rebuffer_events": 0.20833333333333334,
+          "quality_change": 1.9664311392327658,
+          "startup_s": 4.264188147017742,
+          "request_pacing_s": 0.24371009201926366
+        },
+        {
+          "episode": 2000,
+          "reward": 45.66928816519592,
+          "qoe": 45.66928816519594,
+          "qoe_quality": 45.66928816519594,
+          "mean_quality": 0.5890180915263202,
+          "stall_s": 0.7871786718969489,
+          "rebuffer_events": 0.40972222222222215,
+          "quality_change": 1.9667267942058924,
+          "startup_s": 4.707654306419252,
+          "request_pacing_s": 0.09353169536708962
+        },
+        {
+          "episode": 2400,
+          "reward": 40.88829096579137,
+          "qoe": 40.88829096579137,
+          "qoe_quality": 40.88829096579137,
+          "mean_quality": 0.5364778484128192,
+          "stall_s": 0.6285587119578367,
+          "rebuffer_events": 0.2638888888888889,
+          "quality_change": 2.864002747253736,
+          "startup_s": 4.443273926026889,
+          "request_pacing_s": 0.10428117394855542
+        },
+        {
+          "episode": 2800,
+          "reward": 43.17184143252907,
+          "qoe": 43.171841432529085,
+          "qoe_quality": 43.171841432529085,
+          "mean_quality": 0.5925160517155968,
+          "stall_s": 1.0508489245337367,
+          "rebuffer_events": 0.5138888888888888,
+          "quality_change": 3.16653380951737,
+          "startup_s": 4.9112011841602605,
+          "request_pacing_s": 0.11020992668832348
+        },
+        {
+          "episode": 3200,
+          "reward": 41.98006226725768,
+          "qoe": 41.98006226725769,
+          "qoe_quality": 41.98006226725769,
+          "mean_quality": 0.5918766550344325,
+          "stall_s": 1.3877259905879251,
+          "rebuffer_events": 0.8055555555555556,
+          "quality_change": 2.4934043762061404,
+          "startup_s": 4.757243992893486,
+          "request_pacing_s": 0.10574967395592445
+        }
+      ],
+      "45": [
+        {
+          "episode": 400,
+          "reward": 41.79246782146806,
+          "qoe": 41.792467821468065,
+          "qoe_quality": 41.792467821468065,
+          "mean_quality": 0.6441495894344875,
+          "stall_s": 2.750771060061993,
+          "rebuffer_events": 1.4305555555555556,
+          "quality_change": 1.0442452659204802,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09532702712278615
+        },
+        {
+          "episode": 800,
+          "reward": 44.16489573464799,
+          "qoe": 44.164895734648,
+          "qoe_quality": 44.164895734648,
+          "mean_quality": 0.6104457590484401,
+          "stall_s": 1.6418148547626443,
+          "rebuffer_events": 0.763888888888889,
+          "quality_change": 1.4032793302563347,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10008341213231699
+        },
+        {
+          "episode": 1200,
+          "reward": 44.11079867914522,
+          "qoe": 44.110798679145226,
+          "qoe_quality": 44.110798679145226,
+          "mean_quality": 0.5887274335753421,
+          "stall_s": 1.2356121208478434,
+          "rebuffer_events": 0.625,
+          "quality_change": 1.3099933720607306,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.11608767448015883
+        },
+        {
+          "episode": 1600,
+          "reward": 45.53632422307496,
+          "qoe": 45.53632422307496,
+          "qoe_quality": 45.53632422307496,
+          "mean_quality": 0.5701280745287008,
+          "stall_s": 0.5610270694899185,
+          "rebuffer_events": 0.2569444444444444,
+          "quality_change": 1.7764075958321484,
+          "startup_s": 4.515846897511609,
+          "request_pacing_s": 0.08959703487005376
+        },
+        {
+          "episode": 2000,
+          "reward": 44.93217030466563,
+          "qoe": 44.93217030466565,
+          "qoe_quality": 44.93217030466565,
+          "mean_quality": 0.5868102140074741,
+          "stall_s": 0.9558236593871079,
+          "rebuffer_events": 0.4444444444444444,
+          "quality_change": 1.8537697238481432,
+          "startup_s": 4.597433831986784,
+          "request_pacing_s": 0.09251048422172323
+        },
+        {
+          "episode": 2400,
+          "reward": 40.97939400324029,
+          "qoe": 40.979394003240294,
+          "qoe_quality": 40.979394003240294,
+          "mean_quality": 0.6182443675418677,
+          "stall_s": 1.5902727527597842,
+          "rebuffer_events": 1.1458333333333333,
+          "quality_change": 3.509851639120279,
+          "startup_s": 5.470234405528301,
+          "request_pacing_s": 0.14901755303378034
+        },
+        {
+          "episode": 2800,
+          "reward": 38.9805093866459,
+          "qoe": 38.9805093866459,
+          "qoe_quality": 38.9805093866459,
+          "mean_quality": 0.5918620707991602,
+          "stall_s": 1.2014232664051714,
+          "rebuffer_events": 0.8611111111111112,
+          "quality_change": 4.88640193438654,
+          "startup_s": 5.6206356607460775,
+          "request_pacing_s": 0.10340156585096741
+        }
+      ],
+      "46": [
+        {
+          "episode": 400,
+          "reward": 43.21071401733309,
+          "qoe": 43.21071401733309,
+          "qoe_quality": 43.21071401733309,
+          "mean_quality": 0.6388243949877592,
+          "stall_s": 2.3739229477839285,
+          "rebuffer_events": 1.2708333333333333,
+          "quality_change": 1.0333709526227468,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09532432327785376
+        },
+        {
+          "episode": 800,
+          "reward": 45.10286635240016,
+          "qoe": 45.10286635240017,
+          "qoe_quality": 45.10286635240017,
+          "mean_quality": 0.6018694516319503,
+          "stall_s": 1.3105234368395393,
+          "rebuffer_events": 0.6666666666666667,
+          "quality_change": 1.2266755123689745,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09440170655920184
+        },
+        {
+          "episode": 1200,
+          "reward": 46.06248535734027,
+          "qoe": 46.06248535734028,
+          "qoe_quality": 46.06248535734028,
+          "mean_quality": 0.5976907347885547,
+          "stall_s": 1.0475429985182636,
+          "rebuffer_events": 0.5,
+          "quality_change": 1.313334041204129,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09398880237433797
+        },
+        {
+          "episode": 1600,
+          "reward": 44.30997570159768,
+          "qoe": 44.30997570159768,
+          "qoe_quality": 44.30997570159768,
+          "mean_quality": 0.5777554265778844,
+          "stall_s": 0.6156103037335999,
+          "rebuffer_events": 0.43749999999999994,
+          "quality_change": 2.782443102208993,
+          "startup_s": 4.773999698618185,
+          "request_pacing_s": 0.09730213964160722
+        },
+        {
+          "episode": 2000,
+          "reward": 40.23105982713602,
+          "qoe": 40.231059827136036,
+          "qoe_quality": 40.231059827136036,
+          "mean_quality": 0.5154698315613656,
+          "stall_s": 0.4369321613458349,
+          "rebuffer_events": 0.2013888888888889,
+          "quality_change": 2.25238463224066,
+          "startup_s": 4.521301750129993,
+          "request_pacing_s": 0.15124035732487925
+        },
+        {
+          "episode": 2400,
+          "reward": 44.54546257792003,
+          "qoe": 44.54546257792004,
+          "qoe_quality": 44.54546257792004,
+          "mean_quality": 0.562746914090281,
+          "stall_s": 0.5474837356675047,
+          "rebuffer_events": 0.2777777777777778,
+          "quality_change": 2.0602078421311845,
+          "startup_s": 4.506190246700698,
+          "request_pacing_s": 0.19228601537378198
+        }
+      ],
+      "47": [
+        {
+          "episode": 400,
+          "reward": 44.572516375722586,
+          "qoe": 44.57251637572259,
+          "qoe_quality": 44.57251637572259,
+          "mean_quality": 0.6181815076860013,
+          "stall_s": 1.7369967133133757,
+          "rebuffer_events": 0.8541666666666666,
+          "quality_change": 1.1793960056141644,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09824165030251474
+        },
+        {
+          "episode": 800,
+          "reward": 44.835817907790506,
+          "qoe": 44.835817907790506,
+          "qoe_quality": 44.835817907790506,
+          "mean_quality": 0.5902472210885654,
+          "stall_s": 1.1986300149873719,
+          "rebuffer_events": 0.49999999999999994,
+          "quality_change": 1.145975949937815,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10634068901615956
+        },
+        {
+          "episode": 1200,
+          "reward": 45.44323924608541,
+          "qoe": 45.44323924608541,
+          "qoe_quality": 45.44323924608541,
+          "mean_quality": 0.5903342162044181,
+          "stall_s": 0.9954167206001683,
+          "rebuffer_events": 0.4930555555555556,
+          "quality_change": 1.541826739469565,
+          "startup_s": 4.521301750129993,
+          "request_pacing_s": 0.09462735991212133
+        },
+        {
+          "episode": 1600,
+          "reward": 45.33495606974763,
+          "qoe": 45.33495606974764,
+          "qoe_quality": 45.33495606974764,
+          "mean_quality": 0.5773963453756354,
+          "stall_s": 0.7903951879000867,
+          "rebuffer_events": 0.3333333333333333,
+          "quality_change": 1.9362960418433555,
+          "startup_s": 4.268677634223673,
+          "request_pacing_s": 0.09633198300641836
+        },
+        {
+          "episode": 2000,
+          "reward": 40.484154517267775,
+          "qoe": 40.48415451726778,
+          "qoe_quality": 40.48415451726778,
+          "mean_quality": 0.5377129505932801,
+          "stall_s": 0.499707543386845,
+          "rebuffer_events": 0.23611111111111113,
+          "quality_change": 3.6299964528584643,
+          "startup_s": 4.690786286944073,
+          "request_pacing_s": 0.10053641881630253
+        },
+        {
+          "episode": 2400,
+          "reward": 40.5016554458927,
+          "qoe": 40.50165544589271,
+          "qoe_quality": 40.50165544589271,
+          "mean_quality": 0.5537628407263411,
+          "stall_s": 1.0022704870749943,
+          "rebuffer_events": 0.5138888888888888,
+          "quality_change": 2.4576728619700985,
+          "startup_s": 4.719609928380701,
+          "request_pacing_s": 0.14690082938729437
+        }
+      ],
+      "48": [
+        {
+          "episode": 400,
+          "reward": 45.053377910495215,
+          "qoe": 45.05337791049522,
+          "qoe_quality": 45.05337791049522,
+          "mean_quality": 0.6282938014861899,
+          "stall_s": 1.753328686411892,
+          "rebuffer_events": 1.0277777777777777,
+          "quality_change": 1.2923141443145463,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09408330497762199
+        },
+        {
+          "episode": 800,
+          "reward": 45.68997965047768,
+          "qoe": 45.68997965047769,
+          "qoe_quality": 45.68997965047769,
+          "mean_quality": 0.6077647009835365,
+          "stall_s": 1.2958672464541698,
+          "rebuffer_events": 0.6527777777777778,
+          "quality_change": 1.3198865458849496,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10232164482858096
+        },
+        {
+          "episode": 1200,
+          "reward": 45.028676010584775,
+          "qoe": 45.028676010584775,
+          "qoe_quality": 45.028676010584775,
+          "mean_quality": 0.5666120409988652,
+          "stall_s": 0.7259861476276899,
+          "rebuffer_events": 0.3125,
+          "quality_change": 1.489505433976072,
+          "startup_s": 4.264188147017742,
+          "request_pacing_s": 0.14418746355422904
+        },
+        {
+          "episode": 1600,
+          "reward": 43.785348904183785,
+          "qoe": 43.78534890418379,
+          "qoe_quality": 43.78534890418379,
+          "mean_quality": 0.5498678204144978,
+          "stall_s": 0.6352608122114036,
+          "rebuffer_events": 0.2638888888888889,
+          "quality_change": 1.60906936636511,
+          "startup_s": 4.2219763337427,
+          "request_pacing_s": 0.11727414821766881
+        },
+        {
+          "episode": 2000,
+          "reward": 44.58828070916459,
+          "qoe": 44.58828070916459,
+          "qoe_quality": 44.58828070916459,
+          "mean_quality": 0.5680819317466346,
+          "stall_s": 0.7221607930550266,
+          "rebuffer_events": 0.27083333333333337,
+          "quality_change": 2.1745049718081884,
+          "startup_s": 4.2656329445915935,
+          "request_pacing_s": 0.13178126448071606
+        }
+      ],
+      "49": [
+        {
+          "episode": 400,
+          "reward": 45.11835655660048,
+          "qoe": 45.11835655660049,
+          "qoe_quality": 45.11835655660049,
+          "mean_quality": 0.6070745483794088,
+          "stall_s": 1.4197419326408713,
+          "rebuffer_events": 0.625,
+          "quality_change": 1.3453887843021168,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09978312231081884
+        },
+        {
+          "episode": 800,
+          "reward": 43.8689583908846,
+          "qoe": 43.86895839088461,
+          "qoe_quality": 43.86895839088461,
+          "mean_quality": 0.5986429403281184,
+          "stall_s": 1.4756567614491154,
+          "rebuffer_events": 0.6458333333333334,
+          "quality_change": 1.4695257143468479,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10228120739410526
+        },
+        {
+          "episode": 1200,
+          "reward": 42.904688492185414,
+          "qoe": 42.90468849218542,
+          "qoe_quality": 42.90468849218542,
+          "mean_quality": 0.5657732581361068,
+          "stall_s": 1.0787272542897555,
+          "rebuffer_events": 0.4583333333333333,
+          "quality_change": 1.228624274630123,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.1423445882363806
+        },
+        {
+          "episode": 1600,
+          "reward": 44.32933300245898,
+          "qoe": 44.329333002458995,
+          "qoe_quality": 44.329333002458995,
+          "mean_quality": 0.5589620893628038,
+          "stall_s": 0.657835720410119,
+          "rebuffer_events": 0.3333333333333333,
+          "quality_change": 1.1826964827086806,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.12400787581836117
+        }
+      ],
+      "50": [
+        {
+          "episode": 400,
+          "reward": 45.11821335264524,
+          "qoe": 45.11821335264524,
+          "qoe_quality": 45.11821335264524,
+          "mean_quality": 0.6101199715448105,
+          "stall_s": 1.5062047048631806,
+          "rebuffer_events": 0.7013888888888888,
+          "quality_change": 1.1255066064638126,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10282742162851008
+        },
+        {
+          "episode": 800,
+          "reward": 45.08724906706088,
+          "qoe": 45.08724906706089,
+          "qoe_quality": 45.08724906706089,
+          "mean_quality": 0.5968902702549972,
+          "stall_s": 1.2822344545837914,
+          "rebuffer_events": 0.5694444444444444,
+          "quality_change": 1.060461728157105,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10347373607084635
+        },
+        {
+          "episode": 1200,
+          "reward": 45.44148465611636,
+          "qoe": 45.441484656116366,
+          "qoe_quality": 45.441484656116366,
+          "mean_quality": 0.5832978226248551,
+          "stall_s": 0.8769287051336007,
+          "rebuffer_events": 0.4097222222222222,
+          "quality_change": 1.40924054316769,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09970485092803671
+        },
+        {
+          "episode": 1600,
+          "reward": 45.40866629250364,
+          "qoe": 45.40866629250364,
+          "qoe_quality": 45.40866629250364,
+          "mean_quality": 0.5842298215041812,
+          "stall_s": 0.8917143808132506,
+          "rebuffer_events": 0.4305555555555556,
+          "quality_change": 1.4300137226238643,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09217836561866352
+        },
+        {
+          "episode": 2000,
+          "reward": 44.103479829451686,
+          "qoe": 44.1034798294517,
+          "qoe_quality": 44.1034798294517,
+          "mean_quality": 0.6067886382257726,
+          "stall_s": 0.9402104599143913,
+          "rebuffer_events": 0.7083333333333334,
+          "quality_change": 3.0944341754421343,
+          "startup_s": 5.347585448923244,
+          "request_pacing_s": 0.1049901983244266
+        },
+        {
+          "episode": 2400,
+          "reward": 41.37446745531762,
+          "qoe": 41.37446745531763,
+          "qoe_quality": 41.37446745531763,
+          "mean_quality": 0.5855905866697387,
+          "stall_s": 1.0101941723957588,
+          "rebuffer_events": 0.5277777777777778,
+          "quality_change": 3.8686494758598684,
+          "startup_s": 5.277700825959369,
+          "request_pacing_s": 0.11296795619952188
+        }
+      ],
+      "51": [
+        {
+          "episode": 400,
+          "reward": 42.66270524821835,
+          "qoe": 42.66270524821836,
+          "qoe_quality": 42.66270524821836,
+          "mean_quality": 0.6364267441351398,
+          "stall_s": 2.4104983872111068,
+          "rebuffer_events": 1.270833333333333,
+          "quality_change": 1.1843402469386695,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.09472180972559907
+        },
+        {
+          "episode": 800,
+          "reward": 45.10972720314184,
+          "qoe": 45.10972720314184,
+          "qoe_quality": 45.10972720314184,
+          "mean_quality": 0.6062423954457785,
+          "stall_s": 1.4460911668588186,
+          "rebuffer_events": 0.6458333333333333,
+          "quality_change": 1.1158344705938883,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10517621325475707
+        },
+        {
+          "episode": 1200,
+          "reward": 43.97743518434446,
+          "qoe": 43.97743518434447,
+          "qoe_quality": 43.97743518434447,
+          "mean_quality": 0.5868855850220515,
+          "stall_s": 1.2975421829603322,
+          "rebuffer_events": 0.5972222222222222,
+          "quality_change": 1.1552948614918066,
+          "startup_s": 4.521301750129993,
+          "request_pacing_s": 0.10510637202914135
+        },
+        {
+          "episode": 1600,
+          "reward": 44.82383427018768,
+          "qoe": 44.82383427018769,
+          "qoe_quality": 44.82383427018769,
+          "mean_quality": 0.6006674014860709,
+          "stall_s": 1.1860803603693602,
+          "rebuffer_events": 0.6180555555555556,
+          "quality_change": 2.0156628346767342,
+          "startup_s": 4.5939909220288655,
+          "request_pacing_s": 0.10040380078719109
+        },
+        {
+          "episode": 2000,
+          "reward": 42.64122580043809,
+          "qoe": 42.64122580043809,
+          "qoe_quality": 42.64122580043809,
+          "mean_quality": 0.5385140686882903,
+          "stall_s": 0.4446165503563702,
+          "rebuffer_events": 0.2569444444444444,
+          "quality_change": 1.9681493723254913,
+          "startup_s": 4.544194427096108,
+          "request_pacing_s": 0.34216782608692264
+        }
+      ],
+      "52": [
+        {
+          "episode": 400,
+          "reward": 43.73380460847393,
+          "qoe": 43.73380460847394,
+          "qoe_quality": 43.73380460847394,
+          "mean_quality": 0.6176936319815409,
+          "stall_s": 1.9165607369030493,
+          "rebuffer_events": 0.8958333333333333,
+          "quality_change": 1.1138615676478412,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10309863150836053
+        },
+        {
+          "episode": 800,
+          "reward": 44.41222326126665,
+          "qoe": 44.41222326126666,
+          "qoe_quality": 44.41222326126666,
+          "mean_quality": 0.6005542791599027,
+          "stall_s": 1.4478481292984953,
+          "rebuffer_events": 0.6805555555555556,
+          "quality_change": 1.167527400946438,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10131549019598442
+        },
+        {
+          "episode": 1200,
+          "reward": 45.34296902277218,
+          "qoe": 45.34296902277218,
+          "qoe_quality": 45.34296902277218,
+          "mean_quality": 0.5806030902470526,
+          "stall_s": 0.8816103057932645,
+          "rebuffer_events": 0.5763888888888888,
+          "quality_change": 1.352521237212924,
+          "startup_s": 4.280744448020888,
+          "request_pacing_s": 0.1467522365753747
+        },
+        {
+          "episode": 1600,
+          "reward": 45.77415312363876,
+          "qoe": 45.77415312363877,
+          "qoe_quality": 45.77415312363877,
+          "mean_quality": 0.5883153124371339,
+          "stall_s": 0.901254352431176,
+          "rebuffer_events": 0.4375,
+          "quality_change": 1.655212917108225,
+          "startup_s": 4.434514325008226,
+          "request_pacing_s": 0.1141983467283068
+        },
+        {
+          "episode": 2000,
+          "reward": 45.19342017814505,
+          "qoe": 45.193420178145054,
+          "qoe_quality": 45.193420178145054,
+          "mean_quality": 0.5946993639297842,
+          "stall_s": 1.0250307496839381,
+          "rebuffer_events": 0.4861111111111111,
+          "quality_change": 2.0056753859269056,
+          "startup_s": 4.5939909220288655,
+          "request_pacing_s": 0.08846081620840694
+        },
+        {
+          "episode": 2400,
+          "reward": 42.22125124436506,
+          "qoe": 42.22125124436508,
+          "qoe_quality": 42.22125124436508,
+          "mean_quality": 0.5643461717284848,
+          "stall_s": 0.9454118353565019,
+          "rebuffer_events": 0.3402777777777778,
+          "quality_change": 2.619677832859649,
+          "startup_s": 4.565241098690165,
+          "request_pacing_s": 0.12213461864267172
+        },
+        {
+          "episode": 2800,
+          "reward": 42.01608496999534,
+          "qoe": 42.01608496999535,
+          "qoe_quality": 42.01608496999535,
+          "mean_quality": 0.6032054003454431,
+          "stall_s": 1.5843091179445847,
+          "rebuffer_events": 0.7291666666666666,
+          "quality_change": 2.851535653581416,
+          "startup_s": 4.788037913648338,
+          "request_pacing_s": 0.10276016031072734
+        }
+      ],
+      "53": [
+        {
+          "episode": 400,
+          "reward": 43.075073639017646,
+          "qoe": 43.075073639017646,
+          "qoe_quality": 43.075073639017646,
+          "mean_quality": 0.6248447882504086,
+          "stall_s": 2.127429322493423,
+          "rebuffer_events": 1.1458333333333333,
+          "quality_change": 1.080973245952301,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.1005699692457444
+        },
+        {
+          "episode": 800,
+          "reward": 45.633852026487155,
+          "qoe": 45.63385202648716,
+          "qoe_quality": 45.63385202648716,
+          "mean_quality": 0.5965754652949021,
+          "stall_s": 1.1527259859516787,
+          "rebuffer_events": 0.5208333333333334,
+          "quality_change": 1.1364869100616453,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10485865288716978
+        },
+        {
+          "episode": 1200,
+          "reward": 44.78801665793526,
+          "qoe": 44.78801665793526,
+          "qoe_quality": 44.78801665793526,
+          "mean_quality": 0.5771193169929116,
+          "stall_s": 0.9413035510000203,
+          "rebuffer_events": 0.4305555555555555,
+          "quality_change": 1.1263794742621758,
+          "startup_s": 4.592546124455015,
+          "request_pacing_s": 0.10857915349495365
+        },
+        {
+          "episode": 1600,
+          "reward": 41.78461476979455,
+          "qoe": 41.78461476979456,
+          "qoe_quality": 41.78461476979456,
+          "mean_quality": 0.5689589936225576,
+          "stall_s": 0.6682127497135135,
+          "rebuffer_events": 0.41666666666666663,
+          "quality_change": 3.9475864772005647,
+          "startup_s": 4.971366638772793,
+          "request_pacing_s": 0.10016102710898764
+        },
+        {
+          "episode": 2000,
+          "reward": 43.09369281937241,
+          "qoe": 43.09369281937241,
+          "qoe_quality": 43.09369281937241,
+          "mean_quality": 0.5626603798830851,
+          "stall_s": 0.48426470921326886,
+          "rebuffer_events": 0.3055555555555555,
+          "quality_change": 2.910589348312069,
+          "startup_s": 5.0455376399305765,
+          "request_pacing_s": 0.10542512189965213
+        }
+      ]
+    },
+    "checkpoint": "models\\abr_dqn_qoe_v4_startup_w15_s10.pkl"
+  }
+}
