@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "run_id": "20260714_065805_full",
+  "machine": "nima",
+  "timestamp": "20260714_065805",
+  "mode": "full",
+  "source_path": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260714_065805_full",
+  "file_count": 2,
+  "size_bytes": 611612,
+  "first_file_utc": "2026-07-14T07:00:22.530133+00:00",
+  "last_file_utc": "2026-07-14T07:00:22.530133+00:00",
+  "status": "unknown_or_partial",
+  "configuration": null,
+  "artifact_manifest": [
+    {
+      "path": "lstm/bandwidth_lstm_none.pkl",
+      "bytes": 305806,
+      "sha256": "a285d9443867250421283db31492b3e9f8494654d2cc78a1db7035ecfecee207"
+    },
+    {
+      "path": "lstm/bandwidth_lstm_none_best.pkl",
+      "bytes": 305806,
+      "sha256": "a285d9443867250421283db31492b3e9f8494654d2cc78a1db7035ecfecee207"
+    }
+  ],
+  "warnings": [
+    "training.config.json missing",
+    "RUN.log missing",
+    "no machine-readable training history found"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "run_id": "20260711_073759_smoke",
+  "machine": "nima",
+  "timestamp": "20260711_073759",
+  "mode": "smoke",
+  "source_path": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260711_073759_smoke",
+  "file_count": 10,
+  "size_bytes": 1103318,
+  "first_file_utc": "2026-07-11T07:38:12.234033+00:00",
+  "last_file_utc": "2026-07-11T07:38:21.025563+00:00",
+  "status": "unknown_or_partial",
+  "configuration": null,
+  "artifact_manifest": [
+    {
+      "path": "lstm/bandwidth_lstm_none.pkl",
+      "bytes": 214705,
+      "sha256": "e761d052d4b1a01680c78aa7d7901f3d3cf2130703ca818d324ab8e3dcaae1db"
+    },
+    {
+      "path": "lstm/bandwidth_lstm_none_best.pkl",
+      "bytes": 214705,
+      "sha256": "e761d052d4b1a01680c78aa7d7901f3d3cf2130703ca818d324ab8e3dcaae1db"
+    },
+    {
+      "path": "sweep/trial_000_s42/abr_dqn.pkl",
+      "bytes": 84361,
+      "sha256": "a64fc907b80ddeb04b2035130adef2ceb08af8fa0e05da2f610ada15e3b9af2f"
+    },
+    {
+      "path": "sweep/trial_000_s42/abr_dqn_best.pkl",
+      "bytes": 84361,
+      "sha256": "a64fc907b80ddeb04b2035130adef2ceb08af8fa0e05da2f610ada15e3b9af2f"
+    },
+    {
+      "path": "sweep/trial_000_s43/abr_dqn.pkl",
+      "bytes": 84361,
+      "sha256": "933e449aafebc14584ac8145244c33dd04003229ceb18c5d8d0967f271fe16e5"
+    },
+    {
+      "path": "sweep/trial_000_s43/abr_dqn_best.pkl",
+      "bytes": 84361,
+      "sha256": "933e449aafebc14584ac8145244c33dd04003229ceb18c5d8d0967f271fe16e5"
+    },
+    {
+      "path": "sweep/trial_001_s42/abr_dqn.pkl",
+      "bytes": 84116,
+      "sha256": "e2af7be64d80cc564973826073ba4f825f8ad750159979981db226dea1e47c5a"
+    },
+    {
+      "path": "sweep/trial_001_s42/abr_dqn_best.pkl",
+      "bytes": 84116,
+      "sha256": "e2af7be64d80cc564973826073ba4f825f8ad750159979981db226dea1e47c5a"
+    },
+    {
+      "path": "sweep/trial_001_s43/abr_dqn.pkl",
+      "bytes": 84116,
+      "sha256": "4e93b224b951d775b77581951261a3423b560f0b77bc5ff0632e8819a9dab469"
+    },
+    {
+      "path": "sweep/trial_001_s43/abr_dqn_best.pkl",
+      "bytes": 84116,
+      "sha256": "4e93b224b951d775b77581951261a3423b560f0b77bc5ff0632e8819a9dab469"
+    }
+  ],
+  "warnings": [
+    "training.config.json missing",
+    "RUN.log missing",
+    "no machine-readable training history found"
+  ]
+}

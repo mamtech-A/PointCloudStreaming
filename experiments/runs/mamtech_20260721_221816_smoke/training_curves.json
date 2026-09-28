@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "run_id": "20260721_221816_smoke",
+  "machine": "mamtech",
+  "histories": [
+    {
+      "source": "sweep/confirm/trial_000_s42/abr_dqn_train_history.json",
+      "episode_reward_count": 12,
+      "episode_reward_samples": [
+        {
+          "index": 0,
+          "value": 60.022216082274355
+        },
+        {
+          "index": 1,
+          "value": 84.52634685728236
+        },
+        {
+          "index": 2,
+          "value": 50.99673038912623
+        },
+        {
+          "index": 3,
+          "value": 27.835971831210436
+        },
+        {
+          "index": 4,
+          "value": 47.843790754961404
+        },
+        {
+          "index": 5,
+          "value": 53.75618454306999
+        },
+        {
+          "index": 6,
+          "value": 46.40073096611489
+        },
+        {
+          "index": 7,
+          "value": 65.95962354363775
+        },
+        {
+          "index": 8,
+          "value": 67.85098280693683
+        },
+        {
+          "index": 9,
+          "value": 78.26573348968655
+        },
+        {
+          "index": 10,
+          "value": 6.310616712565885
+        },
+        {
+          "index": 11,
+          "value": 68.96541325256432
+        }
+      ],
+      "validation": [
+        {
+          "episode": 3,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        },
+        {
+          "episode": 6,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        },
+        {
+          "episode": 9,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        },
+        {
+          "episode": 12,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        }
+      ]
+    },
+    {
+      "source": "sweep/screen/trial_000_s42/abr_dqn_train_history.json",
+      "episode_reward_count": 12,
+      "episode_reward_samples": [
+        {
+          "index": 0,
+          "value": 60.022216082274355
+        },
+        {
+          "index": 1,
+          "value": 84.52634685728236
+        },
+        {
+          "index": 2,
+          "value": 50.99673038912623
+        },
+        {
+          "index": 3,
+          "value": 27.835971831210436
+        },
+        {
+          "index": 4,
+          "value": 47.843790754961404
+        },
+        {
+          "index": 5,
+          "value": 53.75618454306999
+        },
+        {
+          "index": 6,
+          "value": 46.40073096611489
+        },
+        {
+          "index": 7,
+          "value": 65.95962354363775
+        },
+        {
+          "index": 8,
+          "value": 67.85098280693683
+        },
+        {
+          "index": 9,
+          "value": 78.26573348968655
+        },
+        {
+          "index": 10,
+          "value": 6.310616712565885
+        },
+        {
+          "index": 11,
+          "value": 68.96541325256432
+        }
+      ],
+      "validation": [
+        {
+          "episode": 3,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        },
+        {
+          "episode": 6,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        },
+        {
+          "episode": 9,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        },
+        {
+          "episode": 12,
+          "n_cases": 4,
+          "n_parent_traces": 1,
+          "aggregation": "macro_parent_trace",
+          "reward": 73.4377222866826,
+          "reward_std": 0.0,
+          "qoe": 73.43772228668261,
+          "qoe_std": 0.0,
+          "qoe_quality": 73.43772228668261,
+          "qoe_quality_std": 0.0,
+          "mean_quality": 0.8032531652149697,
+          "mean_quality_std": 0.0,
+          "stall_s": 0.0,
+          "stall_s_std": 0.0,
+          "rebuffer_events": 0.0,
+          "rebuffer_events_std": 0.0,
+          "quality_change": 0.0,
+          "quality_change_std": 0.0,
+          "startup_s": 4.591729489876237,
+          "startup_s_std": 0.0,
+          "request_pacing_s": 0.0,
+          "request_pacing_s_std": 0.0
+        }
+      ]
+    }
+  ]
+}

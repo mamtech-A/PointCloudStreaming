@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "run_id": "20260718_122700_smoke",
+  "machine": "nima",
+  "timestamp": "20260718_122700",
+  "mode": "smoke",
+  "source_path": "C:\\Users\\Nima\\PointCloudStreaming\\logs\\train_runs\\20260718_122700_smoke",
+  "file_count": 8,
+  "size_bytes": 933995,
+  "first_file_utc": "2026-07-18T12:27:12.352353+00:00",
+  "last_file_utc": "2026-07-18T12:27:19.897509+00:00",
+  "status": "unknown_or_partial",
+  "configuration": null,
+  "artifact_manifest": [
+    {
+      "path": "lstm/bandwidth_lstm_none.pkl",
+      "bytes": 214705,
+      "sha256": "9ef7098e37ff9d2a91ded5435cda3177e6717dafdfbe03ea6cf0367043f1bb8d"
+    },
+    {
+      "path": "lstm/bandwidth_lstm_none_best.pkl",
+      "bytes": 214705,
+      "sha256": "9ef7098e37ff9d2a91ded5435cda3177e6717dafdfbe03ea6cf0367043f1bb8d"
+    },
+    {
+      "path": "sweep/trial_000_s42/abr_dqn.pkl",
+      "bytes": 84390,
+      "sha256": "53a498ae0e74dfcda2df725f6a888c30fe7939fcfc770b5bd6816fe60d374804"
+    },
+    {
+      "path": "sweep/trial_000_s42/abr_dqn_best.pkl",
+      "bytes": 84390,
+      "sha256": "53a498ae0e74dfcda2df725f6a888c30fe7939fcfc770b5bd6816fe60d374804"
+    },
+    {
+      "path": "sweep/trial_000_s42/abr_dqn_last.pkl",
+      "bytes": 84390,
+      "sha256": "d043fa4f9eb1bde02574912a8b443c3368c3a89ba7432742c3ebb4df6cb774b4"
+    },
+    {
+      "path": "sweep/trial_001_s42/abr_dqn.pkl",
+      "bytes": 83805,
+      "sha256": "6ab2028f2033d6919eaf2e7ad96206700b399177807f4808f2c741b245e78388"
+    },
+    {
+      "path": "sweep/trial_001_s42/abr_dqn_best.pkl",
+      "bytes": 83805,
+      "sha256": "6ab2028f2033d6919eaf2e7ad96206700b399177807f4808f2c741b245e78388"
+    },
+    {
+      "path": "sweep/trial_001_s42/abr_dqn_last.pkl",
+      "bytes": 83805,
+      "sha256": "632a44968e32923e74b5d15723174668644ef17a9debbcfbc42489d08e9ff446"
+    }
+  ],
+  "warnings": [
+    "training.config.json missing",
+    "RUN.log missing",
+    "no machine-readable training history found"
+  ]
+}

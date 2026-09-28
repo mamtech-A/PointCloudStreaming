@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "run_id": "20260721_221816_smoke",
+  "machine": "mamtech",
+  "timestamp": "20260721_221816",
+  "mode": "smoke",
+  "source_path": "C:\\Users\\Mamtech\\PointCloudStreaming\\.worktrees\\startup-delay-sensitivity\\logs\\train_runs\\20260721_221816_smoke",
+  "file_count": 29,
+  "size_bytes": 3256159,
+  "first_file_utc": "2026-07-21T22:18:16.353235+00:00",
+  "last_file_utc": "2026-07-21T22:18:47.514796+00:00",
+  "status": "completed_with_evaluation",
+  "configuration": {
+    "_comment": "Validation-only startup-delay sensitivity experiment at startup_weight=1.5. It is paired with training_startup_w2_s10.json and reuses the exact protocol, frozen registry windows, S=10 LSTM, DQN hyperparameters, and seeds. Do not run the fixed test stage until the final reward formula is selected.",
+    "protocol": "configs/experiment_protocol.json",
+    "trace_registry": "configs/trace_window_registry.json",
+    "artifacts": {
+      "tag": "qoe_v4_startup_w15_s10",
+      "lstm_model_template": "models/bandwidth_lstm_request_pacing_s{segment_frames}.pkl",
+      "dqn_model": "models/abr_dqn_qoe_v4_startup_w15_s10.pkl",
+      "sweep_results": "models/dqn_sweep_results_qoe_v4_startup_w15_s10.json",
+      "baseline_config": "models/baseline_config_qoe_v4_startup_w15_s10.json",
+      "final_results": "models/final_test_results_qoe_v4_startup_w15_s10.json",
+      "training_summary": "models/TRAINING_SUMMARY_qoe_v4_startup_w15_s10.md"
+    },
+    "lstm": {
+      "signal": "achieved",
+      "data_dir_template": "data/lstm_achieved_request_pacing_s{segment_frames}",
+      "segment_frames": [
+        10
+      ],
+      "gen_args": {
+        "offsets": 8,
+        "protocol": "configs/experiment_protocol.json"
+      },
+      "transforms": [
+        "log1p"
+      ],
+      "tune": false,
+      "fixed_hyperparameters": {
+        "hidden": 128,
+        "layers": 2,
+        "dropout": 0.1,
+        "lr": 0.0005
+      },
+      "sequence_length": 8,
+      "epochs": 50,
+      "select_metric": "low_bw_mae",
+      "_selection_note": "Reuse the existing S=10 request-pacing LSTM; reward weights do not alter its data or prediction target. Invoke with --skip-stages gen,lstm."
+    },
+    "dqn_sweep": {
+      "mode": "grid",
+      "screen_seeds": [
+        42,
+        43,
+        44
+      ],
+      "confirm_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "confirmation_selection_seeds": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "confirm_top_k": 1,
+      "screen_overrides": {
+        "epochs": 3,
+        "early-stop-patience": 0
+      },
+      "base_args": {
+        "protocol": "configs/experiment_protocol.json",
+        "trace-registry": "configs/trace_window_registry.json",
+        "epochs": 8,
+        "coverage-stride": 60,
+        "eval-every": 400,
+        "early-stop-patience": 3,
+        "gamma": 1.0,
+        "torch-threads": 2,
+        "mu": 4.3,
+        "lam": 1.0,
+        "select-by": "qoe_quality",
+        "eval-seeds": "42,43,44",
+        "eval-offsets": 3,
+        "eval-sequences": "longdress,loot,redandblack,soldier",
+        "reward-spec": {
+          "rebuffer_weight": 2.0,
+          "startup_weight": 1.5
+        }
+      },
+      "axes": {
+        "segment-frames": [
+          10
+        ],
+        "lr": [
+          0.0003
+        ],
+        "hidden": [
+          256
+        ],
+        "batch-size": [
+          64
+        ],
+        "target-update": [
+          6000
+        ],
+        "eps-decay-frac": [
+          0.5
+        ]
+      },
+      "_selection_note": "Retrain the same fixed S=10 DQN configuration at startup_weight=1.5. Select checkpoints only on validation; preserve compact validation behavior and convergence for comparison with weight 2."
+    },
+    "baselines": {
+      "families": "fixed,buffer,mpc",
+      "_selection_note": "Retune baselines on validation under startup_weight=1.5, although the final formula is not selected by cross-formula raw QoE."
+    },
+    "final_eval": {
+      "split": "test",
+      "max_frames": 0,
+      "strategies": "dqn,fixed,buffer,mpc",
+      "_note": "Registered for compatibility only. Do not pass --run-test during formula sensitivity; select the final weight from validation behavior first."
+    }
+  },
+  "artifact_manifest": [
+    {
+      "path": "30_dqn_sweep.log",
+      "bytes": 2170,
+      "sha256": "d27fbe9c45d365939de1bccbdab3191250491b4d9eae9f29b2a749a960c6d4d3"
+    },
+    {
+      "path": "35_tune_baselines.log",
+      "bytes": 1265,
+      "sha256": "9a5eb1c07e829380786c15f3602bf043a2df98269b8a427df92b3292e2f9bedf"
+    },
+    {
+      "path": "40_registered_evaluation.log",
+      "bytes": 1900,
+      "sha256": "db7bc90f3485ad5eba23c612a1918c245807b49d6f80d4317ac382b9e0b847d1"
+    },
+    {
+      "path": "experiment_protocol.json",
+      "bytes": 1940,
+      "sha256": "1149e7807d7ace3fa962c2a353f734c3003c86ea245eb0b6dd994792c5db6a98"
+    },
+    {
+      "path": "RUN.log",
+      "bytes": 3312,
+      "sha256": "cd224dd8dd4b9ee09342de5e1c6e4f272ff82044f80342a0c6cb0bf1fd13f62d"
+    },
+    {
+      "path": "smoke_abr_dqn.pkl",
+      "bytes": 296801,
+      "sha256": "14a938457915fbe7ff9ebb4ee782847b5be6cbf1115201383b1dc3898a0570f1"
+    },
+    {
+      "path": "smoke_abr_dqn_best.pkl",
+      "bytes": 296801,
+      "sha256": "14a938457915fbe7ff9ebb4ee782847b5be6cbf1115201383b1dc3898a0570f1"
+    },
+    {
+      "path": "smoke_baseline_config.json",
+      "bytes": 169734,
+      "sha256": "46ff21917d87fb285f538a0066cfb0b9c79438cd1b815ba5fa8ccb82570e1b99"
+    },
+    {
+      "path": "smoke_dqn_sweep_results.json",
+      "bytes": 7086,
+      "sha256": "cc98c32e6a12fc57a205d0b634c1153a903f64dc8e4d56c95e12cf137dc97061"
+    },
+    {
+      "path": "SMOKE_SUMMARY.md",
+      "bytes": 1699,
+      "sha256": "1257909a3cc118dd71909cb834bdce5bcfae8dc1ab973cc1f6a092afd07bdb12"
+    },
+    {
+      "path": "smoke_validation_results.json",
+      "bytes": 307337,
+      "sha256": "a9554138c8a098fb4057ba307fcb44d51f52aa964c7f85c21c4f7a3dd7f6b001"
+    },
+    {
+      "path": "trace_window_registry.json",
+      "bytes": 217909,
+      "sha256": "d77f7f7e70055a49cbae0023210a7591ee83972908d6b2f17c67f385d68c42bf"
+    },
+    {
+      "path": "training.config.json",
+      "bytes": 3383,
+      "sha256": "a103b982e26e324ab24b3227f52c07c6bf29a43c280f2d2ce5c0a19a870f7d0d"
+    },
+    {
+      "path": "sweep/confirm/trial_000_s42/abr_dqn.pkl",
+      "bytes": 296801,
+      "sha256": "14a938457915fbe7ff9ebb4ee782847b5be6cbf1115201383b1dc3898a0570f1"
+    },
+    {
+      "path": "sweep/confirm/trial_000_s42/abr_dqn_best.pkl",
+      "bytes": 296801,
+      "sha256": "14a938457915fbe7ff9ebb4ee782847b5be6cbf1115201383b1dc3898a0570f1"
+    },
+    {
+      "path": "sweep/confirm/trial_000_s42/abr_dqn_last.pkl",
+      "bytes": 296801,
+      "sha256": "14a938457915fbe7ff9ebb4ee782847b5be6cbf1115201383b1dc3898a0570f1"
+    },
+    {
+      "path": "sweep/confirm/trial_000_s42/abr_dqn_train_history.json",
+      "bytes": 40127,
+      "sha256": "d6705c4f0b2913dfd02022ec18865bd2c152849c9809b8f00f9240b3e002698c"
+    },
+    {
+      "path": "sweep/confirm/trial_000_s42/train_summary.json",
+      "bytes": 32494,
+      "sha256": "3f6b9473ba72b3672ee3ca6b26db0e06fc865060d3542b8c1d42391b6603d1a0"
+    },
+    {
+      "path": "sweep/confirm/trial_000_s42/trial_request.json",
+      "bytes": 1823,
+      "sha256": "db6f8e934a7972e0e86a186e5ac7aaf2eeecc4a9dd8b105643755386139fbb70"
+    },
+    {
+      "path": "sweep/screen/trial_000_s42/abr_dqn.pkl",
+      "bytes": 296801,
+      "sha256": "8469a5f1e8f56ffc9f163de5872a31989058af765c06b185bcab80d188b2fa0e"
+    },
+    {
+      "path": "sweep/screen/trial_000_s42/abr_dqn_best.pkl",
+      "bytes": 296801,
+      "sha256": "8469a5f1e8f56ffc9f163de5872a31989058af765c06b185bcab80d188b2fa0e"
+    },
+    {
+      "path": "sweep/screen/trial_000_s42/abr_dqn_last.pkl",
+      "bytes": 296801,
+      "sha256": "8469a5f1e8f56ffc9f163de5872a31989058af765c06b185bcab80d188b2fa0e"
+    },
+    {
+      "path": "sweep/screen/trial_000_s42/abr_dqn_train_history.json",
+      "bytes": 40127,
+      "sha256": "d6705c4f0b2913dfd02022ec18865bd2c152849c9809b8f00f9240b3e002698c"
+    },
+    {
+      "path": "sweep/screen/trial_000_s42/train_summary.json",
+      "bytes": 32488,
+      "sha256": "71a6efa9044ac010a0862fe83a3f6ba54bf7cdf7db42e533671410c6cf5da892"
+    },
+    {
+      "path": "sweep/screen/trial_000_s42/trial_request.json",
+      "bytes": 1823,
+      "sha256": "db6f8e934a7972e0e86a186e5ac7aaf2eeecc4a9dd8b105643755386139fbb70"
+    }
+  ],
+  "warnings": []
+}
